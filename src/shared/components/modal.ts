@@ -1,5 +1,7 @@
 /**
  * Reusable modal dialog component.
+ * Modals can only be closed via the X (close) button.
+ * Backdrop clicks and Escape key are intentionally disabled.
  */
 
 import { Icons } from './icons';
@@ -62,7 +64,7 @@ export function openModal(options: ModalOptions): () => void {
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
 
-  // Trap focus
+  // Focus the first focusable element inside the modal
   const focusable = modal.querySelectorAll<HTMLElement>(
     'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
   );
@@ -74,20 +76,7 @@ export function openModal(options: ModalOptions): () => void {
     options.onCancel?.();
   };
 
-  // Close on backdrop click
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) close();
-  });
-
-  // Close on Escape
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      close();
-      document.removeEventListener('keydown', onKeyDown);
-    }
-  };
-  document.addEventListener('keydown', onKeyDown);
-
+  // X button and Cancel button are the only ways to close
   modal.querySelector('.close-btn')?.addEventListener('click', close);
   modal.querySelector('.cancel-btn')?.addEventListener('click', close);
 
@@ -96,7 +85,6 @@ export function openModal(options: ModalOptions): () => void {
       await options.onConfirm();
     }
     backdrop.remove();
-    document.removeEventListener('keydown', onKeyDown);
   });
 
   return close;
