@@ -5,10 +5,11 @@
 import { repository } from '@data/excelRepository';
 
 export interface MonthlyRevenue {
-  month: string; // e.g. "Jan 2025"
+  month: string;
   revenue: number;
   orders: number;
   profit: number;
+  purchaseCost: number;
 }
 
 export interface CategorySales {
@@ -43,12 +44,14 @@ export interface ReportSummary {
   avgOrderValue: number;
   totalCustomers: number;
   newCustomers: number;
+  totalPurchaseSpend: number;
 }
 
 export const reportsService = {
   /** Revenue by month for the last N months */
   getMonthlyRevenue(months = 12): MonthlyRevenue[] {
     const sales = repository.getAll('sales').filter((s) => s.status !== 'cancelled');
+    const purchases = repository.getAll('purchases').filter((p) => p.status === 'received');
     const products = repository.getAll('products');
     const productCostMap = new Map(products.map((p) => [p.id, p.cost]));
 
@@ -66,17 +69,27 @@ export const reportsService = {
       });
 
       const revenue = monthSales.reduce((sum, s) => sum + s.total, 0);
-      const cost = monthSales.reduce((sum, s) =>
+      // COGS: use product cost map as estimate (actual purchase costs tracked separately)
+      const cogs = monthSales.reduce((sum, s) =>
         sum + s.items.reduce((is, item) => {
           const unitCost = productCostMap.get(item.productId) ?? 0;
           return is + unitCost * item.quantity;
         }, 0), 0);
 
+      // Actual purchase spend in this month
+      const purchaseCost = purchases
+        .filter((p) => {
+          const pd = new Date(p.createdAt);
+          return pd >= start && pd <= end;
+        })
+        .reduce((sum, p) => sum + p.total, 0);
+
       result.push({
         month: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         revenue,
         orders: monthSales.length,
-        profit: revenue - cost,
+        profit: revenue - cogs,
+        purchaseCost,
       });
     }
 
@@ -199,6 +212,15 @@ export const reportsService = {
         return is + unitCost * item.quantity;
       }, 0), 0);
 
+    const allPurchases = repository.getAll('purchases').filter((p) => p.status === 'received');
+    const filteredPurchases = from && to
+      ? allPurchases.filter((p) => {
+          const d = new Date(p.createdAt);
+          return d >= from && d <= to;
+        })
+      : allPurchases;
+    const totalPurchaseSpend = filteredPurchases.reduce((sum, p) => sum + p.total, 0);
+
     const customers = repository.getAll('customers');
     const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
     const newCustomers = customers.filter((c) => new Date(c.createdAt) >= thirtyDaysAgo).length;
@@ -210,6 +232,7 @@ export const reportsService = {
       avgOrderValue: sales.length > 0 ? totalRevenue / sales.length : 0,
       totalCustomers: customers.length,
       newCustomers,
+      totalPurchaseSpend,
     };
   },
 };

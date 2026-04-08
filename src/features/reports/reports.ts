@@ -64,6 +64,7 @@ function buildHTML(monthRange: number): string {
       ${buildKpi('Profit Margin', profitMargin.toFixed(1) + '%', Icons.pieChart(), profitMargin >= 20 ? 'success' : profitMargin >= 10 ? 'warning' : 'error')}
       ${buildKpi('Total Orders', String(summary.totalOrders), Icons.shoppingCart(), 'info')}
       ${buildKpi('Avg Order Value', formatCurrency(summary.avgOrderValue), Icons.barChart(), 'primary')}
+      ${buildKpi('Purchase Spend', formatCurrency(summary.totalPurchaseSpend), Icons.truck(), 'warning')}
       ${buildKpi('New Customers (30d)', String(summary.newCustomers), Icons.customers(), 'success')}
     </div>
 
@@ -259,7 +260,7 @@ if (!document.getElementById('reports-styles')) {
   style.textContent = `
     .reports-kpi-grid {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: var(--space-4);
       margin-bottom: var(--space-6);
     }

@@ -12,6 +12,7 @@ export type Route =
   | 'invoices'
   | 'inventory'
   | 'suppliers'
+  | 'purchases'
   | 'reports'
   | 'users'
   | 'settings';
@@ -171,6 +172,36 @@ export interface EnterpriseProfile {
   logo: string;           // base64 data URL or empty string
   defaultTaxRate: number; // default tax % applied to new orders (0–100)
   currency: string;       // ISO 4217 currency code, e.g. "USD", "EUR"
+}
+
+/** Purchase order line item */
+export interface PurchaseItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitCost: number;
+  total: number;
+}
+
+/** Purchase / restocking order */
+export interface Purchase {
+  id: string;
+  poNumber: string;
+  supplierId: string;
+  supplierName: string;
+  items: PurchaseItem[];
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  shippingCost: number;
+  total: number;
+  status: 'draft' | 'ordered' | 'received' | 'cancelled';
+  paymentStatus: 'unpaid' | 'partial' | 'paid';
+  paymentMethod: 'cash' | 'card' | 'transfer' | 'other';
+  expectedDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /** Supplier entity */
