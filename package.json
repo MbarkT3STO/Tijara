@@ -1,0 +1,56 @@
+{
+  "name": "tijara",
+  "version": "1.0.0",
+  "description": "Tijara - Sales Management Application",
+  "main": "out/main/main.js",
+  "scripts": {
+    "dev": "cls && electron-vite dev",
+    "build": "electron-vite build",
+    "package": "electron-vite build && electron-builder",
+    "preview": "electron-vite preview",
+    "lint": "eslint src electron --ext .ts --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint src electron --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,css}\" \"electron/**/*.ts\""
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.3.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.0"
+  },
+  "build": {
+    "appId": "com.tijara.app",
+    "productName": "Tijara",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/icon.icns",
+      "category": "public.app-category.business"
+    },
+    "linux": {
+      "target": "AppImage"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
