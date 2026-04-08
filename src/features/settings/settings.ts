@@ -15,6 +15,68 @@ function getElectron(): ElectronAPI | null {
 
 const isElectron = !!getElectron();
 
+/** Common world currencies for the selector */
+const CURRENCIES: { code: string; name: string }[] = [
+  { code: 'USD', name: 'US Dollar' },
+  { code: 'EUR', name: 'Euro' },
+  { code: 'GBP', name: 'British Pound' },
+  { code: 'JPY', name: 'Japanese Yen' },
+  { code: 'CNY', name: 'Chinese Yuan' },
+  { code: 'INR', name: 'Indian Rupee' },
+  { code: 'CAD', name: 'Canadian Dollar' },
+  { code: 'AUD', name: 'Australian Dollar' },
+  { code: 'CHF', name: 'Swiss Franc' },
+  { code: 'HKD', name: 'Hong Kong Dollar' },
+  { code: 'SGD', name: 'Singapore Dollar' },
+  { code: 'SEK', name: 'Swedish Krona' },
+  { code: 'NOK', name: 'Norwegian Krone' },
+  { code: 'DKK', name: 'Danish Krone' },
+  { code: 'NZD', name: 'New Zealand Dollar' },
+  { code: 'MXN', name: 'Mexican Peso' },
+  { code: 'BRL', name: 'Brazilian Real' },
+  { code: 'ZAR', name: 'South African Rand' },
+  { code: 'AED', name: 'UAE Dirham' },
+  { code: 'SAR', name: 'Saudi Riyal' },
+  { code: 'QAR', name: 'Qatari Riyal' },
+  { code: 'KWD', name: 'Kuwaiti Dinar' },
+  { code: 'BHD', name: 'Bahraini Dinar' },
+  { code: 'OMR', name: 'Omani Rial' },
+  { code: 'JOD', name: 'Jordanian Dinar' },
+  { code: 'EGP', name: 'Egyptian Pound' },
+  { code: 'MAD', name: 'Moroccan Dirham' },
+  { code: 'TND', name: 'Tunisian Dinar' },
+  { code: 'DZD', name: 'Algerian Dinar' },
+  { code: 'LYD', name: 'Libyan Dinar' },
+  { code: 'TRY', name: 'Turkish Lira' },
+  { code: 'RUB', name: 'Russian Ruble' },
+  { code: 'KRW', name: 'South Korean Won' },
+  { code: 'IDR', name: 'Indonesian Rupiah' },
+  { code: 'MYR', name: 'Malaysian Ringgit' },
+  { code: 'THB', name: 'Thai Baht' },
+  { code: 'PHP', name: 'Philippine Peso' },
+  { code: 'PKR', name: 'Pakistani Rupee' },
+  { code: 'BDT', name: 'Bangladeshi Taka' },
+  { code: 'NGN', name: 'Nigerian Naira' },
+  { code: 'GHS', name: 'Ghanaian Cedi' },
+  { code: 'KES', name: 'Kenyan Shilling' },
+  { code: 'ETB', name: 'Ethiopian Birr' },
+  { code: 'TZS', name: 'Tanzanian Shilling' },
+  { code: 'UGX', name: 'Ugandan Shilling' },
+  { code: 'XOF', name: 'West African CFA Franc' },
+  { code: 'XAF', name: 'Central African CFA Franc' },
+  { code: 'ILS', name: 'Israeli Shekel' },
+  { code: 'CZK', name: 'Czech Koruna' },
+  { code: 'PLN', name: 'Polish Zloty' },
+  { code: 'HUF', name: 'Hungarian Forint' },
+  { code: 'RON', name: 'Romanian Leu' },
+  { code: 'HRK', name: 'Croatian Kuna' },
+  { code: 'BGN', name: 'Bulgarian Lev' },
+  { code: 'CLP', name: 'Chilean Peso' },
+  { code: 'COP', name: 'Colombian Peso' },
+  { code: 'PEN', name: 'Peruvian Sol' },
+  { code: 'ARS', name: 'Argentine Peso' },
+];
+
 /** Render and return the settings page */
 export function renderSettings(): HTMLElement {
   const page = document.createElement('div');
@@ -119,6 +181,13 @@ export function renderSettings(): HTMLElement {
               <label class="form-label" for="ep-default-tax">Default Tax Rate (%)</label>
               <input type="number" id="ep-default-tax" class="form-control" placeholder="0" min="0" max="100" step="0.01" value="${profile.defaultTaxRate ?? 0}" />
               <span class="form-hint">Pre-filled on every new order and invoice</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ep-currency">Default Currency</label>
+              <select id="ep-currency" class="form-control">
+                ${CURRENCIES.map((c) => `<option value="${c.code}" ${(profile.currency || 'USD') === c.code ? 'selected' : ''}>${c.code} — ${c.name}</option>`).join('')}
+              </select>
+              <span class="form-hint">Used across all amounts, invoices and reports</span>
             </div>
           </div>
 
@@ -304,6 +373,7 @@ export function renderSettings(): HTMLElement {
       website:        (page.querySelector('#ep-website')     as HTMLInputElement).value.trim(),
       taxId:          (page.querySelector('#ep-taxid')       as HTMLInputElement).value.trim(),
       defaultTaxRate: parseFloat((page.querySelector('#ep-default-tax') as HTMLInputElement).value) || 0,
+      currency:       (page.querySelector('#ep-currency')    as HTMLSelectElement).value,
       logo:           currentLogo,
     });
     notifications.success('Enterprise profile saved. It will appear on all future invoices.');

@@ -5,6 +5,7 @@
  */
 
 import type { EnterpriseProfile } from '@core/types';
+import { setActiveCurrency } from '@shared/utils/helpers';
 
 const STORAGE_KEY = 'tijara-profile';
 
@@ -20,6 +21,7 @@ const DEFAULT_PROFILE: EnterpriseProfile = {
   taxId: '',
   logo: '',
   defaultTaxRate: 0,
+  currency: 'USD',
 };
 
 class ProfileService {
@@ -38,6 +40,8 @@ class ProfileService {
     } else {
       this.profile = { ...DEFAULT_PROFILE };
     }
+    // Sync currency into the formatCurrency helper
+    setActiveCurrency(this.profile.currency || 'USD');
     return this.profile;
   }
 
@@ -45,6 +49,8 @@ class ProfileService {
   save(data: Partial<EnterpriseProfile>): void {
     this.profile = { ...this.get(), ...data };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.profile));
+    // Keep formatCurrency in sync immediately after save
+    setActiveCurrency(this.profile.currency || 'USD');
   }
 
   /** Check whether a profile has been configured */
@@ -55,6 +61,11 @@ class ProfileService {
   /** Get the default tax rate (falls back to 0) */
   getDefaultTaxRate(): number {
     return this.get().defaultTaxRate ?? 0;
+  }
+
+  /** Get the active currency code (falls back to USD) */
+  getCurrency(): string {
+    return this.get().currency || 'USD';
   }
 }
 

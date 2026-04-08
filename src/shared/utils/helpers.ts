@@ -13,14 +13,27 @@ export function getCurrentISODate(): string {
 }
 
 /**
- * Format a number as currency.
- * @param amount - The numeric amount
- * @param currency - ISO currency code (default: USD)
+ * Active currency code — set by profileService on init.
+ * Defaults to USD until the profile is loaded.
  */
-export function formatCurrency(amount: number, currency = 'USD'): string {
+let _activeCurrency = 'USD';
+
+/** Called by profileService after loading to set the active currency globally */
+export function setActiveCurrency(code: string): void {
+  _activeCurrency = code || 'USD';
+}
+
+/**
+ * Format a number as currency using the active profile currency.
+ * Pass an explicit currency code to override (e.g. in PDF generation).
+ * @param amount - The numeric amount
+ * @param currency - ISO 4217 code; defaults to the active profile currency
+ */
+export function formatCurrency(amount: number, currency?: string): string {
+  const code = currency || _activeCurrency;
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency,
+    currency: code,
     minimumFractionDigits: 2,
   }).format(amount);
 }

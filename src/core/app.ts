@@ -7,6 +7,7 @@
 
 import { router } from './router';
 import { authService } from '@services/authService';
+import { profileService } from '@services/profileService';
 import { createSidebar } from '@shared/components/sidebar';
 import { createTopbar } from '@shared/components/topbar';
 import { initToasts } from '@shared/components/toast';
@@ -27,6 +28,9 @@ const PAGE_RENDERERS: Record<Route, () => Promise<HTMLElement>> = {
 
 export async function bootstrap(root: HTMLElement): Promise<void> {
   await repository.init();
+
+  // Load profile early so currency is set before any page renders
+  profileService.get();
 
   repository.registerMenuListeners(
     () => repository.exportToExcel().catch(console.error),

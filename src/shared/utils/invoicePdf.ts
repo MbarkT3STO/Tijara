@@ -17,7 +17,11 @@ function getElectron(): ElectronAPI | null {
 
 /** Build a complete, self-contained invoice HTML document */
 export function buildInvoiceHTML(invoice: Invoice): string {
-  const profile = profileService.get();
+  const profile  = profileService.get();
+  const currency = profile.currency || 'USD';
+
+  /** Currency-aware formatter for this invoice */
+  const fmt = (n: number) => formatCurrency(n, currency);
 
   const statusColor: Record<string, string> = {
     draft: '#6b7280',
@@ -34,9 +38,9 @@ export function buildInvoiceHTML(invoice: Invoice): string {
       <tr class="${i % 2 === 0 ? 'row-even' : 'row-odd'}">
         <td>${item.productName}</td>
         <td class="center">${item.quantity}</td>
-        <td class="right">${formatCurrency(item.unitPrice)}</td>
+        <td class="right">${fmt(item.unitPrice)}</td>
         <td class="center">${item.discount > 0 ? item.discount + '%' : '—'}</td>
-        <td class="right"><strong>${formatCurrency(item.total)}</strong></td>
+        <td class="right"><strong>${fmt(item.total)}</strong></td>
       </tr>`
     )
     .join('');
@@ -197,13 +201,13 @@ export function buildInvoiceHTML(invoice: Invoice): string {
 
   <div class="totals">
     <div class="totals-box">
-      <div class="totals-row"><span>Subtotal</span><span>${formatCurrency(invoice.subtotal)}</span></div>
-      ${invoice.discount > 0 ? `<div class="totals-row"><span>Discount</span><span>-${formatCurrency(invoice.discount)}</span></div>` : ''}
-      <div class="totals-row"><span>Tax (${invoice.taxRate}%)</span><span>${formatCurrency(invoice.taxAmount)}</span></div>
-      <div class="totals-row grand"><span>Total</span><span>${formatCurrency(invoice.total)}</span></div>
+      <div class="totals-row"><span>Subtotal</span><span>${fmt(invoice.subtotal)}</span></div>
+      ${invoice.discount > 0 ? `<div class="totals-row"><span>Discount</span><span>-${fmt(invoice.discount)}</span></div>` : ''}
+      <div class="totals-row"><span>Tax (${invoice.taxRate}%)</span><span>${fmt(invoice.taxAmount)}</span></div>
+      <div class="totals-row grand"><span>Total</span><span>${fmt(invoice.total)}</span></div>
       ${invoice.amountPaid > 0 ? `
-        <div class="totals-row paid-row"><span>Amount Paid</span><span>${formatCurrency(invoice.amountPaid)}</span></div>
-        <div class="totals-row due-row"><span>Balance Due</span><span>${formatCurrency(invoice.amountDue)}</span></div>
+        <div class="totals-row paid-row"><span>Amount Paid</span><span>${fmt(invoice.amountPaid)}</span></div>
+        <div class="totals-row due-row"><span>Balance Due</span><span>${fmt(invoice.amountDue)}</span></div>
       ` : ''}
     </div>
   </div>
