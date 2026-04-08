@@ -10,7 +10,7 @@
  * or falls back to browser download/File API otherwise.
  */
 
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier, Purchase } from '@core/types';
 import type { ElectronAPI } from '../../electron/preload';
 
@@ -83,9 +83,9 @@ class ExcelRepository {
 
         // Patch products that predate the reorderPoint/reorderQuantity fields
         this.data.products = this.data.products.map((p) => ({
-          reorderPoint:    0,
-          reorderQuantity: 0,
           ...p,
+          reorderPoint:    p.reorderPoint    ?? 0,
+          reorderQuantity: p.reorderQuantity ?? 0,
         }));
       } catch {
         this.data = this.getSeedData();
@@ -167,39 +167,421 @@ class ExcelRepository {
 
   // ── Excel export ──────────────────────────────────────────────────────────
 
-  /** Export all data to an Excel workbook */
+  /** Export all data to a beautifully styled Excel workbook */
   async exportToExcel(): Promise<void> {
+    const profile = (() => {
+      try {
+        const raw = localStorage.getItem('tijara-profile');
+        return raw ? JSON.parse(raw) : {};
+      } catch { return {}; }
+    })();
+    const companyName: string = profile.name || 'Tijara';
+    const currency: string    = profile.currency || 'USD';
+
     const wb = XLSX.utils.book_new();
 
-    for (const [key, sheetName] of Object.entries(SHEET_NAMES)) {
-      const collection = key as keyof WorkbookData;
-      const rows = this.data[collection];
+    // Sheet configs: human-readable column headers + which fields to include
+    const SHEET_CONFIGS: Record<keyof WorkbookData, { label: string; cols: { key: string; header: string; width: number; type?: 'currency' | 'date' | 'number' | 'text' }[] }> = {
+      customers: {
+        label: 'Customers',
+        cols: [
+          { key: 'name',      header: 'Name',         width: 28, type: 'text' },
+          { key: 'email',     header: 'Email',        width: 30, type: 'text' },
+          { key: 'phone',     header: 'Phone',        width: 18, type: 'text' },
+          { key: 'address',   header: 'Address',      width: 30, type: 'text' },
+          { key: 'city',      header: 'City',         width: 18, type: 'text' },
+          { key: 'country',   header: 'Country',      width: 16, type: 'text' },
+          { key: 'notes',     header: 'Notes',        width: 30, type: 'text' },
+          { key: 'createdAt', header: 'Created',      width: 20, type: 'date' },
+        ],
+      },
+      products: {
+        label: 'Products',
+        cols: [
+          { key: 'name',            header: 'Name',            width: 28, type: 'text' },
+          { key: 'sku',             header: 'SKU',             width: 14, type: 'text' },
+          { key: 'category',        header: 'Category',        width: 18, type: 'text' },
+          { key: 'price',           header: 'Selling Price',   width: 16, type: 'currency' },
+          { key: 'cost',            header: 'Cost Price',      width: 14, type: 'currency' },
+          { key: 'stock',           header: 'Stock',           width: 10, type: 'number' },
+          { key: 'unit',            header: 'Unit',            width: 10, type: 'text' },
+          { key: 'reorderPoint',    header: 'Reorder Point',   width: 14, type: 'number' },
+          { key: 'reorderQuantity', header: 'Restock Qty',     width: 14, type: 'number' },
+          { key: 'description',     header: 'Description',     width: 32, type: 'text' },
+          { key: 'createdAt',       header: 'Created',         width: 20, type: 'date' },
+        ],
+      },
+      sales: {
+        label: 'Sales',
+        cols: [
+          { key: 'orderNumber',   header: 'Order #',        width: 18, type: 'text' },
+          { key: 'customerName',  header: 'Customer',       width: 24, type: 'text' },
+          { key: 'subtotal',      header: 'Subtotal',       width: 14, type: 'currency' },
+          { key: 'taxRate',       header: 'Tax %',          width: 10, type: 'number' },
+          { key: 'taxAmount',     header: 'Tax Amount',     width: 14, type: 'currency' },
+          { key: 'discount',      header: 'Discount',       width: 12, type: 'currency' },
+          { key: 'total',         header: 'Total',          width: 14, type: 'currency' },
+          { key: 'status',        header: 'Status',         width: 14, type: 'text' },
+          { key: 'paymentStatus', header: 'Payment',        width: 14, type: 'text' },
+          { key: 'paymentMethod', header: 'Method',         width: 14, type: 'text' },
+          { key: 'notes',         header: 'Notes',          width: 28, type: 'text' },
+          { key: 'createdAt',     header: 'Date',           width: 20, type: 'date' },
+        ],
+      },
+      invoices: {
+        label: 'Invoices',
+        cols: [
+          { key: 'invoiceNumber', header: 'Invoice #',    width: 18, type: 'text' },
+          { key: 'customerName',  header: 'Customer',     width: 24, type: 'text' },
+          { key: 'subtotal',      header: 'Subtotal',     width: 14, type: 'currency' },
+          { key: 'taxAmount',     header: 'Tax',          width: 12, type: 'currency' },
+          { key: 'discount',      header: 'Discount',     width: 12, type: 'currency' },
+          { key: 'total',         header: 'Total',        width: 14, type: 'currency' },
+          { key: 'amountPaid',    header: 'Paid',         width: 14, type: 'currency' },
+          { key: 'amountDue',     header: 'Balance Due',  width: 14, type: 'currency' },
+          { key: 'status',        header: 'Status',       width: 14, type: 'text' },
+          { key: 'dueDate',       header: 'Due Date',     width: 20, type: 'date' },
+          { key: 'createdAt',     header: 'Created',      width: 20, type: 'date' },
+        ],
+      },
+      purchases: {
+        label: 'Purchases',
+        cols: [
+          { key: 'poNumber',      header: 'PO #',          width: 18, type: 'text' },
+          { key: 'supplierName',  header: 'Supplier',      width: 24, type: 'text' },
+          { key: 'subtotal',      header: 'Subtotal',      width: 14, type: 'currency' },
+          { key: 'taxAmount',     header: 'Tax',           width: 12, type: 'currency' },
+          { key: 'shippingCost',  header: 'Shipping',      width: 12, type: 'currency' },
+          { key: 'total',         header: 'Total',         width: 14, type: 'currency' },
+          { key: 'status',        header: 'Status',        width: 14, type: 'text' },
+          { key: 'paymentStatus', header: 'Payment',       width: 14, type: 'text' },
+          { key: 'paymentMethod', header: 'Method',        width: 14, type: 'text' },
+          { key: 'expectedDate',  header: 'Expected Date', width: 20, type: 'date' },
+          { key: 'createdAt',     header: 'Date',          width: 20, type: 'date' },
+        ],
+      },
+      suppliers: {
+        label: 'Suppliers',
+        cols: [
+          { key: 'name',          header: 'Company',        width: 28, type: 'text' },
+          { key: 'contactPerson', header: 'Contact Person', width: 22, type: 'text' },
+          { key: 'email',         header: 'Email',          width: 28, type: 'text' },
+          { key: 'phone',         header: 'Phone',          width: 18, type: 'text' },
+          { key: 'address',       header: 'Address',        width: 28, type: 'text' },
+          { key: 'city',          header: 'City',           width: 16, type: 'text' },
+          { key: 'country',       header: 'Country',        width: 16, type: 'text' },
+          { key: 'taxId',         header: 'Tax ID',         width: 16, type: 'text' },
+          { key: 'website',       header: 'Website',        width: 28, type: 'text' },
+          { key: 'notes',         header: 'Notes',          width: 30, type: 'text' },
+          { key: 'createdAt',     header: 'Created',        width: 20, type: 'date' },
+        ],
+      },
+      stockMovements: {
+        label: 'Stock Movements',
+        cols: [
+          { key: 'productName', header: 'Product',     width: 28, type: 'text' },
+          { key: 'type',        header: 'Type',        width: 14, type: 'text' },
+          { key: 'quantity',    header: 'Qty Change',  width: 12, type: 'number' },
+          { key: 'stockBefore', header: 'Before',      width: 10, type: 'number' },
+          { key: 'stockAfter',  header: 'After',       width: 10, type: 'number' },
+          { key: 'reference',   header: 'Reference',   width: 18, type: 'text' },
+          { key: 'notes',       header: 'Notes',       width: 30, type: 'text' },
+          { key: 'createdAt',   header: 'Date',        width: 20, type: 'date' },
+        ],
+      },
+      users: {
+        label: 'Users',
+        cols: [
+          { key: 'name',         header: 'Name',          width: 24, type: 'text' },
+          { key: 'email',        header: 'Email',         width: 30, type: 'text' },
+          { key: 'role',         header: 'Role',          width: 14, type: 'text' },
+          { key: 'passwordHash', header: 'Password Hash', width: 70, type: 'text' },
+          { key: 'active',       header: 'Active',        width: 10, type: 'text' },
+          { key: 'lastLogin',    header: 'Last Login',    width: 20, type: 'date' },
+          { key: 'createdAt',    header: 'Created',       width: 20, type: 'date' },
+        ],
+      },
+    };
 
-      if (rows.length === 0) {
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['No data']]), sheetName);
-        continue;
+    // ── Design tokens (matching CSS variables) ──────────────────────────────
+    const C = {
+      primary:        '9929EA', // --color-primary
+      primaryDark:    '7A1FC0', // --color-primary-dark
+      primaryLight:   'CC66DA', // --color-primary-light
+      primarySubtle:  'F0E6FD', // light tint of primary
+      white:          'FFFFFF',
+      bgSecondary:    'F0EEFF', // --color-bg-secondary (light)
+      border:         'E5E0F5', // --color-border
+      textPrimary:    '0F0A1E', // --color-text-primary
+      textSecondary:  '5A5070', // --color-text-secondary
+      textTertiary:   '9B92B0', // --color-text-tertiary
+      success:        '22C55E',
+      successSubtle:  'DCFCE7',
+      warning:        'F59E0B',
+      warningSubtle:  'FEF3C7',
+      error:          'EF4444',
+      errorSubtle:    'FEE2E2',
+      info:           '3B82F6',
+      infoSubtle:     'DBEAFE',
+      rowAlt:         'FAF8FF', // very light purple tint for alternating rows
+    };
+
+    // ── Style factories ─────────────────────────────────────────────────────
+    const font = (bold = false, size = 11, color = C.textPrimary, italic = false) => ({
+      name: 'Calibri', sz: size, bold, italic,
+      color: { rgb: color },
+    });
+
+    const fill = (rgb: string) => ({ patternType: 'solid' as const, fgColor: { rgb } });
+
+    const border = (color = C.border) => {
+      const side = { style: 'thin' as const, color: { rgb: color } };
+      return { top: side, bottom: side, left: side, right: side };
+    };
+
+    const thickBottomBorder = (color = C.primaryDark) => ({
+      top:    { style: 'thin'   as const, color: { rgb: C.border } },
+      bottom: { style: 'medium' as const, color: { rgb: color } },
+      left:   { style: 'thin'   as const, color: { rgb: C.border } },
+      right:  { style: 'thin'   as const, color: { rgb: C.border } },
+    });
+
+    const align = (h: 'left' | 'center' | 'right' = 'left', wrap = false) => ({
+      horizontal: h, vertical: 'center' as const, wrapText: wrap,
+    });
+
+    // Status badge colors
+    const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
+      // Sales
+      pending:   { bg: C.warningSubtle, fg: C.warning },
+      confirmed: { bg: C.infoSubtle,    fg: C.info },
+      shipped:   { bg: 'EDE9FE',        fg: '7C3AED' },
+      delivered: { bg: C.successSubtle, fg: C.success },
+      cancelled: { bg: 'F3F4F6',        fg: '6B7280' },
+      // Invoices / Purchases
+      draft:     { bg: 'F3F4F6',        fg: '6B7280' },
+      sent:      { bg: C.infoSubtle,    fg: C.info },
+      paid:      { bg: C.successSubtle, fg: C.success },
+      overdue:   { bg: C.errorSubtle,   fg: C.error },
+      ordered:   { bg: C.infoSubtle,    fg: C.info },
+      received:  { bg: C.successSubtle, fg: C.success },
+      // Payment
+      unpaid:    { bg: C.errorSubtle,   fg: C.error },
+      partial:   { bg: C.warningSubtle, fg: C.warning },
+      // Boolean
+      true:      { bg: C.successSubtle, fg: C.success },
+      false:     { bg: C.errorSubtle,   fg: C.error },
+    };
+
+    const now = new Date();
+    const exportDate = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    for (const [key, config] of Object.entries(SHEET_CONFIGS)) {
+      const collection = key as keyof WorkbookData;
+      const rows = (this.data[collection] as unknown) as Record<string, unknown>[];
+      const { cols } = config;
+      const numCols = cols.length;
+
+      // ── Build AOA (array of arrays) ───────────────────────────────────────
+      // Row 0: Company banner
+      // Row 1: Sheet title + export date
+      // Row 2: empty spacer
+      // Row 3: column headers
+      // Row 4+: data rows
+
+      const HEADER_ROW = 3; // 0-indexed
+      const DATA_START  = 4;
+
+      const aoa: unknown[][] = [
+        [companyName, ...Array(numCols - 1).fill('')],                          // row 0 – banner
+        [config.label, ...Array(numCols - 2).fill(''), `Exported: ${exportDate}`], // row 1 – title
+        Array(numCols).fill(''),                                                 // row 2 – spacer
+        cols.map((c) => c.header),                                               // row 3 – headers
+        ...(rows.length === 0
+          ? [['No data available', ...Array(numCols - 1).fill('')]]
+          : rows.map((row) =>
+              cols.map((c) => {
+                const v = row[c.key];
+                if (v === undefined || v === null) return '';
+                if (c.type === 'date' && typeof v === 'string' && v) {
+                  try { return new Date(v).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); }
+                  catch { return v; }
+                }
+                if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+                if (typeof v === 'object') return JSON.stringify(v);
+                return v;
+              })
+            )),
+      ];
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+      // ── Column widths ─────────────────────────────────────────────────────
+      ws['!cols'] = cols.map((c) => ({ wch: c.width }));
+
+      // ── Row heights ───────────────────────────────────────────────────────
+      ws['!rows'] = [
+        { hpt: 36 }, // row 0 – banner
+        { hpt: 28 }, // row 1 – title
+        { hpt: 8  }, // row 2 – spacer
+        { hpt: 22 }, // row 3 – headers
+        ...Array(Math.max(rows.length, 1)).fill({ hpt: 20 }), // data rows
+      ];
+
+      // ── Merge banner across all columns ───────────────────────────────────
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: numCols - 1 } }, // banner
+        { s: { r: 1, c: 0 }, e: { r: 1, c: numCols - 3 } }, // sheet title (leave last 2 cols for date)
+      ];
+
+      // ── Apply cell styles ─────────────────────────────────────────────────
+      const totalRows = aoa.length;
+
+      for (let r = 0; r < totalRows; r++) {
+        for (let c = 0; c < numCols; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+
+          // ── Banner row (company name) ──────────────────────────────────
+          if (r === 0) {
+            ws[addr].s = {
+              font: font(true, 18, C.white),
+              fill: fill(C.primary),
+              alignment: align(c === 0 ? 'left' : 'center'),
+              border: { bottom: { style: 'medium' as const, color: { rgb: C.primaryDark } } },
+            };
+            continue;
+          }
+
+          // ── Title row ─────────────────────────────────────────────────
+          if (r === 1) {
+            const isDateCell = c === numCols - 1;
+            ws[addr].s = {
+              font: font(c === 0, isDateCell ? 10 : 14, isDateCell ? C.textTertiary : C.primaryDark),
+              fill: fill(C.primarySubtle),
+              alignment: align(isDateCell ? 'right' : 'left'),
+              border: { bottom: { style: 'thin' as const, color: { rgb: C.border } } },
+            };
+            continue;
+          }
+
+          // ── Spacer row ────────────────────────────────────────────────
+          if (r === 2) {
+            ws[addr].s = { fill: fill(C.white), border: {} };
+            continue;
+          }
+
+          // ── Header row ────────────────────────────────────────────────
+          if (r === HEADER_ROW) {
+            ws[addr].s = {
+              font: font(true, 10, C.white),
+              fill: fill(C.primaryDark),
+              alignment: align('center'),
+              border: thickBottomBorder(),
+            };
+            continue;
+          }
+
+          // ── Data rows ─────────────────────────────────────────────────
+          const dataRowIdx = r - DATA_START;
+          const isAlt      = dataRowIdx % 2 === 1;
+          const colDef     = cols[c];
+          const cellVal    = ws[addr].v;
+
+          // Base style
+          const baseStyle = {
+            font: font(false, 10, C.textPrimary),
+            fill: fill(isAlt ? C.rowAlt : C.white),
+            alignment: align(
+              colDef?.type === 'currency' || colDef?.type === 'number' ? 'right' : 'left',
+              false
+            ),
+            border: border(),
+          };
+
+          // Status / badge columns — colorize
+          const statusKey = typeof cellVal === 'string' ? cellVal.toLowerCase() : '';
+          const isStatusCol = colDef?.key === 'status' || colDef?.key === 'paymentStatus' || colDef?.key === 'active';
+          if (isStatusCol && STATUS_COLORS[statusKey]) {
+            const sc = STATUS_COLORS[statusKey];
+            ws[addr].s = {
+              ...baseStyle,
+              font: font(true, 10, sc.fg),
+              fill: fill(sc.bg),
+              alignment: align('center'),
+            };
+            continue;
+          }
+
+          // Currency columns — bold value, right-aligned
+          if (colDef?.type === 'currency' && typeof cellVal === 'number') {
+            ws[addr].s = {
+              ...baseStyle,
+              font: font(true, 10, C.textPrimary),
+              alignment: align('right'),
+            };
+            // Apply number format
+            ws[addr].z = `"${this._getCurrencySymbol(currency)}"#,##0.00`;
+            continue;
+          }
+
+          // Number columns
+          if (colDef?.type === 'number') {
+            ws[addr].s = { ...baseStyle, alignment: align('right') };
+            continue;
+          }
+
+          // Date columns — muted color
+          if (colDef?.type === 'date') {
+            ws[addr].s = { ...baseStyle, font: font(false, 10, C.textSecondary) };
+            continue;
+          }
+
+          // First column (name/identifier) — slightly bolder
+          if (c === 0 && rows.length > 0) {
+            ws[addr].s = { ...baseStyle, font: font(true, 10, C.textPrimary) };
+            continue;
+          }
+
+          ws[addr].s = baseStyle;
+        }
       }
 
-      const flat = rows.map((row) => {
-        const result: Record<string, unknown> = {};
-        for (const [k, v] of Object.entries(row as unknown as Record<string, unknown>)) {
-          result[k] = typeof v === 'object' ? JSON.stringify(v) : v;
+      // ── Empty-data row style ──────────────────────────────────────────────
+      if (rows.length === 0) {
+        const addr = XLSX.utils.encode_cell({ r: DATA_START, c: 0 });
+        if (ws[addr]) {
+          ws[addr].s = {
+            font: font(false, 11, C.textTertiary, true),
+            fill: fill(C.white),
+            alignment: align('center'),
+            border: border(),
+          };
         }
-        return result;
-      });
+      }
 
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(flat), sheetName);
+      XLSX.utils.book_append_sheet(wb, ws, config.label);
     }
 
+    // ── Write & deliver ───────────────────────────────────────────────────
     const electron = getElectron();
     if (electron) {
-      // In Electron: write to ArrayBuffer and send to main via IPC (native save dialog)
-      const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
+      const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx', cellStyles: true }) as ArrayBuffer;
       await electron.exportExcel(buf);
     } else {
-      // Browser fallback: trigger download
-      XLSX.writeFile(wb, 'tijara-data.xlsx');
+      XLSX.writeFile(wb, 'tijara-data.xlsx', { cellStyles: true });
     }
+  }
+
+  /** Derive a simple currency symbol from an ISO code */
+  private _getCurrencySymbol(code: string): string {
+    try {
+      const formatted = new Intl.NumberFormat('en-US', {
+        style: 'currency', currency: code,
+        minimumFractionDigits: 0, maximumFractionDigits: 0,
+      }).format(0);
+      return formatted.replace(/[\d\s,.']/g, '').trim() || code;
+    } catch { return code; }
   }
 
   // ── Excel import ──────────────────────────────────────────────────────────
