@@ -9,6 +9,7 @@ import { confirmDialog, openModal } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
 import { printInvoice, exportInvoicePDF } from '@shared/utils/invoicePdf';
+import { profileService } from '@services/profileService';
 import type { Invoice } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -389,78 +390,200 @@ function buildPagination(
 }
 
 function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
+  const profile = profileService.get();
+
+  const statusColor: Record<string, string> = {
+    draft:     'var(--color-text-tertiary)',
+    sent:      'var(--color-info)',
+    paid:      'var(--color-success)',
+    overdue:   'var(--color-error)',
+    cancelled: 'var(--color-text-tertiary)',
+  };
+  const accentColor = statusColor[invoice.status] ?? 'var(--color-text-tertiary)';
+
+  const netDays = Math.round(
+    (new Date(invoice.dueDate).getTime() - new Date(invoice.createdAt).getTime()) / 86400000
+  );
+
+  // ── Brand block ──────────────────────────────────────────────────────────
+  let brandHTML = '';
+  if (profile.logo) {
+    brandHTML = `
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <img src="${profile.logo}" alt="${profile.name} logo"
+          style="max-height:52px;max-width:140px;object-fit:contain;display:block;" />
+        ${profile.name ? `
+        <div>
+          <div style="font-size:var(--font-size-xl);font-weight:700;color:var(--color-primary);letter-spacing:-0.02em;">${profile.name}</div>
+          ${profile.tagline ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;">${profile.tagline}</div>` : ''}
+        </div>` : ''}
+      </div>`;
+  } else if (profile.name) {
+    brandHTML = `
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--color-primary-dark),var(--color-primary-light));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:var(--font-size-xl);font-weight:700;color:var(--color-primary);letter-spacing:-0.02em;">${profile.name}</div>
+          ${profile.tagline ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;">${profile.tagline}</div>` : ''}
+        </div>
+      </div>`;
+  } else {
+    brandHTML = `
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--color-primary-dark),var(--color-primary-light));display:flex;align-items:center;justify-content:center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:var(--font-size-xl);font-weight:700;color:var(--color-primary);">Tijara</div>
+          <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;">Sales Management</div>
+        </div>
+      </div>`;
+  }
+
+  // ── From block ───────────────────────────────────────────────────────────
+  let fromHTML = '';
+  if (profile.name) {
+    fromHTML += `<div style="font-weight:600;color:var(--color-text-primary);margin-bottom:2px;">${profile.name}</div>`;
+    if (profile.address) fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.address}${profile.city ? ', ' + profile.city : ''}${profile.country ? ', ' + profile.country : ''}</div>`;
+    if (profile.email)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.email}</div>`;
+    if (profile.phone)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.phone}</div>`;
+    if (profile.website) fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.website}</div>`;
+    if (profile.taxId)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">Tax ID: ${profile.taxId}</div>`;
+  } else {
+    fromHTML = `<div style="font-weight:600;color:var(--color-text-primary);">Tijara Inc.</div><div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">billing@tijara.app</div>`;
+  }
+
+  // ── Item rows ────────────────────────────────────────────────────────────
+  const itemRows = invoice.items.map((item, i) => `
+    <tr style="background:${i % 2 === 0 ? 'transparent' : 'var(--color-primary-subtle)'};">
+      <td style="padding:var(--space-2) var(--space-3);">${item.productName}</td>
+      <td style="padding:var(--space-2) var(--space-3);text-align:center;">${item.quantity}</td>
+      <td style="padding:var(--space-2) var(--space-3);text-align:right;">${formatCurrency(item.unitPrice)}</td>
+      <td style="padding:var(--space-2) var(--space-3);text-align:center;">${item.discount > 0 ? item.discount + '%' : '—'}</td>
+      <td style="padding:var(--space-2) var(--space-3);text-align:right;font-weight:600;">${formatCurrency(item.total)}</td>
+    </tr>`).join('');
+
   const content = document.createElement('div');
   content.innerHTML = `
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-5);">
-      <div>
-        <div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: 4px;">Customer</div>
-        <div style="font-weight: 500;">${invoice.customerName}</div>
-      </div>
-      <div>
-        <div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: 4px;">Due Date</div>
-        <div>${formatDate(invoice.dueDate)}</div>
-      </div>
-      <div>
-        <div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: 4px;">Status</div>
-        <span class="badge ${STATUS_BADGE[invoice.status]}">${invoice.status}</span>
-      </div>
-      <div>
-        <div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: 4px;">Amount Due</div>
-        <div style="font-weight: 700; color: ${invoice.amountDue > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatCurrency(invoice.amountDue)}</div>
-      </div>
-    </div>
+    <!-- Invoice preview wrapper -->
+    <div style="background:var(--color-surface);border-radius:var(--radius-md);overflow:hidden;">
 
-    <div class="table-container" style="margin-bottom: var(--space-4);">
-      <table class="data-table">
-        <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
-        <tbody>
-          ${invoice.items.map((item) => `
-            <tr>
-              <td>${item.productName}</td>
-              <td>${item.quantity}</td>
-              <td>${formatCurrency(item.unitPrice)}</td>
-              <td><strong>${formatCurrency(item.total)}</strong></td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <div style="display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-end; margin-bottom: var(--space-4);">
-      <div style="display: flex; gap: var(--space-8);">
-        <span style="color: var(--color-text-secondary);">Subtotal</span>
-        <span>${formatCurrency(invoice.subtotal)}</span>
-      </div>
-      <div style="display: flex; gap: var(--space-8);">
-        <span style="color: var(--color-text-secondary);">Tax (${invoice.taxRate}%)</span>
-        <span>${formatCurrency(invoice.taxAmount)}</span>
-      </div>
-      <div style="display: flex; gap: var(--space-8); font-size: var(--font-size-lg); font-weight: 700; border-top: 1px solid var(--color-border); padding-top: var(--space-2);">
-        <span>Total</span>
-        <span style="color: var(--color-primary);">${formatCurrency(invoice.total)}</span>
-      </div>
-    </div>
-
-    ${invoice.amountDue > 0 ? `
-      <div style="border-top: 1px solid var(--color-border); padding-top: var(--space-4);">
-        <div class="form-group">
-          <label class="form-label" for="payment-amount">Record Payment</label>
-          <div style="display: flex; gap: var(--space-2);">
-            <input type="number" id="payment-amount" class="form-control" placeholder="Amount" min="0" max="${invoice.amountDue}" step="0.01" value="${invoice.amountDue}" />
-            <button type="button" class="btn btn-primary" id="record-payment-btn">Record</button>
+      <!-- Header: brand + invoice meta -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:var(--space-6);border-bottom:2px solid var(--color-primary);gap:var(--space-4);">
+        ${brandHTML}
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:var(--font-size-2xl);font-weight:700;color:var(--color-text-primary);">${invoice.invoiceNumber}</div>
+          <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-top:2px;">Issued: ${formatDate(invoice.createdAt)}</div>
+          <div style="display:inline-block;margin-top:var(--space-2);padding:2px 10px;border-radius:var(--radius-full);font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:${accentColor}1a;color:${accentColor};border:1px solid ${accentColor}44;">
+            ${invoice.status}
           </div>
         </div>
       </div>
-    ` : ''}
 
-    <!-- PDF / Print actions -->
-    <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-border);">
-      <button class="btn btn-secondary" id="detail-pdf-btn">
-        ${Icons.fileText(16)} Export PDF
-      </button>
-      <button class="btn btn-secondary" id="detail-print-btn">
-        ${Icons.printer(16)} Print
-      </button>
+      <!-- From / Bill To -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);padding:var(--space-5) var(--space-6);">
+        <div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:var(--space-2);">From</div>
+          ${fromHTML}
+        </div>
+        <div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:var(--space-2);">Bill To</div>
+          <div style="font-weight:600;color:var(--color-text-primary);margin-bottom:2px;">${invoice.customerName}</div>
+        </div>
+      </div>
+
+      <!-- Dates strip -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);padding:var(--space-4) var(--space-6);background:var(--color-bg-secondary);border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);">
+        <div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:2px;">Invoice Date</div>
+          <div style="font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-primary);">${formatDate(invoice.createdAt)}</div>
+        </div>
+        <div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:2px;">Due Date</div>
+          <div style="font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-primary);">${formatDate(invoice.dueDate)}</div>
+        </div>
+        <div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:2px;">Payment Terms</div>
+          <div style="font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-primary);">Net ${netDays > 0 ? netDays : 30} days</div>
+        </div>
+      </div>
+
+      <!-- Items table -->
+      <div style="padding:var(--space-5) var(--space-6);">
+        <table style="width:100%;border-collapse:collapse;font-size:var(--font-size-sm);">
+          <thead>
+            <tr style="background:var(--color-primary);">
+              <th style="padding:var(--space-2) var(--space-3);text-align:left;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">Description</th>
+              <th style="padding:var(--space-2) var(--space-3);text-align:center;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">Qty</th>
+              <th style="padding:var(--space-2) var(--space-3);text-align:right;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">Unit Price</th>
+              <th style="padding:var(--space-2) var(--space-3);text-align:center;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">Discount</th>
+              <th style="padding:var(--space-2) var(--space-3);text-align:right;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>${itemRows}</tbody>
+        </table>
+      </div>
+
+      <!-- Totals -->
+      <div style="display:flex;justify-content:flex-end;padding:0 var(--space-6) var(--space-5);">
+        <div style="width:260px;display:flex;flex-direction:column;gap:0;">
+          <div style="display:flex;justify-content:space-between;padding:var(--space-2) 0;font-size:var(--font-size-sm);color:var(--color-text-secondary);border-bottom:1px solid var(--color-border-subtle);">
+            <span>Subtotal</span><span>${formatCurrency(invoice.subtotal)}</span>
+          </div>
+          ${invoice.discount > 0 ? `
+          <div style="display:flex;justify-content:space-between;padding:var(--space-2) 0;font-size:var(--font-size-sm);color:var(--color-text-secondary);border-bottom:1px solid var(--color-border-subtle);">
+            <span>Discount</span><span style="color:var(--color-error);">-${formatCurrency(invoice.discount)}</span>
+          </div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:var(--space-2) 0;font-size:var(--font-size-sm);color:var(--color-text-secondary);border-bottom:1px solid var(--color-border-subtle);">
+            <span>Tax (${invoice.taxRate}%)</span><span>${formatCurrency(invoice.taxAmount)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:var(--space-3) 0 var(--space-2);font-size:var(--font-size-lg);font-weight:700;color:var(--color-primary);border-top:2px solid var(--color-primary);margin-top:var(--space-1);">
+            <span>Total</span><span>${formatCurrency(invoice.total)}</span>
+          </div>
+          ${invoice.amountPaid > 0 ? `
+          <div style="display:flex;justify-content:space-between;padding:var(--space-1) 0;font-size:var(--font-size-sm);font-weight:500;color:var(--color-success);">
+            <span>Amount Paid</span><span>${formatCurrency(invoice.amountPaid)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:var(--space-1) 0;font-size:var(--font-size-sm);font-weight:700;color:${invoice.amountDue > 0 ? 'var(--color-error)' : 'var(--color-success)'};">
+            <span>Balance Due</span><span>${formatCurrency(invoice.amountDue)}</span>
+          </div>` : ''}
+        </div>
+      </div>
+
+      ${invoice.notes ? `
+      <!-- Notes -->
+      <div style="margin:0 var(--space-6) var(--space-5);padding:var(--space-3) var(--space-4);background:var(--color-bg-secondary);border-left:3px solid var(--color-primary);border-radius:0 var(--radius-sm) var(--radius-sm) 0;">
+        <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:4px;">Notes</div>
+        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${invoice.notes}</div>
+      </div>` : ''}
+
+    </div>
+
+    <!-- Record payment (only when amount is due) -->
+    ${invoice.amountDue > 0 ? `
+    <div style="margin-top:var(--space-5);padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);border:1px solid var(--color-border);">
+      <div style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-3);">Record Payment</div>
+      <div style="display:flex;gap:var(--space-2);">
+        <input type="number" id="payment-amount" class="form-control" placeholder="Amount"
+          min="0" max="${invoice.amountDue}" step="0.01" value="${invoice.amountDue}" />
+        <button type="button" class="btn btn-primary" id="record-payment-btn">Record</button>
+      </div>
+    </div>` : ''}
+
+    <!-- Actions -->
+    <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4);">
+      <button class="btn btn-secondary" id="detail-pdf-btn">${Icons.fileText(16)} Export PDF</button>
+      <button class="btn btn-secondary" id="detail-print-btn">${Icons.printer(16)} Print</button>
     </div>
   `;
 
