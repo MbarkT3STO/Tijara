@@ -262,8 +262,8 @@ class ExcelRepository {
     ];
 
     const users: User[] = [
-      { id: 'u1', name: 'Admin User', email: 'admin@tijara.app', role: 'admin', active: true, createdAt: now },
-      { id: 'u2', name: 'Sales Manager', email: 'manager@tijara.app', role: 'manager', active: true, createdAt: now },
+      { id: 'u1', name: 'Admin User', email: 'admin@tijara.app', passwordHash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', role: 'admin', active: true, createdAt: now },
+      { id: 'u2', name: 'Sales Manager', email: 'manager@tijara.app', passwordHash: '866485796cfa8d7c0cf7111640205b83076433547577511d81f8030ae99ecea5', role: 'manager', active: true, createdAt: now },
     ];
 
     return { customers, products, sales, invoices, users };

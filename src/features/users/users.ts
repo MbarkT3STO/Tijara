@@ -3,6 +3,7 @@
  */
 
 import { userService } from '@services/userService';
+import { authService } from '@services/authService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
@@ -275,13 +276,28 @@ function openUserModal(user: User | null, onSave: () => void): void {
         </select>
       </div>
     </div>
+    ${!isEdit ? `
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label required" for="u-password">Password</label>
+        <input type="password" id="u-password" class="form-control" placeholder="Min. 6 characters" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label required" for="u-confirm">Confirm Password</label>
+        <input type="password" id="u-confirm" class="form-control" placeholder="Repeat password" required />
+      </div>
+    </div>` : `
+    <div class="form-group">
+      <label class="form-label" for="u-new-password">Reset Password <span style="color:var(--color-text-tertiary);font-weight:400;">(leave blank to keep current)</span></label>
+      <input type="password" id="u-new-password" class="form-control" placeholder="New password…" />
+    </div>`}
   `;
 
   openModal({
     title: isEdit ? 'Edit User' : 'Add User',
     content: form,
     confirmText: isEdit ? 'Save Changes' : 'Add User',
-    onConfirm: () => {
+    onConfirm: async () => {
       const name = (form.querySelector('#u-name') as HTMLInputElement).value.trim();
       const email = (form.querySelector('#u-email') as HTMLInputElement).value.trim();
       if (!name || !email) {
@@ -289,18 +305,39 @@ function openUserModal(user: User | null, onSave: () => void): void {
         return;
       }
 
-      const data = {
-        name,
-        email,
-        role: (form.querySelector('#u-role') as HTMLSelectElement).value as UserRole,
-        active: (form.querySelector('#u-active') as HTMLSelectElement).value === 'true',
-      };
+      const role = (form.querySelector('#u-role') as HTMLSelectElement).value as UserRole;
+      const active = (form.querySelector('#u-active') as HTMLSelectElement).value === 'true';
 
       if (isEdit) {
-        userService.update(user!.id, data);
+        userService.update(user!.id, { name, email, role, active });
+
+        // Optional password reset
+        const newPw = (form.querySelector('#u-new-password') as HTMLInputElement)?.value;
+        if (newPw && newPw.length >= 6) {
+          await authService.adminResetPassword(user!.id, newPw);
+        } else if (newPw && newPw.length > 0) {
+          notifications.error('New password must be at least 6 characters.');
+          return;
+        }
+
         notifications.success('User updated successfully.');
       } else {
-        userService.create(data);
+        const password = (form.querySelector('#u-password') as HTMLInputElement).value;
+        const confirm = (form.querySelector('#u-confirm') as HTMLInputElement).value;
+        if (!password || password.length < 6) {
+          notifications.error('Password must be at least 6 characters.');
+          return;
+        }
+        if (password !== confirm) {
+          notifications.error('Passwords do not match.');
+          return;
+        }
+        await authService.register(name, email, password, role);
+        if (!active) {
+          const users = userService.getAll();
+          const created = users.find((u) => u.email === email);
+          if (created) userService.update(created.id, { active: false });
+        }
         notifications.success('User added successfully.');
       }
       onSave();

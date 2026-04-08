@@ -17,7 +17,7 @@ export const userService = {
     return repository.getById('users', id);
   },
 
-  /** Create a new user */
+  /** Create a new user (use authService.register for password-based creation) */
   create(data: Omit<User, 'id' | 'createdAt'>): User {
     const user: User = {
       ...data,

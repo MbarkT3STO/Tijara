@@ -1,13 +1,17 @@
 /**
- * Application bootstrap – assembles the shell layout and wires up routing.
+ * Application bootstrap.
+ * 1. Initialises data + auth
+ * 2. Shows the auth screen if no valid session exists
+ * 3. Builds the main shell once authenticated
  */
 
 import { router } from './router';
+import { authService } from '@services/authService';
 import { createSidebar } from '@shared/components/sidebar';
 import { createTopbar } from '@shared/components/topbar';
 import { initToasts } from '@shared/components/toast';
 import { repository } from '@data/excelRepository';
-import type { Route } from './types';
+import type { Route, User } from './types';
 
 /** Lazy-loaded page renderers */
 const PAGE_RENDERERS: Record<Route, () => Promise<HTMLElement>> = {
@@ -20,12 +24,9 @@ const PAGE_RENDERERS: Record<Route, () => Promise<HTMLElement>> = {
   settings: () => import('@features/settings/settings').then((m) => m.renderSettings()),
 };
 
-/** Bootstrap the application */
 export async function bootstrap(root: HTMLElement): Promise<void> {
-  // Initialize data layer
   await repository.init();
 
-  // Register Electron menu listeners (export/import from File menu)
   repository.registerMenuListeners(
     () => repository.exportToExcel().catch(console.error),
     async () => {
@@ -34,98 +35,101 @@ export async function bootstrap(root: HTMLElement): Promise<void> {
     }
   );
 
-  // Initialize toast notifications
   initToasts();
 
-  // Build shell
+  const sessionUser = authService.restoreSession();
+  if (sessionUser) {
+    buildShell(root, sessionUser);
+  } else {
+    showAuthScreen(root);
+  }
+}
+
+function showAuthScreen(root: HTMLElement): void {
+  import('@features/auth/auth').then(({ renderAuthScreen }) => {
+    const authEl = renderAuthScreen((user: User) => {
+      root.removeChild(authEl);
+      buildShell(root, user);
+    });
+    root.appendChild(authEl);
+  });
+}
+
+function buildShell(root: HTMLElement, user: User): void {
   const shell = document.createElement('div');
   shell.className = 'app-shell';
 
   const sidebar = createSidebar();
 
-  // Mobile overlay
   const overlay = document.createElement('div');
   overlay.className = 'sidebar-overlay';
-  overlay.addEventListener('click', closeMobileMenu);
+  overlay.addEventListener('click', () => closeMobileMenu(sidebar, overlay));
 
   const mainArea = document.createElement('div');
   mainArea.className = 'main-area';
 
-  const topbar = createTopbar(() => toggleMobileMenu());
+  const topbar = createTopbar(
+    () => toggleMobileMenu(sidebar, overlay),
+    user,
+    () => handleLogout(root, shell, overlay)
+  );
 
   const contentArea = document.createElement('main');
   contentArea.className = 'content-area';
-  contentArea.setAttribute('id', 'main-content');
+  contentArea.id = 'main-content';
   contentArea.setAttribute('role', 'main');
   contentArea.setAttribute('aria-labelledby', 'page-title');
 
   mainArea.appendChild(topbar);
   mainArea.appendChild(contentArea);
-
   shell.appendChild(sidebar);
   shell.appendChild(mainArea);
-
   root.appendChild(overlay);
   root.appendChild(shell);
 
-  // Mobile menu helpers
-  function toggleMobileMenu() {
-    const isOpen = sidebar.classList.contains('mobile-open');
-    if (isOpen) {
-      closeMobileMenu();
-    } else {
-      sidebar.classList.add('mobile-open');
-      overlay.classList.add('visible');
-    }
+  router.subscribe((route) => loadPage(route, contentArea, sidebar, overlay));
+  void loadPage(router.getRoute(), contentArea, sidebar, overlay);
+}
+
+async function loadPage(
+  route: Route,
+  contentArea: HTMLElement,
+  sidebar: HTMLElement,
+  overlay: HTMLElement
+): Promise<void> {
+  closeMobileMenu(sidebar, overlay);
+  contentArea.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:200px;"><div class="spinner"></div></div>`;
+  try {
+    const el = await PAGE_RENDERERS[route]();
+    contentArea.innerHTML = '';
+    contentArea.appendChild(el);
+    contentArea.scrollTop = 0;
+  } catch (err) {
+    console.error('Failed to load page:', err);
+    contentArea.innerHTML = `<div class="content-inner"><div class="empty-state"><p class="empty-state-title">Failed to load page</p><button class="btn btn-primary" onclick="window.location.reload()">Reload</button></div></div>`;
   }
+}
 
-  function closeMobileMenu() {
-    sidebar.classList.remove('mobile-open');
-    overlay.classList.remove('visible');
-  }
+function toggleMobileMenu(sidebar: HTMLElement, overlay: HTMLElement): void {
+  sidebar.classList.contains('mobile-open')
+    ? closeMobileMenu(sidebar, overlay)
+    : openMobileMenu(sidebar, overlay);
+}
 
-  // Route handler
-  async function handleRoute(route: Route) {
-    closeMobileMenu();
+function openMobileMenu(sidebar: HTMLElement, overlay: HTMLElement): void {
+  sidebar.classList.add('mobile-open');
+  overlay.classList.add('visible');
+}
 
-    // Show loading state
-    contentArea.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: center; height: 200px;">
-        <div class="spinner"></div>
-      </div>
-    `;
+function closeMobileMenu(sidebar: HTMLElement, overlay: HTMLElement): void {
+  sidebar.classList.remove('mobile-open');
+  overlay.classList.remove('visible');
+}
 
-    try {
-      const renderer = PAGE_RENDERERS[route];
-      const pageEl = await renderer();
-      contentArea.innerHTML = '';
-      contentArea.appendChild(pageEl);
-      // Scroll to top on navigation
-      contentArea.scrollTop = 0;
-    } catch (err) {
-      console.error('Failed to load page:', err);
-      contentArea.innerHTML = `
-        <div class="content-inner">
-          <div class="empty-state">
-            <div class="empty-state-icon" style="color: var(--color-error);">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-            </div>
-            <p class="empty-state-title">Failed to load page</p>
-            <p class="empty-state-desc">Something went wrong. Please try again.</p>
-            <button class="btn btn-primary" onclick="window.location.reload()">Reload</button>
-          </div>
-        </div>
-      `;
-    }
-  }
-
-  // Subscribe to route changes
-  router.subscribe(handleRoute);
-
-  // Load initial route
-  await handleRoute(router.getRoute());
+function handleLogout(root: HTMLElement, shell: HTMLElement, overlay: HTMLElement): void {
+  authService.logout();
+  if (root.contains(shell)) root.removeChild(shell);
+  if (root.contains(overlay)) root.removeChild(overlay);
+  window.location.hash = '#/dashboard';
+  showAuthScreen(root);
 }
