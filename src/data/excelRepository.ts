@@ -11,7 +11,7 @@
  */
 
 import * as XLSX from 'xlsx';
-import type { Customer, Product, Sale, Invoice, User, StockMovement } from '@core/types';
+import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier } from '@core/types';
 import type { ElectronAPI } from '../../electron/preload';
 
 /** All data collections stored in the workbook */
@@ -22,6 +22,7 @@ export interface WorkbookData {
   invoices: Invoice[];
   users: User[];
   stockMovements: StockMovement[];
+  suppliers: Supplier[];
 }
 
 const SHEET_NAMES = {
@@ -31,6 +32,7 @@ const SHEET_NAMES = {
   invoices: 'Invoices',
   users: 'Users',
   stockMovements: 'Stock Movements',
+  suppliers: 'Suppliers',
 } as const;
 
 const STORAGE_KEY = 'tijara-data';
@@ -48,6 +50,7 @@ class ExcelRepository {
     invoices: [],
     users: [],
     stockMovements: [],
+    suppliers: [],
   };
 
   private initialized = false;
@@ -71,6 +74,7 @@ class ExcelRepository {
           invoices:       Array.isArray(parsed.invoices)       ? parsed.invoices       : [],
           users:          Array.isArray(parsed.users)          ? parsed.users          : [],
           stockMovements: Array.isArray(parsed.stockMovements) ? parsed.stockMovements : [],
+          suppliers:      Array.isArray(parsed.suppliers)      ? parsed.suppliers      : [],
         };
 
         // Patch products that predate the reorderPoint/reorderQuantity fields
@@ -286,7 +290,7 @@ class ExcelRepository {
       { id: 'u2', name: 'Sales Manager', email: 'manager@tijara.app', passwordHash: '866485796cfa8d7c0cf7111640205b83076433547577511d81f8030ae99ecea5', role: 'manager', active: true, createdAt: now },
     ];
 
-    return { customers, products, sales, invoices, users, stockMovements: [] };
+    return { customers, products, sales, invoices, users, stockMovements: [], suppliers: [] };
   }
 }
 

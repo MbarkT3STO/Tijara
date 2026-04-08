@@ -18,8 +18,10 @@ const NAV_ITEMS: NavItem[] = [
   { route: 'customers', label: 'Customers',  icon: Icons.customers(),  section: 'Management' },
   { route: 'products',  label: 'Products',   icon: Icons.products() },
   { route: 'inventory', label: 'Inventory',  icon: Icons.package() },
+  { route: 'suppliers', label: 'Suppliers',  icon: Icons.truck() },
   { route: 'sales',     label: 'Sales',      icon: Icons.sales() },
   { route: 'invoices',  label: 'Invoices',   icon: Icons.invoices() },
+  { route: 'reports',   label: 'Reports',    icon: Icons.barChart(),   section: 'Analytics' },
   { route: 'users',     label: 'Users',      icon: Icons.users(),      section: 'Admin' },
   { route: 'settings',  label: 'Settings',   icon: Icons.settings() },
 ];

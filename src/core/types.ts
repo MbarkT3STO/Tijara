@@ -11,6 +11,8 @@ export type Route =
   | 'sales'
   | 'invoices'
   | 'inventory'
+  | 'suppliers'
+  | 'reports'
   | 'users'
   | 'settings';
 
@@ -169,6 +171,22 @@ export interface EnterpriseProfile {
   logo: string;           // base64 data URL or empty string
   defaultTaxRate: number; // default tax % applied to new orders (0–100)
   currency: string;       // ISO 4217 currency code, e.g. "USD", "EUR"
+}
+
+/** Supplier entity */
+export interface Supplier {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+  contactPerson: string;
+  taxId?: string;
+  website?: string;
+  notes?: string;
+  createdAt: string;
 }
 
 /** Dashboard stats */

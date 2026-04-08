@@ -3,10 +3,12 @@
  */
 
 import { customerService } from '@services/customerService';
+import { saleService } from '@services/saleService';
+import { invoiceService } from '@services/invoiceService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatDate, debounce, getInitials } from '@shared/utils/helpers';
+import { formatDate, formatCurrency, debounce, getInitials } from '@shared/utils/helpers';
 import type { Customer } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -58,6 +60,22 @@ export function renderCustomers(): HTMLElement {
         state.customers = customerService.getAll();
         state.filtered = state.search ? customerService.search(state.search) : [...state.customers];
         render();
+      });
+    });
+
+    // View profile buttons
+    page.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-view')!;
+        const customer = customerService.getById(id);
+        if (!customer) return;
+        openCustomerProfileModal(customer, () => {
+          openCustomerModal(customer, () => {
+            state.customers = customerService.getAll();
+            state.filtered = state.search ? customerService.search(state.search) : [...state.customers];
+            render();
+          });
+        });
       });
     });
 
@@ -193,6 +211,9 @@ function buildHTML(state: State): string {
                 <td style="color: var(--color-text-secondary);">${formatDate(c.createdAt)}</td>
                 <td>
                   <div class="table-actions">
+                    <button class="btn btn-ghost btn-icon btn-sm" data-view="${c.id}" aria-label="View ${c.name}" data-tooltip="View Profile">
+                      ${Icons.eye(16)}
+                    </button>
                     <button class="btn btn-ghost btn-icon btn-sm" data-edit="${c.id}" aria-label="Edit ${c.name}" data-tooltip="Edit">
                       ${Icons.edit(16)}
                     </button>
@@ -323,5 +344,145 @@ function openCustomerModal(customer: Customer | null, onSave: () => void): void 
       }
       onSave();
     },
+  });
+}
+
+/** Open customer profile modal with order history */
+function openCustomerProfileModal(customer: Customer, onEdit: () => void): void {
+  const sales = saleService.getByCustomer(customer.id);
+  const invoices = invoiceService.getByCustomer(customer.id);
+
+  const totalSpent = sales
+    .filter((s) => s.status !== 'cancelled')
+    .reduce((sum, s) => sum + s.total, 0);
+  const totalOrders = sales.filter((s) => s.status !== 'cancelled').length;
+  const outstandingInvoices = invoices.filter(
+    (i) => i.status !== 'paid' && i.status !== 'cancelled'
+  );
+  const totalOutstanding = outstandingInvoices.reduce((sum, i) => sum + i.amountDue, 0);
+
+  const STATUS_BADGE: Record<string, string> = {
+    pending: 'badge-warning', confirmed: 'badge-info', shipped: 'badge-primary',
+    delivered: 'badge-success', cancelled: 'badge-error',
+  };
+  const PAY_BADGE: Record<string, string> = {
+    unpaid: 'badge-error', partial: 'badge-warning', paid: 'badge-success',
+  };
+  const INV_BADGE: Record<string, string> = {
+    draft: 'badge-neutral', sent: 'badge-info', paid: 'badge-success',
+    overdue: 'badge-error', cancelled: 'badge-neutral',
+  };
+
+  const content = document.createElement('div');
+  content.innerHTML = `
+    <!-- Profile header -->
+    <div style="display:flex;align-items:center;gap:var(--space-4);padding-bottom:var(--space-5);border-bottom:1px solid var(--color-border);margin-bottom:var(--space-5);">
+      <div class="avatar avatar-lg">${getInitials(customer.name)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:var(--font-size-xl);font-weight:700;">${customer.name}</div>
+        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${customer.email}</div>
+        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${customer.phone}</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="profile-edit-btn">${Icons.edit(16)} Edit</button>
+    </div>
+
+    <!-- KPI strip -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-5);">
+      <div style="text-align:center;padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);">
+        <div style="font-size:var(--font-size-2xl);font-weight:700;color:var(--color-primary);">${totalOrders}</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">Total Orders</div>
+      </div>
+      <div style="text-align:center;padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);">
+        <div style="font-size:var(--font-size-2xl);font-weight:700;color:var(--color-success);">${formatCurrency(totalSpent)}</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">Total Spent</div>
+      </div>
+      <div style="text-align:center;padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);">
+        <div style="font-size:var(--font-size-2xl);font-weight:700;color:${totalOutstanding > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatCurrency(totalOutstanding)}</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">Outstanding</div>
+      </div>
+    </div>
+
+    <!-- Contact info -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-bottom:var(--space-5);font-size:var(--font-size-sm);">
+      <div>
+        <span style="color:var(--color-text-tertiary);">Address: </span>
+        <span>${[customer.address, customer.city, customer.country].filter(Boolean).join(', ') || '—'}</span>
+      </div>
+      <div>
+        <span style="color:var(--color-text-tertiary);">Customer since: </span>
+        <span>${formatDate(customer.createdAt)}</span>
+      </div>
+      ${customer.notes ? `<div style="grid-column:1/-1;"><span style="color:var(--color-text-tertiary);">Notes: </span><span>${customer.notes}</span></div>` : ''}
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs" id="profile-tabs" style="margin-bottom:var(--space-4);">
+      <button class="tab-btn active" data-tab="orders">Orders (${sales.length})</button>
+      <button class="tab-btn" data-tab="invoices">Invoices (${invoices.length})</button>
+    </div>
+
+    <!-- Orders tab -->
+    <div id="tab-orders">
+      ${sales.length === 0
+        ? `<div style="text-align:center;padding:var(--space-8);color:var(--color-text-tertiary);font-size:var(--font-size-sm);">No orders yet</div>`
+        : `<div class="table-container" style="border:none;">
+            <table class="data-table">
+              <thead><tr><th>Order #</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th></tr></thead>
+              <tbody>
+                ${[...sales].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((s) => `
+                  <tr>
+                    <td><span style="font-weight:600;color:var(--color-primary);">${s.orderNumber}</span></td>
+                    <td style="color:var(--color-text-secondary);">${formatDate(s.createdAt)}</td>
+                    <td style="color:var(--color-text-secondary);">${s.items.length}</td>
+                    <td><strong>${formatCurrency(s.total)}</strong></td>
+                    <td><span class="badge ${STATUS_BADGE[s.status] ?? 'badge-neutral'}">${s.status}</span></td>
+                    <td><span class="badge ${PAY_BADGE[s.paymentStatus] ?? 'badge-neutral'}">${s.paymentStatus}</span></td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`
+      }
+    </div>
+
+    <!-- Invoices tab (hidden by default) -->
+    <div id="tab-invoices" style="display:none;">
+      ${invoices.length === 0
+        ? `<div style="text-align:center;padding:var(--space-8);color:var(--color-text-tertiary);font-size:var(--font-size-sm);">No invoices yet</div>`
+        : `<div class="table-container" style="border:none;">
+            <table class="data-table">
+              <thead><tr><th>Invoice #</th><th>Date</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th></tr></thead>
+              <tbody>
+                ${[...invoices].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((i) => `
+                  <tr>
+                    <td><span style="font-weight:600;color:var(--color-primary);">${i.invoiceNumber}</span></td>
+                    <td style="color:var(--color-text-secondary);">${formatDate(i.createdAt)}</td>
+                    <td><strong>${formatCurrency(i.total)}</strong></td>
+                    <td style="color:var(--color-success);">${formatCurrency(i.amountPaid)}</td>
+                    <td style="color:${i.amountDue > 0 ? 'var(--color-error)' : 'var(--color-text-secondary)'};">${formatCurrency(i.amountDue)}</td>
+                    <td><span class="badge ${INV_BADGE[i.status] ?? 'badge-neutral'}">${i.status}</span></td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`
+      }
+    </div>
+  `;
+
+  const close = openModal({ title: 'Customer Profile', content, size: 'lg', hideFooter: true });
+
+  // Tab switching
+  content.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      content.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.getAttribute('data-tab')!;
+      (content.querySelector('#tab-orders') as HTMLElement).style.display = tab === 'orders' ? '' : 'none';
+      (content.querySelector('#tab-invoices') as HTMLElement).style.display = tab === 'invoices' ? '' : 'none';
+    });
+  });
+
+  content.querySelector('#profile-edit-btn')?.addEventListener('click', () => {
+    close();
+    onEdit();
   });
 }
