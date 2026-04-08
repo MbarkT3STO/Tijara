@@ -233,6 +233,42 @@ ipcMain.handle('excel:import', async (): Promise<ArrayBuffer | null> => {
 /** Get the path to the data file (for display in settings) */
 ipcMain.handle('app:dataPath', (): string => DATA_FILE);
 
+/** Export an invoice as PDF – renders HTML in a hidden window, saves via dialog */
+ipcMain.handle('invoice:exportPDF', async (_event, html: string, invoiceNumber: string): Promise<boolean> => {
+  // Create a hidden off-screen window to render the invoice HTML
+  const pdfWin = new BrowserWindow({
+    show: false,
+    webPreferences: { nodeIntegration: false, contextIsolation: true },
+  });
+
+  try {
+    await pdfWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+
+    const pdfBuffer = await pdfWin.webContents.printToPDF({
+      pageSize: 'A4',
+      printBackground: true,
+      margins: { marginType: 'custom', top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 },
+    });
+
+    const { filePath, canceled } = await dialog.showSaveDialog(mainWindow!, {
+      title: 'Save Invoice as PDF',
+      defaultPath: join(app.getPath('documents'), `${invoiceNumber}.pdf`),
+      filters: [{ name: 'PDF Document', extensions: ['pdf'] }],
+    });
+
+    if (canceled || !filePath) return false;
+
+    writeFileSync(filePath, pdfBuffer);
+    shell.showItemInFolder(filePath);
+    return true;
+  } catch (err) {
+    console.error('[main] invoice:exportPDF error', err);
+    return false;
+  } finally {
+    pdfWin.destroy();
+  }
+});
+
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {

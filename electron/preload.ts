@@ -18,6 +18,8 @@ export interface ElectronAPI {
   importExcel: () => Promise<ArrayBuffer | null>;
   /** Get the path to the data file */
   getDataPath: () => Promise<string>;
+  /** Export a single invoice as PDF – opens native save dialog */
+  exportInvoicePDF: (html: string, invoiceNumber: string) => Promise<boolean>;
   /** Listen for menu-triggered export */
   onMenuExport: (callback: () => void) => () => void;
   /** Listen for menu-triggered import */
@@ -30,6 +32,7 @@ const api: ElectronAPI = {
   exportExcel: (buffer) => ipcRenderer.invoke('excel:export', buffer),
   importExcel: () => ipcRenderer.invoke('excel:import'),
   getDataPath: () => ipcRenderer.invoke('app:dataPath'),
+  exportInvoicePDF: (html, invoiceNumber) => ipcRenderer.invoke('invoice:exportPDF', html, invoiceNumber),
 
   onMenuExport: (callback) => {
     const handler = () => callback();

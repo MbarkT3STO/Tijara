@@ -8,6 +8,7 @@ import { notifications } from '@core/notifications';
 import { confirmDialog, openModal } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
+import { printInvoice, exportInvoicePDF } from '@shared/utils/invoicePdf';
 import type { Invoice } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -130,6 +131,33 @@ export function renderInvoices(): HTMLElement {
       });
     });
 
+    // PDF export from table row
+    page.querySelectorAll<HTMLButtonElement>('[data-pdf]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-pdf')!;
+        const invoice = invoiceService.getById(id);
+        if (!invoice) return;
+        btn.disabled = true;
+        try {
+          await exportInvoicePDF(invoice);
+          notifications.success('Invoice exported as PDF.');
+        } catch {
+          notifications.error('PDF export failed.');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+
+    // Print from table row
+    page.querySelectorAll<HTMLButtonElement>('[data-print]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-print')!;
+        const invoice = invoiceService.getById(id);
+        if (invoice) printInvoice(invoice);
+      });
+    });
+
     page.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const p = parseInt(btn.getAttribute('data-page')!, 10);
@@ -246,6 +274,12 @@ function buildHTML(state: State): string {
                     <button class="btn btn-ghost btn-icon btn-sm" data-edit="${inv.id}" aria-label="Edit invoice ${inv.invoiceNumber}" data-tooltip="Edit">
                       ${Icons.edit(16)}
                     </button>
+                    <button class="btn btn-ghost btn-icon btn-sm" data-pdf="${inv.id}" aria-label="Export PDF for ${inv.invoiceNumber}" data-tooltip="Export PDF" style="color: var(--color-primary);">
+                      ${Icons.fileText(16)}
+                    </button>
+                    <button class="btn btn-ghost btn-icon btn-sm" data-print="${inv.id}" aria-label="Print invoice ${inv.invoiceNumber}" data-tooltip="Print">
+                      ${Icons.printer(16)}
+                    </button>
                     <button class="btn btn-ghost btn-icon btn-sm" data-delete="${inv.id}" aria-label="Delete invoice ${inv.invoiceNumber}" data-tooltip="Delete" style="color: var(--color-error);">
                       ${Icons.trash(16)}
                     </button>
@@ -350,6 +384,16 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
         </div>
       </div>
     ` : ''}
+
+    <!-- PDF / Print actions -->
+    <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-border);">
+      <button class="btn btn-secondary" id="detail-pdf-btn">
+        ${Icons.fileText(16)} Export PDF
+      </button>
+      <button class="btn btn-secondary" id="detail-print-btn">
+        ${Icons.printer(16)} Print
+      </button>
+    </div>
   `;
 
   const close = openModal({
@@ -369,6 +413,23 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
     notifications.success(`Payment of ${formatCurrency(amount)} recorded.`);
     close();
     onUpdate();
+  });
+
+  content.querySelector('#detail-pdf-btn')?.addEventListener('click', async () => {
+    const btn = content.querySelector<HTMLButtonElement>('#detail-pdf-btn')!;
+    btn.disabled = true;
+    try {
+      await exportInvoicePDF(invoice);
+      notifications.success('Invoice exported as PDF.');
+    } catch {
+      notifications.error('PDF export failed.');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  content.querySelector('#detail-print-btn')?.addEventListener('click', () => {
+    printInvoice(invoice);
   });
 }
 
