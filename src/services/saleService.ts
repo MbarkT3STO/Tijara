@@ -96,6 +96,7 @@ export const saleService = {
     return repository.update('sales', id, { paymentStatus, updatedAt: getCurrentISODate() });
   },
 
+  /** Update a sale's fields (does NOT reconcile stock — caller is responsible for item changes) */
   update(id: string, data: Partial<Omit<Sale, 'id' | 'createdAt'>>): boolean {
     return repository.update('sales', id, { ...data, updatedAt: getCurrentISODate() });
   },
