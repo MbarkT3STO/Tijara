@@ -102,6 +102,19 @@ export function renderInvoices(): HTMLElement {
       });
     });
 
+    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-edit')!;
+        const invoice = invoiceService.getById(id);
+        if (!invoice) return;
+        openInvoiceEditModal(invoice, () => {
+          state.invoices = invoiceService.getAll();
+          applyFilters();
+          render();
+        });
+      });
+    });
+
     page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-delete')!;
@@ -229,6 +242,9 @@ function buildHTML(state: State): string {
                   <div class="table-actions">
                     <button class="btn btn-ghost btn-icon btn-sm" data-view="${inv.id}" aria-label="View invoice ${inv.invoiceNumber}" data-tooltip="View">
                       ${Icons.eye(16)}
+                    </button>
+                    <button class="btn btn-ghost btn-icon btn-sm" data-edit="${inv.id}" aria-label="Edit invoice ${inv.invoiceNumber}" data-tooltip="Edit">
+                      ${Icons.edit(16)}
                     </button>
                     <button class="btn btn-ghost btn-icon btn-sm" data-delete="${inv.id}" aria-label="Delete invoice ${inv.invoiceNumber}" data-tooltip="Delete" style="color: var(--color-error);">
                       ${Icons.trash(16)}
@@ -393,6 +409,118 @@ function openCreateInvoiceModal(onSave: () => void): void {
       const days = parseInt((form.querySelector('#inv-days') as HTMLInputElement).value) || 30;
       invoiceService.createFromSale(sale, days);
       notifications.success('Invoice created successfully.');
+      onSave();
+    },
+  });
+}
+
+/** Edit existing invoice – status, due date, notes, and record payment */
+function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
+  // Format ISO date to yyyy-MM-dd for <input type="date">
+  const dueDateValue = invoice.dueDate ? invoice.dueDate.slice(0, 10) : '';
+
+  const form = document.createElement('div');
+  form.innerHTML = `
+    <div class="form-row" style="margin-bottom: var(--space-4);">
+      <div class="form-group">
+        <label class="form-label" for="ie-status">Status</label>
+        <select id="ie-status" class="form-control">
+          <option value="draft"     ${invoice.status === 'draft'     ? 'selected' : ''}>Draft</option>
+          <option value="sent"      ${invoice.status === 'sent'      ? 'selected' : ''}>Sent</option>
+          <option value="paid"      ${invoice.status === 'paid'      ? 'selected' : ''}>Paid</option>
+          <option value="overdue"   ${invoice.status === 'overdue'   ? 'selected' : ''}>Overdue</option>
+          <option value="cancelled" ${invoice.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="ie-due-date">Due Date</label>
+        <input type="date" id="ie-due-date" class="form-control" value="${dueDateValue}" />
+      </div>
+    </div>
+
+    <!-- Summary (read-only) -->
+    <div style="background:var(--color-bg-secondary);border-radius:var(--radius-sm);padding:var(--space-4);margin-bottom:var(--space-4);">
+      <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:var(--space-3);text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Invoice Summary</div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+          <tbody>
+            ${invoice.items.map((item) => `
+              <tr>
+                <td>${item.productName}</td>
+                <td>${item.quantity}</td>
+                <td>${formatCurrency(item.unitPrice)}</td>
+                <td><strong>${formatCurrency(item.total)}</strong></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:var(--space-1);align-items:flex-end;margin-top:var(--space-3);font-size:var(--font-size-sm);">
+        <div style="display:flex;gap:var(--space-8);color:var(--color-text-secondary);">
+          <span>Subtotal</span><span>${formatCurrency(invoice.subtotal)}</span>
+        </div>
+        <div style="display:flex;gap:var(--space-8);color:var(--color-text-secondary);">
+          <span>Tax (${invoice.taxRate}%)</span><span>${formatCurrency(invoice.taxAmount)}</span>
+        </div>
+        <div style="display:flex;gap:var(--space-8);font-weight:700;font-size:var(--font-size-base);border-top:1px solid var(--color-border);padding-top:var(--space-2);margin-top:var(--space-1);">
+          <span>Total</span><span style="color:var(--color-primary);">${formatCurrency(invoice.total)}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment tracking -->
+    <div class="form-row" style="margin-bottom: var(--space-4);">
+      <div class="form-group">
+        <label class="form-label" for="ie-amount-paid">Amount Paid ($)</label>
+        <input type="number" id="ie-amount-paid" class="form-control" value="${invoice.amountPaid}" min="0" step="0.01" max="${invoice.total}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount Due</label>
+        <div id="ie-amount-due" class="form-control" style="background:var(--color-bg-secondary);cursor:default;font-weight:600;color:${invoice.amountDue > 0 ? 'var(--color-error)' : 'var(--color-success)'};">
+          ${formatCurrency(invoice.amountDue)}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="ie-notes">Notes</label>
+      <textarea id="ie-notes" class="form-control" placeholder="Optional notes...">${invoice.notes ?? ''}</textarea>
+    </div>
+  `;
+
+  // Live-update amount due as paid changes
+  form.querySelector('#ie-amount-paid')?.addEventListener('input', (e) => {
+    const paid = parseFloat((e.target as HTMLInputElement).value) || 0;
+    const due = Math.max(0, invoice.total - paid);
+    const dueEl = form.querySelector<HTMLElement>('#ie-amount-due')!;
+    dueEl.textContent = formatCurrency(due);
+    dueEl.style.color = due > 0 ? 'var(--color-error)' : 'var(--color-success)';
+  });
+
+  openModal({
+    title: `Edit Invoice ${invoice.invoiceNumber}`,
+    content: form,
+    size: 'lg',
+    confirmText: 'Save Changes',
+    onConfirm: () => {
+      const amountPaid = parseFloat((form.querySelector('#ie-amount-paid') as HTMLInputElement).value) || 0;
+      const amountDue  = Math.max(0, invoice.total - amountPaid);
+      const dueDateRaw = (form.querySelector('#ie-due-date') as HTMLInputElement).value;
+      const dueDate    = dueDateRaw ? new Date(dueDateRaw).toISOString() : invoice.dueDate;
+
+      let status = (form.querySelector('#ie-status') as HTMLSelectElement).value as Invoice['status'];
+      // Auto-set paid status when fully paid
+      if (amountDue === 0 && status !== 'cancelled') status = 'paid';
+
+      invoiceService.update(invoice.id, {
+        status,
+        dueDate,
+        amountPaid,
+        amountDue,
+        notes: (form.querySelector('#ie-notes') as HTMLTextAreaElement).value.trim(),
+      });
+
+      notifications.success('Invoice updated successfully.');
       onSave();
     },
   });

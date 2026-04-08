@@ -103,6 +103,19 @@ export function renderSales(): HTMLElement {
       });
     });
 
+    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-edit')!;
+        const sale = saleService.getById(id);
+        if (!sale) return;
+        openSaleEditModal(sale, () => {
+          state.sales = saleService.getAll();
+          applyFilters();
+          render();
+        });
+      });
+    });
+
     page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-delete')!;
@@ -205,6 +218,9 @@ function buildHTML(state: State): string {
                   <div class="table-actions">
                     <button class="btn btn-ghost btn-icon btn-sm" data-view="${s.id}" aria-label="View order ${s.orderNumber}" data-tooltip="View">
                       ${Icons.eye(16)}
+                    </button>
+                    <button class="btn btn-ghost btn-icon btn-sm" data-edit="${s.id}" aria-label="Edit order ${s.orderNumber}" data-tooltip="Edit">
+                      ${Icons.edit(16)}
                     </button>
                     <button class="btn btn-ghost btn-icon btn-sm" data-delete="${s.id}" aria-label="Delete order ${s.orderNumber}" data-tooltip="Delete" style="color: var(--color-error);">
                       ${Icons.trash(16)}
@@ -519,6 +535,175 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
       });
 
       notifications.success('Order created successfully.');
+      onSave();
+    },
+  });
+}
+
+/** Edit existing sale modal – status, payment, items, notes */
+function openSaleEditModal(sale: Sale, onSave: () => void): void {
+  const products = productService.getAll();
+  let items: OrderItem[] = sale.items.map((i) => ({ ...i }));
+
+  const form = document.createElement('div');
+  form.innerHTML = `
+    <!-- Meta row -->
+    <div class="form-row" style="margin-bottom: var(--space-4);">
+      <div class="form-group">
+        <label class="form-label" for="se-status">Order Status</label>
+        <select id="se-status" class="form-control">
+          <option value="pending"   ${sale.status === 'pending'   ? 'selected' : ''}>Pending</option>
+          <option value="confirmed" ${sale.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+          <option value="shipped"   ${sale.status === 'shipped'   ? 'selected' : ''}>Shipped</option>
+          <option value="delivered" ${sale.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+          <option value="cancelled" ${sale.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="se-payment-status">Payment Status</label>
+        <select id="se-payment-status" class="form-control">
+          <option value="unpaid"  ${sale.paymentStatus === 'unpaid'  ? 'selected' : ''}>Unpaid</option>
+          <option value="partial" ${sale.paymentStatus === 'partial' ? 'selected' : ''}>Partial</option>
+          <option value="paid"    ${sale.paymentStatus === 'paid'    ? 'selected' : ''}>Paid</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-bottom: var(--space-4);">
+      <div class="form-group">
+        <label class="form-label" for="se-payment-method">Payment Method</label>
+        <select id="se-payment-method" class="form-control">
+          <option value="cash"     ${sale.paymentMethod === 'cash'     ? 'selected' : ''}>Cash</option>
+          <option value="card"     ${sale.paymentMethod === 'card'     ? 'selected' : ''}>Card</option>
+          <option value="transfer" ${sale.paymentMethod === 'transfer' ? 'selected' : ''}>Bank Transfer</option>
+          <option value="other"    ${sale.paymentMethod === 'other'    ? 'selected' : ''}>Other</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div style="margin-bottom: var(--space-4);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
+        <label class="form-label" style="margin: 0;">Order Items</label>
+        <button type="button" class="btn btn-secondary btn-sm" id="se-add-item-btn">${Icons.plus(16)} Add Item</button>
+      </div>
+      <div id="se-items-container"></div>
+      <div id="se-order-totals" style="margin-top: var(--space-3); text-align: right; font-size: var(--font-size-sm); color: var(--color-text-secondary);"></div>
+    </div>
+
+    <!-- Tax / Discount -->
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="se-tax">Tax Rate (%)</label>
+        <input type="number" id="se-tax" class="form-control" value="${sale.taxRate}" min="0" max="100" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="se-discount">Discount ($)</label>
+        <input type="number" id="se-discount" class="form-control" value="${sale.discount}" min="0" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="se-notes">Notes</label>
+      <textarea id="se-notes" class="form-control" placeholder="Optional notes...">${sale.notes ?? ''}</textarea>
+    </div>
+  `;
+
+  const recalcItem = (idx: number) => {
+    const item = items[idx];
+    item.total = item.unitPrice * (1 - item.discount / 100) * item.quantity;
+  };
+
+  const updateTotals = () => {
+    const taxRate = parseFloat((form.querySelector('#se-tax') as HTMLInputElement).value) || 0;
+    const discount = parseFloat((form.querySelector('#se-discount') as HTMLInputElement).value) || 0;
+    const { subtotal, taxAmount, total } = saleService.calculateTotals(items, taxRate, discount);
+    const el = form.querySelector('#se-order-totals')!;
+    el.innerHTML = `
+      <div>Subtotal: <strong>${formatCurrency(subtotal)}</strong></div>
+      <div>Tax: <strong>${formatCurrency(taxAmount)}</strong></div>
+      <div style="font-size:var(--font-size-base);font-weight:700;color:var(--color-primary);margin-top:4px;">Total: ${formatCurrency(total)}</div>
+    `;
+  };
+
+  const renderItems = () => {
+    const container = form.querySelector('#se-items-container')!;
+    container.innerHTML = items.length === 0
+      ? `<div style="text-align:center;padding:var(--space-4);color:var(--color-text-tertiary);font-size:var(--font-size-sm);border:1px dashed var(--color-border);border-radius:var(--radius-sm);">No items</div>`
+      : items.map((item, idx) => `
+          <div style="display:grid;grid-template-columns:1fr 80px 100px 80px auto;gap:var(--space-2);align-items:center;margin-bottom:var(--space-2);">
+            <select class="form-control se-item-product" data-idx="${idx}">
+              ${products.map((p) => `<option value="${p.id}" data-price="${p.price}" data-name="${p.name}" ${p.id === item.productId ? 'selected' : ''}>${p.name}</option>`).join('')}
+            </select>
+            <input type="number" class="form-control se-item-qty"      data-idx="${idx}" value="${item.quantity}"  min="1"   placeholder="Qty" />
+            <input type="number" class="form-control se-item-price"    data-idx="${idx}" value="${item.unitPrice}" min="0" step="0.01" placeholder="Price" />
+            <input type="number" class="form-control se-item-discount" data-idx="${idx}" value="${item.discount}"  min="0" max="100" placeholder="Disc%" />
+            <button type="button" class="btn btn-ghost btn-icon btn-sm se-remove-item" data-idx="${idx}" style="color:var(--color-error);">${Icons.trash(16)}</button>
+          </div>`).join('');
+
+    container.querySelectorAll<HTMLSelectElement>('.se-item-product').forEach((sel) => {
+      sel.addEventListener('change', () => {
+        const idx = +sel.getAttribute('data-idx')!;
+        const opt = sel.selectedOptions[0];
+        items[idx].productId   = sel.value;
+        items[idx].productName = opt.getAttribute('data-name') ?? '';
+        items[idx].unitPrice   = parseFloat(opt.getAttribute('data-price') ?? '0');
+        recalcItem(idx); renderItems(); updateTotals();
+      });
+    });
+    container.querySelectorAll<HTMLInputElement>('.se-item-qty').forEach((inp) => {
+      inp.addEventListener('input', () => { const idx = +inp.getAttribute('data-idx')!; items[idx].quantity = parseInt(inp.value) || 1; recalcItem(idx); updateTotals(); });
+    });
+    container.querySelectorAll<HTMLInputElement>('.se-item-price').forEach((inp) => {
+      inp.addEventListener('input', () => { const idx = +inp.getAttribute('data-idx')!; items[idx].unitPrice = parseFloat(inp.value) || 0; recalcItem(idx); updateTotals(); });
+    });
+    container.querySelectorAll<HTMLInputElement>('.se-item-discount').forEach((inp) => {
+      inp.addEventListener('input', () => { const idx = +inp.getAttribute('data-idx')!; items[idx].discount = parseFloat(inp.value) || 0; recalcItem(idx); updateTotals(); });
+    });
+    container.querySelectorAll<HTMLButtonElement>('.se-remove-item').forEach((btn) => {
+      btn.addEventListener('click', () => { items.splice(+btn.getAttribute('data-idx')!, 1); renderItems(); updateTotals(); });
+    });
+  };
+
+  form.querySelector('#se-add-item-btn')?.addEventListener('click', () => {
+    const first = products[0];
+    if (!first) { notifications.warning('No products available.'); return; }
+    items.push({ productId: first.id, productName: first.name, quantity: 1, unitPrice: first.price, discount: 0, total: first.price });
+    renderItems(); updateTotals();
+  });
+
+  form.querySelector('#se-tax')?.addEventListener('input', updateTotals);
+  form.querySelector('#se-discount')?.addEventListener('input', updateTotals);
+
+  renderItems();
+  updateTotals();
+
+  openModal({
+    title: `Edit Order ${sale.orderNumber}`,
+    content: form,
+    size: 'lg',
+    confirmText: 'Save Changes',
+    onConfirm: () => {
+      if (items.length === 0) { notifications.error('Add at least one item.'); return; }
+
+      const taxRate  = parseFloat((form.querySelector('#se-tax')      as HTMLInputElement).value) || 0;
+      const discount = parseFloat((form.querySelector('#se-discount') as HTMLInputElement).value) || 0;
+      const { subtotal, taxAmount, total } = saleService.calculateTotals(items, taxRate, discount);
+
+      saleService.update(sale.id, {
+        items,
+        subtotal,
+        taxRate,
+        taxAmount,
+        discount,
+        total,
+        status:        (form.querySelector('#se-status')         as HTMLSelectElement).value as Sale['status'],
+        paymentStatus: (form.querySelector('#se-payment-status') as HTMLSelectElement).value as Sale['paymentStatus'],
+        paymentMethod: (form.querySelector('#se-payment-method') as HTMLSelectElement).value as Sale['paymentMethod'],
+        notes:         (form.querySelector('#se-notes')          as HTMLTextAreaElement).value.trim(),
+      });
+
+      notifications.success('Order updated successfully.');
       onSave();
     },
   });
