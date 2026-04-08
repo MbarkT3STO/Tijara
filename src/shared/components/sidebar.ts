@@ -14,13 +14,14 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { route: 'dashboard', label: 'Dashboard', icon: Icons.dashboard(), section: 'Main' },
-  { route: 'customers', label: 'Customers', icon: Icons.customers(), section: 'Management' },
-  { route: 'products', label: 'Products', icon: Icons.products() },
-  { route: 'sales', label: 'Sales', icon: Icons.sales() },
-  { route: 'invoices', label: 'Invoices', icon: Icons.invoices() },
-  { route: 'users', label: 'Users', icon: Icons.users(), section: 'Admin' },
-  { route: 'settings', label: 'Settings', icon: Icons.settings() },
+  { route: 'dashboard', label: 'Dashboard',  icon: Icons.dashboard(),  section: 'Main' },
+  { route: 'customers', label: 'Customers',  icon: Icons.customers(),  section: 'Management' },
+  { route: 'products',  label: 'Products',   icon: Icons.products() },
+  { route: 'inventory', label: 'Inventory',  icon: Icons.package() },
+  { route: 'sales',     label: 'Sales',      icon: Icons.sales() },
+  { route: 'invoices',  label: 'Invoices',   icon: Icons.invoices() },
+  { route: 'users',     label: 'Users',      icon: Icons.users(),      section: 'Admin' },
+  { route: 'settings',  label: 'Settings',   icon: Icons.settings() },
 ];
 
 /** Build and return the sidebar element */

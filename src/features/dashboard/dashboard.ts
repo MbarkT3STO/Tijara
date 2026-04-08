@@ -33,6 +33,7 @@ function buildDashboardHTML(stats: DashboardStats): string {
       ${buildStatCard('Total Orders', String(stats.totalOrders), stats.ordersGrowth, Icons.shoppingCart(), 'info')}
       ${buildStatCard('Customers', String(stats.totalCustomers), 0, Icons.customers(), 'success')}
       ${buildStatCard('Products', String(stats.totalProducts), 0, Icons.products(), 'warning')}
+      ${buildLowStockCard(stats.lowStockCount)}
     </div>
 
     <!-- Recent Sales + Top Products -->
@@ -114,6 +115,21 @@ function buildDashboardHTML(stats: DashboardStats): string {
   `;
 }
 
+function buildLowStockCard(count: number): string {
+  const color = count === 0 ? 'success' : 'error';
+  const icon = count === 0 ? Icons.check() : Icons.alertCircle();
+  return `
+    <div class="card stat-card card-hover" style="cursor:pointer;" onclick="window.location.hash='#/inventory'">
+      <div class="stat-card-icon stat-icon-${color}">${icon}</div>
+      <div class="stat-card-value">${count}</div>
+      <div class="stat-card-label">Low Stock Items</div>
+      <div style="font-size:var(--font-size-xs);color:var(--color-primary);margin-top:var(--space-1);">
+        View inventory ${Icons.chevronRight(12)}
+      </div>
+    </div>
+  `;
+}
+
 function buildStatCard(
   label: string,
   value: string,
@@ -157,7 +173,7 @@ function buildStatusBadge(status: string): string {
 const dashboardStyles = `
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: var(--space-5);
     margin-bottom: var(--space-6);
   }
@@ -170,6 +186,7 @@ const dashboardStyles = `
   .stat-icon-info { background: var(--color-info-subtle); color: var(--color-info); }
   .stat-icon-success { background: var(--color-success-subtle); color: var(--color-success); }
   .stat-icon-warning { background: var(--color-warning-subtle); color: var(--color-warning); }
+  .stat-icon-error { background: var(--color-error-subtle); color: var(--color-error); }
   .top-product-item {
     display: flex;
     align-items: center;

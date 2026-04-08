@@ -17,11 +17,12 @@ import type { Route, User } from './types';
 const PAGE_RENDERERS: Record<Route, () => Promise<HTMLElement>> = {
   dashboard: () => import('@features/dashboard/dashboard').then((m) => m.renderDashboard()),
   customers: () => import('@features/customers/customers').then((m) => m.renderCustomers()),
-  products: () => import('@features/products/products').then((m) => m.renderProducts()),
-  sales: () => import('@features/sales/sales').then((m) => m.renderSales()),
-  invoices: () => import('@features/invoices/invoices').then((m) => m.renderInvoices()),
-  users: () => import('@features/users/users').then((m) => m.renderUsers()),
-  settings: () => import('@features/settings/settings').then((m) => m.renderSettings()),
+  products:  () => import('@features/products/products').then((m) => m.renderProducts()),
+  sales:     () => import('@features/sales/sales').then((m) => m.renderSales()),
+  invoices:  () => import('@features/invoices/invoices').then((m) => m.renderInvoices()),
+  inventory: () => import('@features/inventory/inventory').then((m) => m.renderInventory()),
+  users:     () => import('@features/users/users').then((m) => m.renderUsers()),
+  settings:  () => import('@features/settings/settings').then((m) => m.renderSettings()),
 };
 
 export async function bootstrap(root: HTMLElement): Promise<void> {

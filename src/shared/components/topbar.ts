@@ -13,11 +13,12 @@ import type { Route, User } from '@core/types';
 const ROUTE_TITLES: Record<Route, string> = {
   dashboard: 'Dashboard',
   customers: 'Customers',
-  products: 'Products',
-  sales: 'Sales',
-  invoices: 'Invoices',
-  users: 'Users',
-  settings: 'Settings',
+  products:  'Products',
+  sales:     'Sales',
+  invoices:  'Invoices',
+  inventory: 'Inventory',
+  users:     'Users',
+  settings:  'Settings',
 };
 
 /** Build and return the topbar element */

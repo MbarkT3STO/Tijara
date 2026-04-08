@@ -333,6 +333,18 @@ function openProductModal(product: Product | null, onSave: () => void): void {
         <input type="number" id="p-stock" class="form-control" placeholder="0" min="0" value="${product?.stock ?? 0}" />
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="p-reorder-point">Reorder Point</label>
+        <input type="number" id="p-reorder-point" class="form-control" placeholder="0" min="0" value="${product?.reorderPoint ?? 0}" />
+        <span class="form-hint">Alert when stock reaches this level</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="p-reorder-qty">Restock Quantity</label>
+        <input type="number" id="p-reorder-qty" class="form-control" placeholder="0" min="0" value="${product?.reorderQuantity ?? 0}" />
+        <span class="form-hint">Suggested quantity to reorder</span>
+      </div>
+    </div>
     <div class="form-group">
       <label class="form-label" for="p-desc">Description</label>
       <textarea id="p-desc" class="form-control" placeholder="Optional description...">${product?.description ?? ''}</textarea>
@@ -377,6 +389,8 @@ function openProductModal(product: Product | null, onSave: () => void): void {
         price,
         cost: parseFloat((form.querySelector('#p-cost') as HTMLInputElement).value) || 0,
         stock: parseInt((form.querySelector('#p-stock') as HTMLInputElement).value) || 0,
+        reorderPoint: parseInt((form.querySelector('#p-reorder-point') as HTMLInputElement).value) || 0,
+        reorderQuantity: parseInt((form.querySelector('#p-reorder-qty') as HTMLInputElement).value) || 0,
         description: (form.querySelector('#p-desc') as HTMLTextAreaElement).value.trim(),
       };
 

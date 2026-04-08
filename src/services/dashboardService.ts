@@ -4,6 +4,7 @@
  */
 
 import { repository } from '@data/excelRepository';
+import { inventoryService } from './inventoryService';
 import type { DashboardStats } from '@core/types';
 
 export const dashboardService = {
@@ -82,6 +83,7 @@ export const dashboardService = {
       totalProducts: products.length,
       revenueGrowth,
       ordersGrowth,
+      lowStockCount: inventoryService.getLowStockProducts().length,
       recentSales,
       topProducts,
     };

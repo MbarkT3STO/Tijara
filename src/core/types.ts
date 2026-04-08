@@ -10,6 +10,7 @@ export type Route =
   | 'products'
   | 'sales'
   | 'invoices'
+  | 'inventory'
   | 'users'
   | 'settings';
 
@@ -40,6 +41,25 @@ export interface Product {
   stock: number;
   unit: string;
   description?: string;
+  reorderPoint: number;   // alert when stock falls at or below this
+  reorderQuantity: number; // suggested restock quantity
+  createdAt: string;
+}
+
+/** Stock movement type */
+export type StockMovementType = 'purchase' | 'sale' | 'adjustment' | 'return' | 'initial';
+
+/** Stock movement record – every change to a product's stock level */
+export interface StockMovement {
+  id: string;
+  productId: string;
+  productName: string;
+  type: StockMovementType;
+  quantity: number;      // positive = stock in, negative = stock out
+  stockBefore: number;
+  stockAfter: number;
+  reference?: string;    // e.g. order number, PO number
+  notes?: string;
   createdAt: string;
 }
 
@@ -157,6 +177,7 @@ export interface DashboardStats {
   totalProducts: number;
   revenueGrowth: number;
   ordersGrowth: number;
+  lowStockCount: number;
   recentSales: Sale[];
   topProducts: { name: string; revenue: number; quantity: number }[];
 }

@@ -11,7 +11,7 @@
  */
 
 import * as XLSX from 'xlsx';
-import type { Customer, Product, Sale, Invoice, User } from '@core/types';
+import type { Customer, Product, Sale, Invoice, User, StockMovement } from '@core/types';
 import type { ElectronAPI } from '../../electron/preload';
 
 /** All data collections stored in the workbook */
@@ -21,6 +21,7 @@ export interface WorkbookData {
   sales: Sale[];
   invoices: Invoice[];
   users: User[];
+  stockMovements: StockMovement[];
 }
 
 const SHEET_NAMES = {
@@ -29,6 +30,7 @@ const SHEET_NAMES = {
   sales: 'Sales',
   invoices: 'Invoices',
   users: 'Users',
+  stockMovements: 'Stock Movements',
 } as const;
 
 const STORAGE_KEY = 'tijara-data';
@@ -45,6 +47,7 @@ class ExcelRepository {
     sales: [],
     invoices: [],
     users: [],
+    stockMovements: [],
   };
 
   private initialized = false;
@@ -58,7 +61,24 @@ class ExcelRepository {
     const raw = await this.loadRaw();
     if (raw) {
       try {
-        this.data = JSON.parse(raw) as WorkbookData;
+        const parsed = JSON.parse(raw) as Partial<WorkbookData>;
+        // Merge with defaults so any collection added after initial save
+        // is always an array, never undefined (forward-compatibility guard).
+        this.data = {
+          customers:      Array.isArray(parsed.customers)      ? parsed.customers      : [],
+          products:       Array.isArray(parsed.products)       ? parsed.products       : [],
+          sales:          Array.isArray(parsed.sales)          ? parsed.sales          : [],
+          invoices:       Array.isArray(parsed.invoices)       ? parsed.invoices       : [],
+          users:          Array.isArray(parsed.users)          ? parsed.users          : [],
+          stockMovements: Array.isArray(parsed.stockMovements) ? parsed.stockMovements : [],
+        };
+
+        // Patch products that predate the reorderPoint/reorderQuantity fields
+        this.data.products = this.data.products.map((p) => ({
+          reorderPoint:    0,
+          reorderQuantity: 0,
+          ...p,
+        }));
       } catch {
         this.data = this.getSeedData();
         await this.persist();
@@ -241,10 +261,10 @@ class ExcelRepository {
     ];
 
     const products: Product[] = [
-      { id: 'p1', name: 'Laptop Pro 15', sku: 'LP-001', category: 'Electronics', price: 1299.99, cost: 850.0, stock: 45, unit: 'pcs', description: 'High-performance laptop', createdAt: now },
-      { id: 'p2', name: 'Wireless Mouse', sku: 'WM-002', category: 'Accessories', price: 49.99, cost: 18.0, stock: 200, unit: 'pcs', createdAt: now },
-      { id: 'p3', name: 'USB-C Hub', sku: 'UH-003', category: 'Accessories', price: 79.99, cost: 30.0, stock: 150, unit: 'pcs', createdAt: now },
-      { id: 'p4', name: 'Monitor 27"', sku: 'MN-004', category: 'Electronics', price: 399.99, cost: 250.0, stock: 30, unit: 'pcs', createdAt: now },
+      { id: 'p1', name: 'Laptop Pro 15', sku: 'LP-001', category: 'Electronics', price: 1299.99, cost: 850.0, stock: 45, unit: 'pcs', description: 'High-performance laptop', reorderPoint: 10, reorderQuantity: 20, createdAt: now },
+      { id: 'p2', name: 'Wireless Mouse', sku: 'WM-002', category: 'Accessories', price: 49.99, cost: 18.0, stock: 200, unit: 'pcs', reorderPoint: 30, reorderQuantity: 100, createdAt: now },
+      { id: 'p3', name: 'USB-C Hub', sku: 'UH-003', category: 'Accessories', price: 79.99, cost: 30.0, stock: 150, unit: 'pcs', reorderPoint: 20, reorderQuantity: 50, createdAt: now },
+      { id: 'p4', name: 'Monitor 27"', sku: 'MN-004', category: 'Electronics', price: 399.99, cost: 250.0, stock: 30, unit: 'pcs', reorderPoint: 5, reorderQuantity: 15, createdAt: now },
     ];
 
     const saleItems = [
@@ -266,7 +286,7 @@ class ExcelRepository {
       { id: 'u2', name: 'Sales Manager', email: 'manager@tijara.app', passwordHash: '866485796cfa8d7c0cf7111640205b83076433547577511d81f8030ae99ecea5', role: 'manager', active: true, createdAt: now },
     ];
 
-    return { customers, products, sales, invoices, users };
+    return { customers, products, sales, invoices, users, stockMovements: [] };
   }
 }
 

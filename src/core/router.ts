@@ -13,6 +13,7 @@ const ROUTE_MAP: Record<string, Route> = {
   '#/products': 'products',
   '#/sales': 'sales',
   '#/invoices': 'invoices',
+  '#/inventory': 'inventory',
   '#/users': 'users',
   '#/settings': 'settings',
 };
