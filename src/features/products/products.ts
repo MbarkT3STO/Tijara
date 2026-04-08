@@ -253,8 +253,34 @@ function buildPagination(
   `;
 }
 
+/** Common product units */
+const PRODUCT_UNITS = [
+  'pcs',
+  'kg',
+  'g',
+  'lb',
+  'oz',
+  'l',
+  'ml',
+  'm',
+  'cm',
+  'box',
+  'pack',
+  'pair',
+  'set',
+  'roll',
+  'sheet',
+  'hour',
+  'day',
+  'license',
+  'other',
+] as const;
+
 function openProductModal(product: Product | null, onSave: () => void): void {
   const isEdit = product !== null;
+  const currentUnit = product?.unit ?? 'pcs';
+  // If the saved unit isn't in the preset list, treat it as custom
+  const isCustomUnit = currentUnit !== '' && !PRODUCT_UNITS.includes(currentUnit as typeof PRODUCT_UNITS[number]);
 
   const form = document.createElement('form');
   form.innerHTML = `
@@ -275,7 +301,20 @@ function openProductModal(product: Product | null, onSave: () => void): void {
       </div>
       <div class="form-group">
         <label class="form-label" for="p-unit">Unit</label>
-        <input type="text" id="p-unit" class="form-control" placeholder="pcs" value="${product?.unit ?? 'pcs'}" />
+        <select id="p-unit" class="form-control">
+          ${PRODUCT_UNITS.map(
+            (u) => `<option value="${u}" ${(!isCustomUnit && currentUnit === u) ? 'selected' : ''}>${u}</option>`
+          ).join('')}
+          <option value="__custom__" ${isCustomUnit ? 'selected' : ''}>Custom…</option>
+        </select>
+        <input
+          type="text"
+          id="p-unit-custom"
+          class="form-control"
+          placeholder="Enter unit name"
+          value="${isCustomUnit ? currentUnit : ''}"
+          style="margin-top: var(--space-2); display: ${isCustomUnit ? 'block' : 'none'};"
+        />
       </div>
     </div>
     <div class="form-row">
@@ -300,6 +339,15 @@ function openProductModal(product: Product | null, onSave: () => void): void {
     </div>
   `;
 
+  // Show/hide custom unit input when "Custom…" is selected
+  const unitSelect = form.querySelector<HTMLSelectElement>('#p-unit')!;
+  const unitCustom = form.querySelector<HTMLInputElement>('#p-unit-custom')!;
+  unitSelect.addEventListener('change', () => {
+    const isCustom = unitSelect.value === '__custom__';
+    unitCustom.style.display = isCustom ? 'block' : 'none';
+    if (isCustom) unitCustom.focus();
+  });
+
   openModal({
     title: isEdit ? 'Edit Product' : 'Add Product',
     content: form,
@@ -315,11 +363,17 @@ function openProductModal(product: Product | null, onSave: () => void): void {
         return;
       }
 
+      // Resolve unit: use custom text if "Custom…" selected
+      let unit = unitSelect.value;
+      if (unit === '__custom__') {
+        unit = unitCustom.value.trim() || 'pcs';
+      }
+
       const data = {
         name,
         sku,
         category,
-        unit: (form.querySelector('#p-unit') as HTMLInputElement).value.trim() || 'pcs',
+        unit,
         price,
         cost: parseFloat((form.querySelector('#p-cost') as HTMLInputElement).value) || 0,
         stock: parseInt((form.querySelector('#p-stock') as HTMLInputElement).value) || 0,

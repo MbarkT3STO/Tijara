@@ -1,6 +1,7 @@
 /**
  * Top navigation bar component.
- * Shows page title, theme toggle, export button, user avatar, and logout.
+ * Shows page title, theme toggle, and user menu with sign-out confirmation.
+ * User dropdown uses a body portal to avoid overflow clipping.
  */
 
 import { themeManager } from '@core/theme';
@@ -64,23 +65,11 @@ export function createTopbar(
   themeBtn.addEventListener('click', () => { themeManager.toggle(); updateThemeIcon(); });
   themeManager.subscribe(updateThemeIcon);
 
-  // Export button
-  const exportBtn = document.createElement('button');
-  exportBtn.className = 'btn btn-secondary btn-sm';
-  exportBtn.setAttribute('aria-label', 'Export data to Excel');
-  exportBtn.innerHTML = `${Icons.download(16)} <span>Export</span>`;
-  exportBtn.addEventListener('click', () => {
-    import('@data/excelRepository').then(({ repository }) => {
-      repository.exportToExcel().catch(console.error);
-    });
-  });
-
-  // User menu (avatar + name + logout dropdown)
-  const userMenu = buildUserMenu(currentUser, onLogout);
+  // User menu trigger
+  const userTrigger = buildUserTrigger(currentUser);
 
   right.appendChild(themeBtn);
-  right.appendChild(exportBtn);
-  right.appendChild(userMenu);
+  right.appendChild(userTrigger);
 
   topbar.appendChild(left);
   topbar.appendChild(right);
@@ -88,14 +77,86 @@ export function createTopbar(
   // Update title on route change
   router.subscribe((route) => { title.textContent = ROUTE_TITLES[route]; });
 
+  // ── User dropdown portal ──────────────────────────────────────────────────
+  let activePortal: HTMLElement | null = null;
+
+  const closePortal = () => {
+    activePortal?.remove();
+    activePortal = null;
+    userTrigger.setAttribute('aria-expanded', 'false');
+  };
+
+  document.addEventListener('click', closePortal);
+
+  userTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+
+    if (activePortal) {
+      closePortal();
+      return;
+    }
+
+    const rect = userTrigger.getBoundingClientRect();
+    const menuWidth = 220;
+    const left = Math.max(8, rect.right - menuWidth);
+    const top = rect.bottom + 6;
+
+    const portal = document.createElement('div');
+    portal.setAttribute('role', 'menu');
+    portal.setAttribute('aria-label', 'User menu');
+    portal.style.cssText = `
+      position: fixed;
+      top: ${top}px;
+      left: ${left}px;
+      width: ${menuWidth}px;
+      z-index: 9999;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: slideUp 150ms ease;
+    `;
+
+    portal.innerHTML = `
+      <div style="padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border);">
+        <div style="font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-primary);">${currentUser.name}</div>
+        <div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-top: 2px; word-break: break-all;">${currentUser.email}</div>
+        <div style="margin-top: var(--space-2);">
+          <span class="badge badge-primary" style="font-size: 10px; text-transform: capitalize;">${currentUser.role}</span>
+        </div>
+      </div>
+      <button class="dropdown-item" id="portal-settings" role="menuitem">
+        ${Icons.settings(16)} Settings
+      </button>
+      <div class="dropdown-divider"></div>
+      <button class="dropdown-item danger" id="portal-logout" role="menuitem">
+        ${Icons.logOut(16)} Sign out
+      </button>
+    `;
+
+    portal.addEventListener('click', (e) => e.stopPropagation());
+
+    portal.querySelector('#portal-settings')?.addEventListener('click', () => {
+      closePortal();
+      router.navigate('settings');
+    });
+
+    portal.querySelector('#portal-logout')?.addEventListener('click', () => {
+      closePortal();
+      showSignOutConfirmation(onLogout);
+    });
+
+    document.body.appendChild(portal);
+    activePortal = portal;
+    userTrigger.setAttribute('aria-expanded', 'true');
+  });
+
   return topbar;
 }
 
-/** Build the user avatar + dropdown menu */
-function buildUserMenu(user: User, onLogout: () => void): HTMLElement {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'dropdown user-menu';
-
+/** Build the user avatar trigger button */
+function buildUserTrigger(user: User): HTMLButtonElement {
   const trigger = document.createElement('button');
   trigger.className = 'user-menu-trigger';
   trigger.setAttribute('aria-label', `User menu for ${user.name}`);
@@ -109,55 +170,41 @@ function buildUserMenu(user: User, onLogout: () => void): HTMLElement {
     </div>
     ${Icons.chevronDown(14)}
   `;
+  return trigger;
+}
 
-  const menu = document.createElement('div');
-  menu.className = 'dropdown-menu user-dropdown';
-  menu.setAttribute('role', 'menu');
-  menu.innerHTML = `
-    <div class="user-dropdown-header">
-      <div class="user-dropdown-name">${user.name}</div>
-      <div class="user-dropdown-email">${user.email}</div>
-    </div>
-    <div class="dropdown-divider"></div>
-    <button class="dropdown-item" id="goto-settings" role="menuitem">
-      ${Icons.settings(16)} Settings
-    </button>
-    <div class="dropdown-divider"></div>
-    <button class="dropdown-item danger" id="logout-btn" role="menuitem">
-      ${Icons.logOut(16)} Sign out
-    </button>
-  `;
+/** Show a sign-out confirmation modal */
+function showSignOutConfirmation(onConfirm: () => void): void {
+  import('./modal').then(({ openModal }) => {
+    const content = document.createElement('div');
+    content.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-4); text-align: center; padding: var(--space-2) 0;">
+        <div style="
+          width: 56px; height: 56px; border-radius: var(--radius-full);
+          background: var(--color-error-subtle); color: var(--color-error);
+          display: flex; align-items: center; justify-content: center;
+        ">
+          ${Icons.logOut(24)}
+        </div>
+        <div>
+          <p style="font-size: var(--font-size-base); color: var(--color-text-primary); font-weight: 500; margin-bottom: var(--space-2);">
+            Sign out of Tijara?
+          </p>
+          <p style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">
+            Your data is saved automatically. You can sign back in at any time.
+          </p>
+        </div>
+      </div>
+    `;
 
-  let open = false;
-
-  const toggleMenu = () => {
-    open = !open;
-    menu.classList.toggle('open', open);
-    trigger.setAttribute('aria-expanded', String(open));
-  };
-
-  const closeMenu = () => {
-    open = false;
-    menu.classList.remove('open');
-    trigger.setAttribute('aria-expanded', 'false');
-  };
-
-  trigger.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
-
-  menu.querySelector('#goto-settings')?.addEventListener('click', () => {
-    closeMenu();
-    import('@core/router').then(({ router }) => router.navigate('settings'));
+    openModal({
+      title: 'Sign Out',
+      content,
+      confirmText: 'Sign Out',
+      cancelText: 'Stay',
+      confirmClass: 'btn-danger',
+      size: 'sm',
+      onConfirm,
+    });
   });
-
-  menu.querySelector('#logout-btn')?.addEventListener('click', () => {
-    closeMenu();
-    onLogout();
-  });
-
-  // Close on outside click
-  document.addEventListener('click', closeMenu);
-
-  wrapper.appendChild(trigger);
-  wrapper.appendChild(menu);
-  return wrapper;
 }
