@@ -91,70 +91,145 @@ export function renderInvoices(): HTMLElement {
       });
     });
 
-    page.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-view')!;
-        const invoice = invoiceService.getById(id);
-        if (invoice) openInvoiceDetailModal(invoice, () => {
-          state.invoices = invoiceService.getAll();
-          applyFilters();
-          render();
+    // ── Three-dot dropdown menus (body portal – avoids overflow clipping) ──
+    // The menu is appended to document.body and positioned via getBoundingClientRect.
+    let activePortal: HTMLElement | null = null;
+    let activeTrigger: HTMLButtonElement | null = null;
+
+    const closePortal = () => {
+      activePortal?.remove();
+      activePortal = null;
+      activeTrigger?.setAttribute('aria-expanded', 'false');
+      activeTrigger = null;
+    };
+
+    // Close on outside click or scroll
+    document.addEventListener('click', closePortal);
+    document.querySelector('.content-area')?.addEventListener('scroll', closePortal);
+
+    const openPortal = (trigger: HTMLButtonElement, invId: string, invNumber: string) => {
+      // Close any already-open portal first
+      closePortal();
+
+      const rect = trigger.getBoundingClientRect();
+
+      const menu = document.createElement('div');
+      menu.className = 'inv-portal-menu';
+      menu.setAttribute('role', 'menu');
+      menu.setAttribute('aria-label', `Actions for invoice ${invNumber}`);
+      menu.innerHTML = `
+        <button class="dropdown-item" data-action="view"   role="menuitem">${Icons.eye(16)}      View</button>
+        <button class="dropdown-item" data-action="edit"   role="menuitem">${Icons.edit(16)}     Edit</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" data-action="pdf"    role="menuitem" style="color:var(--color-primary);">${Icons.fileText(16)}  Export PDF</button>
+        <button class="dropdown-item" data-action="print"  role="menuitem">${Icons.printer(16)}  Print</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item danger" data-action="delete" role="menuitem">${Icons.trash(16)} Delete</button>
+      `;
+
+      // Position: align right edge of menu with right edge of trigger
+      const menuWidth = 168;
+      let left = rect.right - menuWidth;
+      let top = rect.bottom + 4;
+
+      // Flip upward if too close to viewport bottom
+      if (top + 220 > window.innerHeight) {
+        top = rect.top - 220;
+      }
+      // Keep within left viewport edge
+      if (left < 8) left = 8;
+
+      menu.style.cssText = `
+        position: fixed;
+        top: ${top}px;
+        left: ${left}px;
+        width: ${menuWidth}px;
+        z-index: 9999;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        animation: slideUp 150ms ease;
+      `;
+
+      document.body.appendChild(menu);
+      activePortal = menu;
+      activeTrigger = trigger;
+      trigger.setAttribute('aria-expanded', 'true');
+
+      // Stop clicks inside the menu from immediately closing it
+      menu.addEventListener('click', (e) => e.stopPropagation());
+
+      // Wire up action items
+      menu.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((item) => {
+        item.addEventListener('click', async () => {
+          const action = item.getAttribute('data-action')!;
+          closePortal();
+
+          const invoice = invoiceService.getById(invId);
+          if (!invoice) return;
+
+          switch (action) {
+            case 'view':
+              openInvoiceDetailModal(invoice, () => {
+                state.invoices = invoiceService.getAll();
+                applyFilters();
+                render();
+              });
+              break;
+
+            case 'edit':
+              openInvoiceEditModal(invoice, () => {
+                state.invoices = invoiceService.getAll();
+                applyFilters();
+                render();
+              });
+              break;
+
+            case 'pdf':
+              item.setAttribute('disabled', 'true');
+              try {
+                await exportInvoicePDF(invoice);
+                notifications.success('Invoice exported as PDF.');
+              } catch {
+                notifications.error('PDF export failed.');
+              } finally {
+                item.removeAttribute('disabled');
+              }
+              break;
+
+            case 'print':
+              printInvoice(invoice);
+              break;
+
+            case 'delete':
+              confirmDialog('Delete Invoice', `Delete invoice "${invoice.invoiceNumber}"?`, () => {
+                invoiceService.delete(invId);
+                notifications.success('Invoice deleted.');
+                state.invoices = invoiceService.getAll();
+                applyFilters();
+                render();
+              });
+              break;
+          }
         });
       });
-    });
+    };
 
-    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-edit')!;
-        const invoice = invoiceService.getById(id);
-        if (!invoice) return;
-        openInvoiceEditModal(invoice, () => {
-          state.invoices = invoiceService.getAll();
-          applyFilters();
-          render();
-        });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-delete')!;
-        const invoice = invoiceService.getById(id);
-        if (!invoice) return;
-        confirmDialog('Delete Invoice', `Delete invoice "${invoice.invoiceNumber}"?`, () => {
-          invoiceService.delete(id);
-          notifications.success('Invoice deleted.');
-          state.invoices = invoiceService.getAll();
-          applyFilters();
-          render();
-        });
-      });
-    });
-
-    // PDF export from table row
-    page.querySelectorAll<HTMLButtonElement>('[data-pdf]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-pdf')!;
-        const invoice = invoiceService.getById(id);
-        if (!invoice) return;
-        btn.disabled = true;
-        try {
-          await exportInvoicePDF(invoice);
-          notifications.success('Invoice exported as PDF.');
-        } catch {
-          notifications.error('PDF export failed.');
-        } finally {
-          btn.disabled = false;
+    // Attach trigger clicks
+    page.querySelectorAll<HTMLButtonElement>('.inv-menu-trigger').forEach((trigger) => {
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wrapper = trigger.closest<HTMLElement>('.inv-action-menu')!;
+        const invId     = wrapper.getAttribute('data-inv-id')!;
+        const invNumber = wrapper.getAttribute('data-inv-number')!;
+        // Toggle: if this trigger's portal is already open, close it
+        if (activeTrigger === trigger) {
+          closePortal();
+        } else {
+          openPortal(trigger, invId, invNumber);
         }
-      });
-    });
-
-    // Print from table row
-    page.querySelectorAll<HTMLButtonElement>('[data-print]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-print')!;
-        const invoice = invoiceService.getById(id);
-        if (invoice) printInvoice(invoice);
       });
     });
 
@@ -267,21 +342,14 @@ function buildHTML(state: State): string {
                 <td><span class="badge ${STATUS_BADGE[inv.status] ?? 'badge-neutral'}">${inv.status}</span></td>
                 <td style="color: var(--color-text-secondary);">${formatDate(inv.dueDate)}</td>
                 <td>
-                  <div class="table-actions">
-                    <button class="btn btn-ghost btn-icon btn-sm" data-view="${inv.id}" aria-label="View invoice ${inv.invoiceNumber}" data-tooltip="View">
-                      ${Icons.eye(16)}
-                    </button>
-                    <button class="btn btn-ghost btn-icon btn-sm" data-edit="${inv.id}" aria-label="Edit invoice ${inv.invoiceNumber}" data-tooltip="Edit">
-                      ${Icons.edit(16)}
-                    </button>
-                    <button class="btn btn-ghost btn-icon btn-sm" data-pdf="${inv.id}" aria-label="Export PDF for ${inv.invoiceNumber}" data-tooltip="Export PDF" style="color: var(--color-primary);">
-                      ${Icons.fileText(16)}
-                    </button>
-                    <button class="btn btn-ghost btn-icon btn-sm" data-print="${inv.id}" aria-label="Print invoice ${inv.invoiceNumber}" data-tooltip="Print">
-                      ${Icons.printer(16)}
-                    </button>
-                    <button class="btn btn-ghost btn-icon btn-sm" data-delete="${inv.id}" aria-label="Delete invoice ${inv.invoiceNumber}" data-tooltip="Delete" style="color: var(--color-error);">
-                      ${Icons.trash(16)}
+                  <div class="inv-action-menu" data-inv-id="${inv.id}" data-inv-number="${inv.invoiceNumber}">
+                    <button
+                      class="btn btn-ghost btn-icon btn-sm inv-menu-trigger"
+                      aria-label="Actions for invoice ${inv.invoiceNumber}"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                    >
+                      ${Icons.moreVertical(16)}
                     </button>
                   </div>
                 </td>

@@ -880,3 +880,14 @@ textarea.form-control {
     display: none;
   }
 }
+
+/* ── Invoice action dropdown (three-dot menu, body portal) ───────────────── */
+
+.inv-action-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The portal menu itself is injected into document.body via JS (inline styles).
+   Only the dropdown-item / dropdown-divider classes from components.css are reused. */
