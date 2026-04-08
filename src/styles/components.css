@@ -896,3 +896,25 @@ textarea.form-control {
 
 /* The portal menu itself is injected into document.body via JS (inline styles).
    Only the dropdown-item / dropdown-divider classes from components.css are reused. */
+
+/* ── Modal inline error banner ───────────────────────────────────────────── */
+
+.modal-error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-error-subtle);
+  color: var(--color-error);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-4);
+  animation: slideUp var(--transition-fast) ease;
+}
+
+.modal-error-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}

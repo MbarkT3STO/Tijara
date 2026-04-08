@@ -5,7 +5,7 @@
 import { userService } from '@services/userService';
 import { authService } from '@services/authService';
 import { notifications } from '@core/notifications';
-import { confirmDialog, openModal } from '@shared/components/modal';
+import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatDate, formatDateTime, getInitials, debounce } from '@shared/utils/helpers';
 import type { User, UserRole } from '@core/types';
@@ -301,8 +301,11 @@ function openUserModal(user: User | null, onSave: () => void): void {
       const name = (form.querySelector('#u-name') as HTMLInputElement).value.trim();
       const email = (form.querySelector('#u-email') as HTMLInputElement).value.trim();
       if (!name || !email) {
-        notifications.error('Name and email are required.');
-        return;
+        showModalError(form, 'Name and email are required.', [
+          ...(!name ? ['u-name'] : []),
+          ...(!email ? ['u-email'] : []),
+        ]);
+        return false;
       }
 
       const role = (form.querySelector('#u-role') as HTMLSelectElement).value as UserRole;
@@ -316,8 +319,8 @@ function openUserModal(user: User | null, onSave: () => void): void {
         if (newPw && newPw.length >= 6) {
           await authService.adminResetPassword(user!.id, newPw);
         } else if (newPw && newPw.length > 0) {
-          notifications.error('New password must be at least 6 characters.');
-          return;
+          showModalError(form, 'New password must be at least 6 characters.', ['u-new-password']);
+          return false;
         }
 
         notifications.success('User updated successfully.');
@@ -325,12 +328,12 @@ function openUserModal(user: User | null, onSave: () => void): void {
         const password = (form.querySelector('#u-password') as HTMLInputElement).value;
         const confirm = (form.querySelector('#u-confirm') as HTMLInputElement).value;
         if (!password || password.length < 6) {
-          notifications.error('Password must be at least 6 characters.');
-          return;
+          showModalError(form, 'Password must be at least 6 characters.', ['u-password']);
+          return false;
         }
         if (password !== confirm) {
-          notifications.error('Passwords do not match.');
-          return;
+          showModalError(form, 'Passwords do not match.', ['u-password', 'u-confirm']);
+          return false;
         }
         await authService.register(name, email, password, role);
         if (!active) {

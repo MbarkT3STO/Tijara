@@ -4,7 +4,7 @@
 
 import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
-import { confirmDialog, openModal } from '@shared/components/modal';
+import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, debounce } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
@@ -372,8 +372,14 @@ function openProductModal(product: Product | null, onSave: () => void): void {
       const price = parseFloat((form.querySelector('#p-price') as HTMLInputElement).value);
 
       if (!name || !sku || !category || isNaN(price)) {
-        notifications.error('Name, SKU, category, and price are required.');
-        return;
+        const invalidIds = [
+          ...(!name ? ['p-name'] : []),
+          ...(!sku ? ['p-sku'] : []),
+          ...(!category ? ['p-category'] : []),
+          ...(isNaN(price) ? ['p-price'] : []),
+        ];
+        showModalError(form, 'Name, SKU, category, and price are required.', invalidIds);
+        return false;
       }
 
       // Resolve unit: use custom text if "Custom…" selected

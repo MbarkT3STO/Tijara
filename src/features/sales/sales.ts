@@ -7,7 +7,7 @@ import { saleService } from '@services/saleService';
 import { customerService } from '@services/customerService';
 import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
-import { confirmDialog, openModal } from '@shared/components/modal';
+import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
@@ -511,12 +511,12 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
       const customerId = customerSelect.value;
       const customerName = customerSelect.selectedOptions[0]?.text ?? '';
 
-      if (!customerId) { notifications.error('Please select a customer.'); return; }
-      if (items.length === 0) { notifications.error('Please add at least one item.'); return; }
+      if (!customerId) { showModalError(form, 'Please select a customer.', ['s-customer']); return false; }
+      if (items.length === 0) { showModalError(form, 'Please add at least one item.'); return false; }
 
       // Stock validation
       const stockError = validateStock(items, products, reserved);
-      if (stockError) { notifications.error(stockError); return; }
+      if (stockError) { showModalError(form, stockError); return false; }
 
       const taxRate      = parseFloat((form.querySelector('#s-tax')      as HTMLInputElement).value) || 0;
       const discount     = parseFloat((form.querySelector('#s-discount') as HTMLInputElement).value) || 0;
@@ -646,14 +646,14 @@ function openSaleEditModal(sale: Sale, onSave: () => void): void {
     size: 'lg',
     confirmText: 'Save Changes',
     onConfirm: () => {
-      if (items.length === 0) { notifications.error('Add at least one item.'); return; }
+      if (items.length === 0) { showModalError(form, 'Add at least one item.'); return false; }
 
       const newStatus = (form.querySelector('#se-status') as HTMLSelectElement).value as Sale['status'];
 
       // Only validate stock when the order is not being cancelled
       if (newStatus !== 'cancelled') {
         const stockError = validateStock(items, products, reserved);
-        if (stockError) { notifications.error(stockError); return; }
+        if (stockError) { showModalError(form, stockError); return false; }
       }
 
       const taxRate  = parseFloat((form.querySelector('#se-tax')      as HTMLInputElement).value) || 0;

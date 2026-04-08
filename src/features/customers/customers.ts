@@ -4,7 +4,7 @@
 
 import { customerService } from '@services/customerService';
 import { notifications } from '@core/notifications';
-import { confirmDialog, openModal } from '@shared/components/modal';
+import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatDate, debounce, getInitials } from '@shared/utils/helpers';
 import type { Customer } from '@core/types';
@@ -297,8 +297,11 @@ function openCustomerModal(customer: Customer | null, onSave: () => void): void 
       const name = (form.querySelector('#c-name') as HTMLInputElement).value.trim();
       const email = (form.querySelector('#c-email') as HTMLInputElement).value.trim();
       if (!name || !email) {
-        notifications.error('Name and email are required.');
-        return;
+        showModalError(form, 'Name and email are required.', [
+          ...(!name ? ['c-name'] : []),
+          ...(!email ? ['c-email'] : []),
+        ]);
+        return false;
       }
 
       const data = {

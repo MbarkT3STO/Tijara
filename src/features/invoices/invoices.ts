@@ -5,7 +5,7 @@
 import { invoiceService } from '@services/invoiceService';
 import { saleService } from '@services/saleService';
 import { notifications } from '@core/notifications';
-import { confirmDialog, openModal } from '@shared/components/modal';
+import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
 import { printInvoice, exportInvoicePDF } from '@shared/utils/invoicePdf';
@@ -653,8 +653,8 @@ function openCreateInvoiceModal(onSave: () => void): void {
     onConfirm: () => {
       const saleId = (form.querySelector('#inv-sale') as HTMLSelectElement).value;
       if (!saleId) {
-        notifications.error('Please select an order.');
-        return;
+        showModalError(form, 'Please select an order.', ['inv-sale']);
+        return false;
       }
       const sale = saleService.getById(saleId);
       if (!sale) return;
