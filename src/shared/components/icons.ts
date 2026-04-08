@@ -136,4 +136,7 @@ export const Icons = {
 
   pieChart: (s: IconSize = 20) =>
     icon('<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>', s),
+
+  arrowRight: (s: IconSize = 20) =>
+    icon('<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>', s),
 };

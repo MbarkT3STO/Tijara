@@ -1,14 +1,16 @@
 /**
  * Top navigation bar component.
- * Shows page title, theme toggle, and user menu with sign-out confirmation.
- * User dropdown uses a body portal to avoid overflow clipping.
+ * Shows page title, theme toggle, notifications bell, and user menu.
+ * Both dropdowns use body portals to avoid overflow clipping.
  */
 
 import { themeManager } from '@core/theme';
 import { router } from '@core/router';
 import { Icons } from './icons';
 import { getInitials } from '@shared/utils/helpers';
+import { alertService } from '@services/alertService';
 import type { Route, User } from '@core/types';
+import type { SystemAlert } from '@services/alertService';
 
 const ROUTE_TITLES: Record<Route, string> = {
   dashboard: 'Dashboard',
@@ -17,8 +19,25 @@ const ROUTE_TITLES: Record<Route, string> = {
   sales:     'Sales',
   invoices:  'Invoices',
   inventory: 'Inventory',
+  suppliers: 'Suppliers',
+  purchases: 'Purchases',
+  returns:   'Returns & Refunds',
+  reports:   'Reports & Analytics',
   users:     'Users',
   settings:  'Settings',
+};
+
+const SEVERITY_COLORS: Record<SystemAlert['severity'], { icon: string; color: string; bg: string; border: string }> = {
+  error:   { icon: Icons.alertCircle(16), color: 'var(--color-error)',   bg: 'var(--color-error-subtle)',   border: 'rgba(239,68,68,.2)' },
+  warning: { icon: Icons.alertCircle(16), color: 'var(--color-warning)', bg: 'var(--color-warning-subtle)', border: 'rgba(245,158,11,.2)' },
+  info:    { icon: Icons.info(16),        color: 'var(--color-info)',    bg: 'var(--color-info-subtle)',    border: 'rgba(59,130,246,.2)' },
+};
+
+const CATEGORY_ICONS: Record<SystemAlert['category'], string> = {
+  inventory: Icons.package(16),
+  invoice:   Icons.invoices(16),
+  purchase:  Icons.truck(16),
+  return:    Icons.refresh(16),
 };
 
 /** Build and return the topbar element */
@@ -44,7 +63,7 @@ export function createTopbar(
   const title = document.createElement('h1');
   title.className = 'topbar-title';
   title.id = 'page-title';
-  title.textContent = ROUTE_TITLES[router.getRoute()];
+  title.textContent = ROUTE_TITLES[router.getRoute()] ?? 'Dashboard';
 
   left.appendChild(menuBtn);
   left.appendChild(title);
@@ -58,7 +77,6 @@ export function createTopbar(
   themeBtn.className = 'btn btn-ghost btn-icon';
   themeBtn.setAttribute('aria-label', 'Toggle dark/light mode');
   themeBtn.setAttribute('data-tooltip', 'Toggle theme');
-
   const updateThemeIcon = () => {
     themeBtn.innerHTML = themeManager.getTheme() === 'dark' ? Icons.sun() : Icons.moon();
   };
@@ -66,36 +84,92 @@ export function createTopbar(
   themeBtn.addEventListener('click', () => { themeManager.toggle(); updateThemeIcon(); });
   themeManager.subscribe(updateThemeIcon);
 
+  // Notifications bell
+  const bellWrapper = buildBellButton();
+
   // User menu trigger
   const userTrigger = buildUserTrigger(currentUser);
 
   right.appendChild(themeBtn);
+  right.appendChild(bellWrapper);
   right.appendChild(userTrigger);
 
   topbar.appendChild(left);
   topbar.appendChild(right);
 
   // Update title on route change
-  router.subscribe((route) => { title.textContent = ROUTE_TITLES[route]; });
+  router.subscribe((route) => {
+    title.textContent = ROUTE_TITLES[route] ?? 'Dashboard';
+    // Refresh badge on every navigation (data may have changed)
+    refreshBadge(bellWrapper);
+  });
 
-  // ── User dropdown portal ──────────────────────────────────────────────────
+  // ── Shared portal close state ─────────────────────────────────────────────
   let activePortal: HTMLElement | null = null;
+  let activeTrigger: HTMLElement | null = null;
 
   const closePortal = () => {
     activePortal?.remove();
     activePortal = null;
-    userTrigger.setAttribute('aria-expanded', 'false');
+    activeTrigger?.setAttribute('aria-expanded', 'false');
+    activeTrigger = null;
   };
-
   document.addEventListener('click', closePortal);
 
+  // ── Notifications portal ──────────────────────────────────────────────────
+  const bellBtn = bellWrapper.querySelector<HTMLButtonElement>('#bell-btn')!;
+
+  bellBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (activeTrigger === bellBtn) { closePortal(); return; }
+    closePortal();
+
+    const alerts = alertService.getAlerts();
+    const rect = bellBtn.getBoundingClientRect();
+    const menuWidth = 340;
+    const left = Math.max(8, rect.right - menuWidth);
+    const top = rect.bottom + 6;
+
+    const portal = document.createElement('div');
+    portal.setAttribute('role', 'menu');
+    portal.setAttribute('aria-label', 'Notifications');
+    portal.style.cssText = `
+      position: fixed;
+      top: ${top}px;
+      left: ${left}px;
+      width: ${menuWidth}px;
+      max-height: 480px;
+      overflow-y: auto;
+      z-index: 9999;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      animation: slideUp 150ms ease;
+    `;
+
+    portal.innerHTML = buildNotificationsHTML(alerts);
+    portal.addEventListener('click', (e) => e.stopPropagation());
+
+    // Wire up "Go to" navigation links
+    portal.querySelectorAll<HTMLAnchorElement>('[data-nav]').forEach((link) => {
+      link.addEventListener('click', () => {
+        closePortal();
+        window.location.hash = link.getAttribute('data-nav')!;
+      });
+    });
+
+    document.body.appendChild(portal);
+    activePortal = portal;
+    activeTrigger = bellBtn;
+    bellBtn.setAttribute('aria-expanded', 'true');
+  });
+
+  // ── User dropdown portal ──────────────────────────────────────────────────
   userTrigger.addEventListener('click', (e) => {
     e.stopPropagation();
-
-    if (activePortal) {
-      closePortal();
-      return;
-    }
+    if (activeTrigger === userTrigger) { closePortal(); return; }
+    closePortal();
 
     const rect = userTrigger.getBoundingClientRect();
     const menuWidth = 220;
@@ -137,26 +211,184 @@ export function createTopbar(
     `;
 
     portal.addEventListener('click', (e) => e.stopPropagation());
-
-    portal.querySelector('#portal-settings')?.addEventListener('click', () => {
-      closePortal();
-      router.navigate('settings');
-    });
-
-    portal.querySelector('#portal-logout')?.addEventListener('click', () => {
-      closePortal();
-      showSignOutConfirmation(onLogout);
-    });
+    portal.querySelector('#portal-settings')?.addEventListener('click', () => { closePortal(); router.navigate('settings'); });
+    portal.querySelector('#portal-logout')?.addEventListener('click', () => { closePortal(); showSignOutConfirmation(onLogout); });
 
     document.body.appendChild(portal);
     activePortal = portal;
+    activeTrigger = userTrigger;
     userTrigger.setAttribute('aria-expanded', 'true');
   });
 
   return topbar;
 }
 
-/** Build the user avatar trigger button */
+// ── Bell button builder ───────────────────────────────────────────────────────
+
+function buildBellButton(): HTMLElement {
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:relative;display:inline-flex;';
+
+  const count = alertService.getCount();
+
+  wrapper.innerHTML = `
+    <button
+      id="bell-btn"
+      class="btn btn-ghost btn-icon"
+      aria-label="Notifications${count > 0 ? ` (${count} alerts)` : ''}"
+      aria-haspopup="true"
+      aria-expanded="false"
+      data-tooltip="Notifications"
+      style="position:relative;"
+    >
+      ${Icons.bell()}
+      ${count > 0 ? `
+        <span id="bell-badge" style="
+          position: absolute;
+          top: 2px; right: 2px;
+          min-width: 16px; height: 16px;
+          padding: 0 4px;
+          background: var(--color-error);
+          color: white;
+          font-size: 10px;
+          font-weight: 700;
+          border-radius: var(--radius-full);
+          display: flex; align-items: center; justify-content: center;
+          line-height: 1;
+          pointer-events: none;
+        ">${count > 99 ? '99+' : count}</span>
+      ` : ''}
+    </button>
+  `;
+
+  return wrapper;
+}
+
+function refreshBadge(wrapper: HTMLElement): void {
+  const count = alertService.getCount();
+  const btn = wrapper.querySelector<HTMLButtonElement>('#bell-btn');
+  if (!btn) return;
+
+  btn.setAttribute('aria-label', `Notifications${count > 0 ? ` (${count} alerts)` : ''}`);
+
+  let badge = wrapper.querySelector<HTMLElement>('#bell-badge');
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.id = 'bell-badge';
+      badge.style.cssText = `
+        position: absolute;
+        top: 2px; right: 2px;
+        min-width: 16px; height: 16px;
+        padding: 0 4px;
+        background: var(--color-error);
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        border-radius: var(--radius-full);
+        display: flex; align-items: center; justify-content: center;
+        line-height: 1;
+        pointer-events: none;
+      `;
+      btn.appendChild(badge);
+    }
+    badge.textContent = count > 99 ? '99+' : String(count);
+  } else {
+    badge?.remove();
+  }
+}
+
+// ── Notifications dropdown HTML ───────────────────────────────────────────────
+
+function buildNotificationsHTML(alerts: SystemAlert[]): string {
+  const header = `
+    <div style="
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      position: sticky; top: 0;
+      background: var(--color-surface);
+      z-index: 1;
+    ">
+      <div style="display:flex;align-items:center;gap:var(--space-2);">
+        <span style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-primary);">Notifications</span>
+        ${alerts.length > 0 ? `<span class="badge badge-error" style="font-size:10px;">${alerts.length}</span>` : ''}
+      </div>
+      ${alerts.length > 0 ? `<span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${alerts.filter(a => a.severity === 'error').length} critical</span>` : ''}
+    </div>
+  `;
+
+  if (alerts.length === 0) {
+    return header + `
+      <div style="
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: var(--space-10) var(--space-6);
+        gap: var(--space-3);
+        text-align: center;
+      ">
+        <div style="
+          width: 48px; height: 48px; border-radius: var(--radius-full);
+          background: var(--color-success-subtle); color: var(--color-success);
+          display: flex; align-items: center; justify-content: center;
+        ">${Icons.check(24)}</div>
+        <div style="font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-primary);">All clear</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">No alerts at this time</div>
+      </div>
+    `;
+  }
+
+  const items = alerts.map((alert) => {
+    const s = SEVERITY_COLORS[alert.severity];
+    const catIcon = CATEGORY_ICONS[alert.category];
+    return `
+      <a data-nav="${alert.route}" style="
+        display: flex; align-items: flex-start; gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        border-bottom: 1px solid var(--color-border-subtle);
+        cursor: pointer;
+        text-decoration: none;
+        transition: background var(--transition-fast);
+      "
+      onmouseenter="this.style.background='var(--color-primary-subtle)'"
+      onmouseleave="this.style.background='transparent'"
+      role="menuitem"
+      >
+        <!-- Severity dot + category icon -->
+        <div style="
+          width: 36px; height: 36px; border-radius: var(--radius-sm);
+          background: ${s.bg}; color: ${s.color};
+          border: 1px solid ${s.border};
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        ">${catIcon}</div>
+
+        <!-- Text -->
+        <div style="flex:1;min-width:0;">
+          <div style="
+            font-size: var(--font-size-sm); font-weight: 600;
+            color: ${s.color};
+            margin-bottom: 2px;
+          ">${alert.title}</div>
+          <div style="
+            font-size: var(--font-size-xs);
+            color: var(--color-text-secondary);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+          ">${alert.message}</div>
+        </div>
+
+        <!-- Arrow -->
+        <div style="color:var(--color-text-tertiary);flex-shrink:0;margin-top:2px;">
+          ${Icons.arrowRight(14)}
+        </div>
+      </a>
+    `;
+  }).join('');
+
+  return header + `<div>${items}</div>`;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function buildUserTrigger(user: User): HTMLButtonElement {
   const trigger = document.createElement('button');
   trigger.className = 'user-menu-trigger';
@@ -174,38 +406,22 @@ function buildUserTrigger(user: User): HTMLButtonElement {
   return trigger;
 }
 
-/** Show a sign-out confirmation modal */
 function showSignOutConfirmation(onConfirm: () => void): void {
   import('./modal').then(({ openModal }) => {
     const content = document.createElement('div');
     content.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-4); text-align: center; padding: var(--space-2) 0;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:var(--space-4);text-align:center;padding:var(--space-2) 0;">
         <div style="
-          width: 56px; height: 56px; border-radius: var(--radius-full);
-          background: var(--color-error-subtle); color: var(--color-error);
-          display: flex; align-items: center; justify-content: center;
-        ">
-          ${Icons.logOut(24)}
-        </div>
+          width:56px;height:56px;border-radius:var(--radius-full);
+          background:var(--color-error-subtle);color:var(--color-error);
+          display:flex;align-items:center;justify-content:center;
+        ">${Icons.logOut(24)}</div>
         <div>
-          <p style="font-size: var(--font-size-base); color: var(--color-text-primary); font-weight: 500; margin-bottom: var(--space-2);">
-            Sign out of Tijara?
-          </p>
-          <p style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">
-            Your data is saved automatically. You can sign back in at any time.
-          </p>
+          <p style="font-size:var(--font-size-base);color:var(--color-text-primary);font-weight:500;margin-bottom:var(--space-2);">Sign out of Tijara?</p>
+          <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">Your data is saved automatically. You can sign back in at any time.</p>
         </div>
       </div>
     `;
-
-    openModal({
-      title: 'Sign Out',
-      content,
-      confirmText: 'Sign Out',
-      cancelText: 'Stay',
-      confirmClass: 'btn-danger',
-      size: 'sm',
-      onConfirm,
-    });
+    openModal({ title: 'Sign Out', content, confirmText: 'Sign Out', cancelText: 'Stay', confirmClass: 'btn-danger', size: 'sm', onConfirm });
   });
 }
