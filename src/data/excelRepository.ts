@@ -11,7 +11,7 @@
  */
 
 import * as XLSX from 'xlsx-js-style';
-import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier, Purchase } from '@core/types';
+import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier, Purchase, Return } from '@core/types';
 import type { ElectronAPI } from '../../electron/preload';
 
 /** All data collections stored in the workbook */
@@ -24,6 +24,7 @@ export interface WorkbookData {
   stockMovements: StockMovement[];
   suppliers: Supplier[];
   purchases: Purchase[];
+  returns: Return[];
 }
 
 const SHEET_NAMES = {
@@ -35,6 +36,7 @@ const SHEET_NAMES = {
   stockMovements: 'Stock Movements',
   suppliers: 'Suppliers',
   purchases: 'Purchases',
+  returns: 'Returns',
 } as const;
 
 const STORAGE_KEY = 'tijara-data';
@@ -54,6 +56,7 @@ class ExcelRepository {
     stockMovements: [],
     suppliers: [],
     purchases: [],
+    returns: [],
   };
 
   private initialized = false;
@@ -79,6 +82,7 @@ class ExcelRepository {
           stockMovements: Array.isArray(parsed.stockMovements) ? parsed.stockMovements : [],
           suppliers:      Array.isArray(parsed.suppliers)      ? parsed.suppliers      : [],
           purchases:      Array.isArray(parsed.purchases)      ? parsed.purchases      : [],
+          returns:        Array.isArray(parsed.returns)        ? parsed.returns        : [],
         };
 
         // Patch products that predate the reorderPoint/reorderQuantity fields
@@ -301,6 +305,23 @@ class ExcelRepository {
           { key: 'createdAt',    header: 'Created',       width: 20, type: 'date' },
         ],
       },
+      returns: {
+        label: 'Returns',
+        cols: [
+          { key: 'returnNumber',  header: 'Return #',      width: 18, type: 'text' },
+          { key: 'orderNumber',   header: 'Order #',       width: 18, type: 'text' },
+          { key: 'customerName',  header: 'Customer',      width: 24, type: 'text' },
+          { key: 'subtotal',      header: 'Subtotal',      width: 14, type: 'currency' },
+          { key: 'taxAmount',     header: 'Tax',           width: 12, type: 'currency' },
+          { key: 'refundAmount',  header: 'Refund Amount', width: 16, type: 'currency' },
+          { key: 'reason',        header: 'Reason',        width: 22, type: 'text' },
+          { key: 'status',        header: 'Status',        width: 14, type: 'text' },
+          { key: 'refundMethod',  header: 'Refund Method', width: 16, type: 'text' },
+          { key: 'restockItems',  header: 'Restocked',     width: 12, type: 'text' },
+          { key: 'notes',         header: 'Notes',         width: 30, type: 'text' },
+          { key: 'createdAt',     header: 'Date',          width: 20, type: 'date' },
+        ],
+      },
     };
 
     // ── Design tokens (matching CSS variables) ──────────────────────────────
@@ -368,6 +389,10 @@ class ExcelRepository {
       // Payment
       unpaid:    { bg: C.errorSubtle,   fg: C.error },
       partial:   { bg: C.warningSubtle, fg: C.warning },
+      // Returns
+      approved:  { bg: C.successSubtle, fg: C.success },
+      rejected:  { bg: C.errorSubtle,   fg: C.error },
+      refunded:  { bg: 'EDE9FE',        fg: '7C3AED' },
       // Boolean
       true:      { bg: C.successSubtle, fg: C.success },
       false:     { bg: C.errorSubtle,   fg: C.error },
@@ -676,7 +701,7 @@ class ExcelRepository {
       { id: 'u2', name: 'Sales Manager', email: 'manager@tijara.app', passwordHash: '866485796cfa8d7c0cf7111640205b83076433547577511d81f8030ae99ecea5', role: 'manager', active: true, createdAt: now },
     ];
 
-    return { customers, products, sales, invoices, users, stockMovements: [], suppliers: [], purchases: [] };
+    return { customers, products, sales, invoices, users, stockMovements: [], suppliers: [], purchases: [], returns: [] };
   }
 }
 

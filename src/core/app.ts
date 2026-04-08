@@ -24,6 +24,7 @@ const PAGE_RENDERERS: Record<Route, () => Promise<HTMLElement>> = {
   inventory: () => import('@features/inventory/inventory').then((m) => m.renderInventory()),
   suppliers: () => import('@features/suppliers/suppliers').then((m) => m.renderSuppliers()),
   purchases: () => import('@features/purchases/purchases').then((m) => m.renderPurchases()),
+  returns:   () => import('@features/returns/returns').then((m) => m.renderReturns()),
   reports:   () => import('@features/reports/reports').then((m) => m.renderReports()),
   users:     () => import('@features/users/users').then((m) => m.renderUsers()),
   settings:  () => import('@features/settings/settings').then((m) => m.renderSettings()),

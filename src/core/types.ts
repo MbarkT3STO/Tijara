@@ -13,6 +13,7 @@ export type Route =
   | 'inventory'
   | 'suppliers'
   | 'purchases'
+  | 'returns'
   | 'reports'
   | 'users'
   | 'settings';
@@ -199,6 +200,46 @@ export interface Purchase {
   paymentStatus: 'unpaid' | 'partial' | 'paid';
   paymentMethod: 'cash' | 'card' | 'transfer' | 'other';
   expectedDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Return / refund line item */
+export interface ReturnItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+/** Return reason */
+export type ReturnReason =
+  | 'defective'
+  | 'wrong_item'
+  | 'not_as_described'
+  | 'damaged_shipping'
+  | 'customer_changed_mind'
+  | 'other';
+
+/** Customer return / refund */
+export interface Return {
+  id: string;
+  returnNumber: string;
+  saleId: string;
+  orderNumber: string;
+  customerId: string;
+  customerName: string;
+  items: ReturnItem[];
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  refundAmount: number;
+  reason: ReturnReason;
+  status: 'pending' | 'approved' | 'rejected' | 'refunded';
+  refundMethod: 'cash' | 'card' | 'transfer' | 'store_credit' | 'other';
+  restockItems: boolean;
   notes?: string;
   createdAt: string;
   updatedAt: string;
