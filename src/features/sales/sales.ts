@@ -420,6 +420,7 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
   const reserved = new Map<string, number>();
 
   const defaultTaxRate = profileService.getDefaultTaxRate();
+  const currencySymbol = profileService.getCurrencySymbol();
 
   const form = document.createElement('div');
   form.innerHTML = `
@@ -457,7 +458,7 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
         <input type="number" id="s-tax" class="form-control" value="${defaultTaxRate}" min="0" max="100" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="s-discount">Discount ($)</label>
+        <label class="form-label" for="s-discount">Discount (${currencySymbol})</label>
         <input type="number" id="s-discount" class="form-control" value="0" min="0" />
       </div>
     </div>
@@ -534,6 +535,7 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
 function openSaleEditModal(sale: Sale, onSave: () => void): void {
   const products = productService.getAll();
   let items: OrderItem[] = sale.items.map((i) => ({ ...i }));
+  const currencySymbol = profileService.getCurrencySymbol();
 
   /**
    * Reserved stock = quantities already consumed by THIS order.
@@ -596,7 +598,7 @@ function openSaleEditModal(sale: Sale, onSave: () => void): void {
         <input type="number" id="se-tax" class="form-control" value="${sale.taxRate}" min="0" max="100" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="se-discount">Discount ($)</label>
+        <label class="form-label" for="se-discount">Discount (${currencySymbol})</label>
         <input type="number" id="se-discount" class="form-control" value="${sale.discount}" min="0" />
       </div>
     </div>

@@ -668,8 +668,8 @@ function openCreateInvoiceModal(onSave: () => void): void {
 
 /** Edit existing invoice – status, due date, notes, and record payment */
 function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
-  // Format ISO date to yyyy-MM-dd for <input type="date">
   const dueDateValue = invoice.dueDate ? invoice.dueDate.slice(0, 10) : '';
+  const currencySymbol = profileService.getCurrencySymbol();
 
   const form = document.createElement('div');
   form.innerHTML = `
@@ -723,7 +723,7 @@ function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
     <!-- Payment tracking -->
     <div class="form-row" style="margin-bottom: var(--space-4);">
       <div class="form-group">
-        <label class="form-label" for="ie-amount-paid">Amount Paid ($)</label>
+        <label class="form-label" for="ie-amount-paid">Amount Paid (${currencySymbol})</label>
         <input type="number" id="ie-amount-paid" class="form-control" value="${invoice.amountPaid}" min="0" step="0.01" max="${invoice.total}" />
       </div>
       <div class="form-group">

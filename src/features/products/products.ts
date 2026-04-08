@@ -7,6 +7,7 @@ import { notifications } from '@core/notifications';
 import { confirmDialog, openModal } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, debounce } from '@shared/utils/helpers';
+import { profileService } from '@services/profileService';
 import type { Product } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -279,8 +280,8 @@ const PRODUCT_UNITS = [
 function openProductModal(product: Product | null, onSave: () => void): void {
   const isEdit = product !== null;
   const currentUnit = product?.unit ?? 'pcs';
-  // If the saved unit isn't in the preset list, treat it as custom
   const isCustomUnit = currentUnit !== '' && !PRODUCT_UNITS.includes(currentUnit as typeof PRODUCT_UNITS[number]);
+  const currencySymbol = profileService.getCurrencySymbol();
 
   const form = document.createElement('form');
   form.innerHTML = `
@@ -319,11 +320,11 @@ function openProductModal(product: Product | null, onSave: () => void): void {
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label required" for="p-price">Selling Price ($)</label>
+        <label class="form-label required" for="p-price">Selling Price (${currencySymbol})</label>
         <input type="number" id="p-price" class="form-control" placeholder="0.00" min="0" step="0.01" value="${product?.price ?? ''}" required />
       </div>
       <div class="form-group">
-        <label class="form-label" for="p-cost">Cost Price ($)</label>
+        <label class="form-label" for="p-cost">Cost Price (${currencySymbol})</label>
         <input type="number" id="p-cost" class="form-control" placeholder="0.00" min="0" step="0.01" value="${product?.cost ?? ''}" />
       </div>
     </div>

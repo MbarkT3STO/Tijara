@@ -67,6 +67,23 @@ class ProfileService {
   getCurrency(): string {
     return this.get().currency || 'USD';
   }
+
+  /** Get the currency symbol for the active currency (e.g. "$", "€", "£") */
+  getCurrencySymbol(): string {
+    const code = this.getCurrency();
+    try {
+      const formatted = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: code,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(0);
+      // Strip digits, spaces, commas, dots — what remains is the symbol
+      return formatted.replace(/[\d\s,.']/g, '').trim() || code;
+    } catch {
+      return code;
+    }
+  }
 }
 
 export const profileService = new ProfileService();
