@@ -6,6 +6,7 @@
 import { themeManager } from '@core/theme';
 import { notifications } from '@core/notifications';
 import { Icons } from '@shared/components/icons';
+import { profileService } from '@services/profileService';
 import type { ElectronAPI } from '../../../electron/preload';
 
 function getElectron(): ElectronAPI | null {
@@ -19,6 +20,8 @@ export function renderSettings(): HTMLElement {
   const page = document.createElement('div');
   page.className = 'content-inner animate-fade-in';
 
+  const profile = profileService.get();
+
   page.innerHTML = `
     <div class="page-header">
       <div>
@@ -29,7 +32,96 @@ export function renderSettings(): HTMLElement {
 
     <div style="display: grid; gap: var(--space-5); max-width: 720px;">
 
-      <!-- Appearance -->
+      <!-- Enterprise Profile -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Enterprise Profile</h3>
+          <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">Appears on all invoices</span>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:var(--space-5);">
+
+          <!-- Logo upload -->
+          <div style="display:flex;align-items:center;gap:var(--space-5);">
+            <div id="logo-preview" style="
+              width:96px;height:96px;border-radius:var(--radius-md);
+              border:2px dashed var(--color-border);
+              display:flex;align-items:center;justify-content:center;
+              overflow:hidden;flex-shrink:0;background:var(--color-bg-secondary);
+              transition:border-color var(--transition-fast);
+            ">
+              ${profile.logo
+                ? `<img src="${profile.logo}" alt="Logo" style="width:100%;height:100%;object-fit:contain;" />`
+                : `<span style="color:var(--color-text-tertiary);">${Icons.upload(24)}</span>`
+              }
+            </div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-2);">
+              <div style="font-weight:500;">Company Logo</div>
+              <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">PNG, JPG or SVG · Max 2 MB · Recommended 400×200px</div>
+              <div style="display:flex;gap:var(--space-2);">
+                <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                  ${Icons.upload(14)} Upload
+                  <input type="file" id="logo-input" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none;" />
+                </label>
+                ${profile.logo ? `<button class="btn btn-ghost btn-sm" id="logo-remove" style="color:var(--color-error);">${Icons.trash(14)} Remove</button>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Company details -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="ep-name">Company Name</label>
+              <input type="text" id="ep-name" class="form-control" placeholder="Acme Corporation" value="${profile.name}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ep-tagline">Tagline / Industry</label>
+              <input type="text" id="ep-tagline" class="form-control" placeholder="Technology Solutions" value="${profile.tagline}" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="ep-email">Email</label>
+              <input type="email" id="ep-email" class="form-control" placeholder="billing@company.com" value="${profile.email}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ep-phone">Phone</label>
+              <input type="tel" id="ep-phone" class="form-control" placeholder="+1-555-0100" value="${profile.phone}" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ep-address">Address</label>
+            <input type="text" id="ep-address" class="form-control" placeholder="123 Business Ave" value="${profile.address}" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="ep-city">City</label>
+              <input type="text" id="ep-city" class="form-control" placeholder="New York" value="${profile.city}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ep-country">Country</label>
+              <input type="text" id="ep-country" class="form-control" placeholder="USA" value="${profile.country}" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="ep-website">Website</label>
+              <input type="url" id="ep-website" class="form-control" placeholder="https://company.com" value="${profile.website}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ep-taxid">Tax ID / VAT Number</label>
+              <input type="text" id="ep-taxid" class="form-control" placeholder="US-123456789" value="${profile.taxId}" />
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-primary" id="save-profile-btn">
+              ${Icons.check(16)} Save Profile
+            </button>
+          </div>
+        </div>
+      </div>
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">Appearance</h3>
@@ -159,6 +251,55 @@ export function renderSettings(): HTMLElement {
 
     </div>
   `;
+
+  // ── Enterprise Profile ──────────────────────────────────────────────────
+
+  let currentLogo = profile.logo;
+
+  // Logo upload
+  page.querySelector<HTMLInputElement>('#logo-input')?.addEventListener('change', (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      notifications.error('Logo file must be under 2 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      currentLogo = reader.result as string;
+      const preview = page.querySelector<HTMLElement>('#logo-preview')!;
+      preview.innerHTML = `<img src="${currentLogo}" alt="Logo" style="width:100%;height:100%;object-fit:contain;" />`;
+      preview.style.borderStyle = 'solid';
+      preview.style.borderColor = 'var(--color-primary)';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Logo remove
+  page.querySelector('#logo-remove')?.addEventListener('click', () => {
+    currentLogo = '';
+    const preview = page.querySelector<HTMLElement>('#logo-preview')!;
+    preview.innerHTML = `<span style="color:var(--color-text-tertiary);">${Icons.upload(24)}</span>`;
+    preview.style.borderStyle = 'dashed';
+    preview.style.borderColor = 'var(--color-border)';
+  });
+
+  // Save profile
+  page.querySelector('#save-profile-btn')?.addEventListener('click', () => {
+    profileService.save({
+      name:    (page.querySelector('#ep-name')    as HTMLInputElement).value.trim(),
+      tagline: (page.querySelector('#ep-tagline') as HTMLInputElement).value.trim(),
+      email:   (page.querySelector('#ep-email')   as HTMLInputElement).value.trim(),
+      phone:   (page.querySelector('#ep-phone')   as HTMLInputElement).value.trim(),
+      address: (page.querySelector('#ep-address') as HTMLInputElement).value.trim(),
+      city:    (page.querySelector('#ep-city')    as HTMLInputElement).value.trim(),
+      country: (page.querySelector('#ep-country') as HTMLInputElement).value.trim(),
+      website: (page.querySelector('#ep-website') as HTMLInputElement).value.trim(),
+      taxId:   (page.querySelector('#ep-taxid')   as HTMLInputElement).value.trim(),
+      logo:    currentLogo,
+    });
+    notifications.success('Enterprise profile saved. It will appear on all future invoices.');
+  });
 
   // ── Theme controls ──────────────────────────────────────────────────────
 

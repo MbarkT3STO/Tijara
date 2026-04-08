@@ -135,6 +135,20 @@ export interface AppNotification {
   duration?: number;
 }
 
+/** Enterprise profile for invoice branding */
+export interface EnterpriseProfile {
+  name: string;
+  tagline: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+  website: string;
+  taxId: string;
+  logo: string; // base64 data URL or empty string
+}
+
 /** Dashboard stats */
 export interface DashboardStats {
   totalRevenue: number;
