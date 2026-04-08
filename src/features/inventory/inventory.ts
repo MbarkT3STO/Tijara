@@ -6,7 +6,7 @@
 import { inventoryService } from '@services/inventoryService';
 import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
-import { openModal, confirmDialog } from '@shared/components/modal';
+import { openModal, confirmDialog, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, formatDateTime, debounce } from '@shared/utils/helpers';
 import type { StockMovement, StockMovementType, Product } from '@core/types';
@@ -429,8 +429,8 @@ function openAdjustModal(onSave: () => void): void {
       const qty = parseInt((form.querySelector('#adj-qty') as HTMLInputElement).value);
       const notes = (form.querySelector('#adj-notes') as HTMLTextAreaElement).value.trim();
 
-      if (!productId) { notifications.error('Please select a product.'); return; }
-      if (isNaN(qty) || qty === 0) { notifications.error('Enter a non-zero quantity.'); return; }
+      if (!productId) { showModalError(form, 'Please select a product.', ['adj-product']); return false; }
+      if (isNaN(qty) || qty === 0) { showModalError(form, 'Enter a non-zero quantity (positive to add, negative to remove).', ['adj-qty']); return false; }
 
       const result = inventoryService.adjust(productId, qty, notes || undefined);
       if (result) {
@@ -438,7 +438,8 @@ function openAdjustModal(onSave: () => void): void {
         notifications.success(`Stock adjusted: ${product.name} → ${result.stockAfter} ${product.unit}`);
         onSave();
       } else {
-        notifications.error('Adjustment failed.');
+        showModalError(form, 'Adjustment failed. Product not found.');
+        return false;
       }
     },
   });
@@ -490,8 +491,8 @@ function openRestockModal(onSave: () => void, preselected?: Product): void {
       const ref = (form.querySelector('#rs-ref') as HTMLInputElement).value.trim();
       const notes = (form.querySelector('#rs-notes') as HTMLTextAreaElement).value.trim();
 
-      if (!productId) { notifications.error('Please select a product.'); return; }
-      if (isNaN(qty) || qty <= 0) { notifications.error('Enter a valid quantity.'); return; }
+      if (!productId) { showModalError(form, 'Please select a product.', ['rs-product']); return false; }
+      if (isNaN(qty) || qty <= 0) { showModalError(form, 'Enter a valid quantity greater than zero.', ['rs-qty']); return false; }
 
       const result = inventoryService.restock(productId, qty, ref || undefined, notes || undefined);
       if (result) {
@@ -499,7 +500,8 @@ function openRestockModal(onSave: () => void, preselected?: Product): void {
         notifications.success(`Restocked: ${product.name} +${qty} → ${result.stockAfter} ${product.unit}`);
         onSave();
       } else {
-        notifications.error('Restock failed.');
+        showModalError(form, 'Restock failed. Product not found.');
+        return false;
       }
     },
   });
