@@ -166,7 +166,8 @@ export interface EnterpriseProfile {
   country: string;
   website: string;
   taxId: string;
-  logo: string; // base64 data URL or empty string
+  logo: string;           // base64 data URL or empty string
+  defaultTaxRate: number; // default tax % applied to new orders (0–100)
 }
 
 /** Dashboard stats */

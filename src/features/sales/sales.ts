@@ -10,6 +10,7 @@ import { notifications } from '@core/notifications';
 import { confirmDialog, openModal } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
+import { profileService } from '@services/profileService';
 import type { Sale, OrderItem, Product } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -418,6 +419,8 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
   // No reserved stock for new orders
   const reserved = new Map<string, number>();
 
+  const defaultTaxRate = profileService.getDefaultTaxRate();
+
   const form = document.createElement('div');
   form.innerHTML = `
     <div class="form-row" style="margin-bottom:var(--space-4);">
@@ -451,7 +454,7 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label" for="s-tax">Tax Rate (%)</label>
-        <input type="number" id="s-tax" class="form-control" value="10" min="0" max="100" />
+        <input type="number" id="s-tax" class="form-control" value="${defaultTaxRate}" min="0" max="100" />
       </div>
       <div class="form-group">
         <label class="form-label" for="s-discount">Discount ($)</label>

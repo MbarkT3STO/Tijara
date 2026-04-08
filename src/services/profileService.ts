@@ -19,6 +19,7 @@ const DEFAULT_PROFILE: EnterpriseProfile = {
   website: '',
   taxId: '',
   logo: '',
+  defaultTaxRate: 0,
 };
 
 class ProfileService {
@@ -49,6 +50,11 @@ class ProfileService {
   /** Check whether a profile has been configured */
   isConfigured(): boolean {
     return !!this.get().name.trim();
+  }
+
+  /** Get the default tax rate (falls back to 0) */
+  getDefaultTaxRate(): number {
+    return this.get().defaultTaxRate ?? 0;
   }
 }
 

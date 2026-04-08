@@ -114,6 +114,13 @@ export function renderSettings(): HTMLElement {
               <input type="text" id="ep-taxid" class="form-control" placeholder="US-123456789" value="${profile.taxId}" />
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="ep-default-tax">Default Tax Rate (%)</label>
+              <input type="number" id="ep-default-tax" class="form-control" placeholder="0" min="0" max="100" step="0.01" value="${profile.defaultTaxRate ?? 0}" />
+              <span class="form-hint">Pre-filled on every new order and invoice</span>
+            </div>
+          </div>
 
           <div style="display:flex;justify-content:flex-end;">
             <button class="btn btn-primary" id="save-profile-btn">
@@ -287,16 +294,17 @@ export function renderSettings(): HTMLElement {
   // Save profile
   page.querySelector('#save-profile-btn')?.addEventListener('click', () => {
     profileService.save({
-      name:    (page.querySelector('#ep-name')    as HTMLInputElement).value.trim(),
-      tagline: (page.querySelector('#ep-tagline') as HTMLInputElement).value.trim(),
-      email:   (page.querySelector('#ep-email')   as HTMLInputElement).value.trim(),
-      phone:   (page.querySelector('#ep-phone')   as HTMLInputElement).value.trim(),
-      address: (page.querySelector('#ep-address') as HTMLInputElement).value.trim(),
-      city:    (page.querySelector('#ep-city')    as HTMLInputElement).value.trim(),
-      country: (page.querySelector('#ep-country') as HTMLInputElement).value.trim(),
-      website: (page.querySelector('#ep-website') as HTMLInputElement).value.trim(),
-      taxId:   (page.querySelector('#ep-taxid')   as HTMLInputElement).value.trim(),
-      logo:    currentLogo,
+      name:           (page.querySelector('#ep-name')        as HTMLInputElement).value.trim(),
+      tagline:        (page.querySelector('#ep-tagline')     as HTMLInputElement).value.trim(),
+      email:          (page.querySelector('#ep-email')       as HTMLInputElement).value.trim(),
+      phone:          (page.querySelector('#ep-phone')       as HTMLInputElement).value.trim(),
+      address:        (page.querySelector('#ep-address')     as HTMLInputElement).value.trim(),
+      city:           (page.querySelector('#ep-city')        as HTMLInputElement).value.trim(),
+      country:        (page.querySelector('#ep-country')     as HTMLInputElement).value.trim(),
+      website:        (page.querySelector('#ep-website')     as HTMLInputElement).value.trim(),
+      taxId:          (page.querySelector('#ep-taxid')       as HTMLInputElement).value.trim(),
+      defaultTaxRate: parseFloat((page.querySelector('#ep-default-tax') as HTMLInputElement).value) || 0,
+      logo:           currentLogo,
     });
     notifications.success('Enterprise profile saved. It will appear on all future invoices.');
   });
