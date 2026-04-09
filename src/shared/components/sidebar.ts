@@ -2,6 +2,9 @@
  * Sidebar navigation component.
  * Supports Classic (full sidebar), Modern (icon rail), and Floating layouts.
  * Floating sidebar is collapsible with persisted state.
+ *
+ * Settings is intentionally excluded from the nav — it lives in the user menu.
+ * Modern rail footer shows only the theme toggle (no avatar/settings).
  */
 
 import { router } from '@core/router';
@@ -9,11 +12,11 @@ import { Icons } from './icons';
 import { i18n } from '@core/i18n';
 import { layoutService } from '@core/layout';
 import { themeManager } from '@core/theme';
-import { getInitials } from '@shared/utils/helpers';
 import type { Route } from '@core/types';
 import type { User } from '@core/types';
 
-const NAV_ITEMS: { route: Route; icon: (s?: number) => string; section?: string; pinBottom?: boolean }[] = [
+// Settings is intentionally absent — it's accessible via the user dropdown in the topbar.
+const NAV_ITEMS: { route: Route; icon: (s?: number) => string; section?: string }[] = [
   { route: 'dashboard', icon: (s) => Icons.dashboard(s),    section: 'main' },
   { route: 'customers', icon: (s) => Icons.customers(s),    section: 'management' },
   { route: 'products',  icon: (s) => Icons.products(s) },
@@ -25,14 +28,13 @@ const NAV_ITEMS: { route: Route; icon: (s?: number) => string; section?: string;
   { route: 'invoices',  icon: (s) => Icons.invoices(s) },
   { route: 'reports',   icon: (s) => Icons.barChart(s),     section: 'analytics' },
   { route: 'users',     icon: (s) => Icons.users(s),        section: 'admin' },
-  { route: 'settings',  icon: (s) => Icons.settings(s),     pinBottom: true },
 ];
 
 const FLOAT_COLLAPSED_KEY = 'tijara_float_sidebar_collapsed';
-const FLOAT_EXPANDED_KEY = 'tijara_float_sidebar_expanded';
+const FLOAT_EXPANDED_KEY  = 'tijara_float_sidebar_expanded';
 
 /** Build and return the sidebar element */
-export function createSidebar(currentUser?: User): HTMLElement {
+export function createSidebar(_currentUser?: User): HTMLElement {
   const sidebar = document.createElement('aside');
   sidebar.className = 'sidebar';
   sidebar.setAttribute('aria-label', 'Main navigation');
@@ -60,6 +62,7 @@ export function createSidebar(currentUser?: User): HTMLElement {
   const renderNav = () => {
     nav.innerHTML = '';
     let currentSection = '';
+
     NAV_ITEMS.forEach((item) => {
       // Section label + gap divider
       if (item.section && item.section !== currentSection) {
@@ -75,15 +78,8 @@ export function createSidebar(currentUser?: User): HTMLElement {
         nav.appendChild(label);
       }
 
-      // Pin-bottom items (e.g. Settings) get a gap + spacer before them
-      if (item.pinBottom) {
-        const gap = document.createElement('div');
-        gap.className = 'rail-section-gap nav-pin-gap';
-        nav.appendChild(gap);
-      }
-
       const btn = document.createElement('button');
-      btn.className = 'nav-item' + (item.pinBottom ? ' nav-item-pinned' : '');
+      btn.className = 'nav-item';
       btn.setAttribute('data-route', item.route);
       const labelText = i18n.t(`nav.${item.route}` as any);
       btn.setAttribute('aria-label', labelText);
@@ -92,10 +88,10 @@ export function createSidebar(currentUser?: User): HTMLElement {
         <span class="nav-icon" aria-hidden="true">${item.icon(20)}</span>
         <span class="nav-label">${labelText}</span>
       `;
-
       btn.addEventListener('click', () => router.navigate(item.route));
       nav.appendChild(btn);
     });
+
     updateActive(router.getRoute());
   };
 
@@ -106,40 +102,25 @@ export function createSidebar(currentUser?: User): HTMLElement {
   const footer = document.createElement('div');
   footer.className = 'sidebar-footer';
   footer.innerHTML = `
-    <button class="sidebar-toggle-btn" aria-label="Toggle sidebar" id="sidebar-toggle" style="transform: scaleX(var(--icon-flip));">
+    <button class="sidebar-toggle-btn" aria-label="Toggle sidebar" id="sidebar-toggle"
+            style="transform: scaleX(var(--icon-flip));">
       ${Icons.chevronLeft()}
     </button>
   `;
 
-  // ── Modern rail footer ────────────────────────────────────────────────────
+  // ── Modern rail footer — theme toggle only ────────────────────────────────
   const railFooter = document.createElement('div');
   railFooter.className = 'rail-footer';
 
-  if (currentUser) {
-    const avatarBtn = document.createElement('button');
-    avatarBtn.className = 'nav-item';
-    avatarBtn.setAttribute('aria-label', currentUser.name);
-    avatarBtn.setAttribute('data-nav-label', currentUser.name);
-    avatarBtn.style.cssText = 'width:34px;height:34px;padding:0;justify-content:center;border-radius:50%;';
-    avatarBtn.innerHTML = `<div class="avatar avatar-sm" style="pointer-events:none;">${getInitials(currentUser.name)}</div>`;
-    railFooter.appendChild(avatarBtn);
-  }
-
-  const settingsBtn = document.createElement('button');
-  settingsBtn.className = 'nav-item';
-  const settingsLabel = i18n.t('nav.settings' as any);
-  settingsBtn.setAttribute('aria-label', settingsLabel);
-  settingsBtn.setAttribute('data-nav-label', settingsLabel);
-  settingsBtn.innerHTML = `<span class="nav-icon" aria-hidden="true">${Icons.settings(20)}</span>`;
-  settingsBtn.addEventListener('click', () => router.navigate('settings'));
-  railFooter.appendChild(settingsBtn);
-
   const themeBtn = document.createElement('button');
-  themeBtn.className = 'nav-item';
+  themeBtn.className = 'nav-item rail-theme-btn';
   themeBtn.setAttribute('aria-label', i18n.t('topbar.toggleTheme' as any));
   themeBtn.setAttribute('data-nav-label', i18n.t('topbar.toggleTheme' as any));
+
   const updateThemeIcon = () => {
-    themeBtn.innerHTML = `<span class="nav-icon" aria-hidden="true">${themeManager.getTheme() === 'dark' ? Icons.sun(20) : Icons.moon(20)}</span>`;
+    themeBtn.innerHTML = `<span class="nav-icon" aria-hidden="true">
+      ${themeManager.getTheme() === 'dark' ? Icons.sun(20) : Icons.moon(20)}
+    </span>`;
   };
   updateThemeIcon();
   themeBtn.addEventListener('click', () => { themeManager.toggle(); updateThemeIcon(); });
@@ -150,7 +131,8 @@ export function createSidebar(currentUser?: User): HTMLElement {
   const floatFooter = document.createElement('div');
   floatFooter.className = 'sidebar-float-footer';
   floatFooter.innerHTML = `
-    <button class="sidebar-toggle-btn float-collapse-btn" aria-label="Toggle sidebar" id="float-sidebar-toggle">
+    <button class="sidebar-toggle-btn float-collapse-btn" aria-label="Toggle sidebar"
+            id="float-sidebar-toggle">
       ${Icons.chevronLeft()}
     </button>
   `;
@@ -168,17 +150,16 @@ export function createSidebar(currentUser?: User): HTMLElement {
     classicCollapsed = !classicCollapsed;
     sidebar.classList.toggle('collapsed', classicCollapsed);
     classicToggleBtn.innerHTML = classicCollapsed ? Icons.chevronRight() : Icons.chevronLeft();
+    classicToggleBtn.style.transform = `scaleX(var(--icon-flip))`;
   });
 
   // ── Floating collapse toggle (persisted) ──────────────────────────────────
   let floatCollapsed = localStorage.getItem(FLOAT_COLLAPSED_KEY) === 'true';
-  // User explicitly expanded on a medium screen — override auto-collapse
   const floatExpandedOverride = localStorage.getItem(FLOAT_EXPANDED_KEY) === 'true';
 
   const applyFloatCollapsed = (collapsed: boolean, animate = false) => {
     if (!animate) sidebar.classList.add('no-transition');
     sidebar.classList.toggle('float-collapsed', collapsed);
-    // If user explicitly expands, mark the override so CSS media query doesn't re-collapse
     if (!collapsed) {
       sidebar.classList.add('float-expanded-override');
       localStorage.setItem(FLOAT_EXPANDED_KEY, 'true');
@@ -192,7 +173,6 @@ export function createSidebar(currentUser?: User): HTMLElement {
     btn.style.transform = `scaleX(var(--icon-flip))`;
   };
 
-  // Apply persisted state immediately (no animation on mount)
   if (layoutService.currentLayout === 'floating') {
     applyFloatCollapsed(floatCollapsed, false);
     if (floatExpandedOverride && !floatCollapsed) {

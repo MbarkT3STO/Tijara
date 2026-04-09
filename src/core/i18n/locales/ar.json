@@ -88,6 +88,8 @@
     "appearance": "المظهر",
     "darkMode": "الوضع الداكن",
     "darkModeSubtitle": "التبديل بين السمة الفاتحة والداكنة",
+    "lightSidebar": "الشريط الجانبي الفاتح",
+    "lightSidebarSubtitle": "استخدام شريط جانبي فاتح اللون بدلاً من الداكن",
     "themePreview": "معاينة السمة",
     "light": "فاتح",
     "dark": "داكن",

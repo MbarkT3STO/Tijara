@@ -13,6 +13,7 @@ import { createTopbar } from '@shared/components/topbar';
 import { initToasts } from '@shared/components/toast';
 import { initRailTooltips } from '@shared/components/rail-tooltip';
 import { repository } from '@data/excelRepository';
+import { sidebarThemeService } from './sidebarTheme';
 import type { Route, User } from './types';
 
 /** Lazy-loaded page renderers */
@@ -33,6 +34,8 @@ const PAGE_RENDERERS: Record<Route, () => Promise<HTMLElement>> = {
 
 export async function bootstrap(root: HTMLElement): Promise<void> {
   await repository.init();
+
+  // sidebarThemeService constructor runs on import and sets data-sidebar on body
 
   // Load profile early so currency is set before any page renders
   profileService.get();

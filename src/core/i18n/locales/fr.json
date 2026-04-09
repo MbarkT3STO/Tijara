@@ -88,6 +88,8 @@
     "appearance": "Apparence",
     "darkMode": "Mode sombre",
     "darkModeSubtitle": "Basculer entre les thèmes clair et sombre",
+    "lightSidebar": "Barre latérale claire",
+    "lightSidebarSubtitle": "Utiliser une barre latérale claire au lieu de sombre",
     "themePreview": "Aperçu du thème",
     "light": "Clair",
     "dark": "Sombre",

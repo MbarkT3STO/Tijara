@@ -4,7 +4,7 @@
  */
 
 :root {
-  /* Language & Direction variables */
+  /* ── Direction & RTL ───────────────────────────────────────────────────── */
   --dir: ltr;
   --start: left;
   --end: right;
@@ -14,15 +14,18 @@
   --text-align-end: right;
   --icon-flip: 1;
 
-  /* Brand / Accent */
-  --color-primary: #9929ea;
-  --color-primary-light: #cc66da;
-  --color-primary-dark: #7a1fc0;
-  --color-primary-subtle: rgba(153, 41, 234, 0.1);
-  --color-accent: #faeb92;
-  --color-accent-dark: #f0d84a;
+  /* ── Brand / Primary ───────────────────────────────────────────────────── */
+  --color-primary: #7c3aed;
+  --color-primary-light: #a78bfa;
+  --color-primary-dark: #5b21b6;
+  --color-primary-subtle: rgba(124, 58, 237, 0.08);
+  --color-primary-hover: rgba(124, 58, 237, 0.12);
 
-  /* Semantic */
+  /* ── Accent ────────────────────────────────────────────────────────────── */
+  --color-accent: #f59e0b;
+  --color-accent-subtle: rgba(245, 158, 11, 0.1);
+
+  /* ── Semantic ──────────────────────────────────────────────────────────── */
   --color-success: #22c55e;
   --color-success-subtle: rgba(34, 197, 94, 0.1);
   --color-warning: #f59e0b;
@@ -32,39 +35,51 @@
   --color-info: #3b82f6;
   --color-info-subtle: rgba(59, 130, 246, 0.1);
 
-  /* Light theme surfaces */
-  --color-bg: #f8f7ff;
-  --color-bg-secondary: #f0eeff;
+  /* ── Light theme surfaces ──────────────────────────────────────────────── */
+  --color-bg: #f9f8ff;
+  --color-bg-secondary: #f2f0fc;
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
   --color-surface-overlay: rgba(255, 255, 255, 0.95);
-  --color-border: #e5e0f5;
-  --color-border-subtle: #f0eeff;
+  --color-border: #e4e0f5;
+  --color-border-subtle: #edeaf8;
 
-  /* Light theme text */
+  /* ── Light theme text ──────────────────────────────────────────────────── */
   --color-text-primary: #0f0a1e;
   --color-text-secondary: #5a5070;
   --color-text-tertiary: #9b92b0;
   --color-text-inverse: #ffffff;
   --color-text-on-primary: #ffffff;
 
-  /* Sidebar */
-  --color-sidebar-bg: #0f0a1e;
-  --color-sidebar-text: rgba(255, 255, 255, 0.75);
+  /* ── Sidebar (dark variant — default) ─────────────────────────────────── */
+  --color-sidebar-bg: #1e1b4b;
+  --color-sidebar-bg-end: #16133a;
+  --color-sidebar-text: rgba(199, 210, 254, 0.72);
   --color-sidebar-text-active: #ffffff;
-  --color-sidebar-active-bg: rgba(153, 41, 234, 0.3);
+  --color-sidebar-active-bg: rgba(124, 58, 237, 0.35);
   --color-sidebar-hover-bg: rgba(255, 255, 255, 0.07);
-  --color-sidebar-border: rgba(255, 255, 255, 0.08);
+  --color-sidebar-border: rgba(199, 210, 254, 0.1);
+  --color-sidebar-section-label: rgba(199, 210, 254, 0.35);
+  --color-sidebar-accent: var(--color-primary-light);
 
-  /* Shadows */
+  /* ── Glass / Frosted ───────────────────────────────────────────────────── */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-blur: blur(16px);
+
+  /* ── Gradients ─────────────────────────────────────────────────────────── */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  --gradient-surface: linear-gradient(180deg, var(--color-surface) 0%, var(--color-bg-secondary) 100%);
+
+  /* ── Shadows ───────────────────────────────────────────────────────────── */
   --shadow-xs: 0 1px 2px rgba(15, 10, 30, 0.05);
   --shadow-sm: 0 2px 8px rgba(15, 10, 30, 0.08);
   --shadow-md: 0 4px 16px rgba(15, 10, 30, 0.1);
   --shadow-lg: 0 8px 32px rgba(15, 10, 30, 0.12);
   --shadow-xl: 0 16px 48px rgba(15, 10, 30, 0.16);
-  --shadow-primary: 0 4px 16px rgba(153, 41, 234, 0.3);
+  --shadow-primary: 0 4px 16px rgba(124, 58, 237, 0.35);
 
-  /* Radius */
+  /* ── Radius ────────────────────────────────────────────────────────────── */
   --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -72,7 +87,7 @@
   --radius-xl: 24px;
   --radius-full: 9999px;
 
-  /* Spacing */
+  /* ── Spacing (4px scale) ───────────────────────────────────────────────── */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -84,8 +99,10 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  /* Typography */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* ── Typography ────────────────────────────────────────────────────────── */
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  --font-arabic: 'Cairo', 'Inter', sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -101,8 +118,9 @@
   --line-height-tight: 1.25;
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.75;
+  --letter-spacing-tight: -0.025em;
 
-  /* Layout */
+  /* ── Layout ────────────────────────────────────────────────────────────── */
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 72px;
   --rail-width: 52px;
@@ -111,17 +129,17 @@
   --content-offset: var(--sidebar-width);
   --layout-transition: width 200ms ease, margin 200ms ease, opacity 150ms ease;
 
-  /* Nav active/hover tokens (used by both layouts) */
+  /* ── Nav tokens ────────────────────────────────────────────────────────── */
   --nav-active-bg: var(--color-sidebar-active-bg);
   --nav-hover-bg: var(--color-sidebar-hover-bg);
   --color-border-tertiary: rgba(255, 255, 255, 0.12);
 
-  /* Transitions */
+  /* ── Transitions ───────────────────────────────────────────────────────── */
   --transition-fast: 150ms ease;
   --transition-base: 250ms ease;
   --transition-slow: 400ms ease;
 
-  /* Z-index layers */
+  /* ── Z-index layers ────────────────────────────────────────────────────── */
   --z-base: 0;
   --z-raised: 10;
   --z-dropdown: 100;
@@ -131,22 +149,27 @@
   --z-toast: 500;
 }
 
-/* Dark theme overrides */
-[data-theme='dark'] {
-  --color-bg: #0a0614;
-  --color-bg-secondary: #110d1f;
-  --color-surface: #160f28;
-  --color-surface-raised: #1e1535;
-  --color-surface-overlay: rgba(22, 15, 40, 0.97);
-  --color-border: #2a1f45;
-  --color-border-subtle: #1e1535;
+/* ── Dark theme ──────────────────────────────────────────────────────────── */
 
-  --color-text-primary: #f0ecff;
-  --color-text-secondary: #a89ec8;
-  --color-text-tertiary: #6b5f8a;
+[data-theme='dark'] {
+  --color-bg: #080714;
+  --color-bg-secondary: #0f0d1f;
+  --color-surface: #13112a;
+  --color-surface-raised: #1a1733;
+  --color-surface-overlay: rgba(19, 17, 42, 0.97);
+  --color-border: #252148;
+  --color-border-subtle: #1a1733;
+
+  --color-text-primary: #ede9fe;
+  --color-text-secondary: #a78bfa;
+  --color-text-tertiary: #6d5aac;
   --color-text-inverse: #0f0a1e;
 
-  --color-primary-subtle: rgba(153, 41, 234, 0.15);
+  --color-primary-subtle: rgba(124, 58, 237, 0.15);
+  --color-primary-hover: rgba(124, 58, 237, 0.2);
+
+  --glass-bg: rgba(19, 17, 42, 0.75);
+  --glass-border: rgba(124, 58, 237, 0.2);
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -155,8 +178,36 @@
   --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
 }
 
-/* RTL overrides */
-[dir="rtl"] {
+/* ── Sidebar light variant ───────────────────────────────────────────────── */
+/* Applied via body[data-sidebar="light"] — works in both light & dark themes */
+
+body[data-sidebar='light'] {
+  --color-sidebar-bg: #ffffff;
+  --color-sidebar-bg-end: #f9f8ff;
+  --color-sidebar-text: var(--color-text-secondary);
+  --color-sidebar-text-active: var(--color-text-primary);
+  --color-sidebar-active-bg: var(--color-primary-subtle);
+  --color-sidebar-hover-bg: var(--color-bg-secondary);
+  --color-sidebar-border: var(--color-border);
+  --color-sidebar-section-label: var(--color-text-tertiary);
+  --color-sidebar-accent: var(--color-primary);
+}
+
+[data-theme='dark'] body[data-sidebar='light'] {
+  --color-sidebar-bg: #13112a;
+  --color-sidebar-bg-end: #0f0d1f;
+  --color-sidebar-text: rgba(167, 139, 250, 0.75);
+  --color-sidebar-text-active: #ede9fe;
+  --color-sidebar-active-bg: rgba(124, 58, 237, 0.2);
+  --color-sidebar-hover-bg: rgba(124, 58, 237, 0.08);
+  --color-sidebar-border: #252148;
+  --color-sidebar-section-label: rgba(167, 139, 250, 0.4);
+  --color-sidebar-accent: var(--color-primary-light);
+}
+
+/* ── RTL overrides ───────────────────────────────────────────────────────── */
+
+[dir='rtl'] {
   --dir: rtl;
   --start: right;
   --end: left;
@@ -165,10 +216,11 @@
   --text-align-start: right;
   --text-align-end: left;
   --icon-flip: -1;
-  font-family: 'Cairo', 'Inter', sans-serif;
+  font-family: var(--font-arabic);
 }
 
-/* Utilities */
+/* ── Utilities ───────────────────────────────────────────────────────────── */
+
 .force-ltr {
   direction: ltr !important;
   unicode-bidi: isolate;
@@ -178,7 +230,7 @@
 /* ── Modern layout overrides ─────────────────────────────────────────────── */
 
 body[data-layout='modern'] {
-  --topbar-height: 36px;
+  --topbar-height: 52px;
   --content-offset: var(--rail-width);
 }
 
@@ -187,12 +239,11 @@ body[data-layout='modern'] {
 body[data-layout='floating'] {
   --float-gap: 8px;
   --float-radius: 14px;
-  /* light theme defaults */
-  --float-canvas-bg: #e8e5f5;
+  --float-canvas-bg: #ece9f8;
   --float-panel-bg: #ffffff;
-  --float-panel-inner-bg: #f0eeff;
-  --float-table-head-bg: #e8e5f5;
-  --float-border: 0.5px solid #d4cef0;
+  --float-panel-inner-bg: #f2f0fc;
+  --float-table-head-bg: #ece9f8;
+  --float-border: 0.5px solid #d8d2f0;
   --float-scrollbar-thumb: #c4bce0;
   --layout-transition: width 200ms ease,
                        margin 220ms cubic-bezier(0.4, 0, 0.2, 1),
@@ -201,12 +252,11 @@ body[data-layout='floating'] {
                        opacity 180ms ease;
 }
 
-/* dark theme overrides for floating — data-theme is on <html>, data-layout on <body> */
 [data-theme='dark'] body[data-layout='floating'] {
-  --float-canvas-bg: #09090f;
-  --float-panel-bg: #13141f;
-  --float-panel-inner-bg: #0f1018;
-  --float-table-head-bg: #0c0d16;
-  --float-border: 0.5px solid #232438;
-  --float-scrollbar-thumb: #2a2b3d;
+  --float-canvas-bg: #050410;
+  --float-panel-bg: #13112a;
+  --float-panel-inner-bg: #0f0d1f;
+  --float-table-head-bg: #0c0b1e;
+  --float-border: 0.5px solid #252148;
+  --float-scrollbar-thumb: #2a2650;
 }

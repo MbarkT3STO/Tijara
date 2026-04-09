@@ -11,6 +11,7 @@ import { i18n } from '@core/i18n';
 import { createLanguageSwitcher } from '@shared/components/languageSwitcher';
 import { repository } from '@data/excelRepository';
 import { layoutService } from '@core/layout';
+import { sidebarThemeService } from '@core/sidebarTheme';
 import type { ElectronAPI } from '../../../electron/preload';
 
 function getElectron(): ElectronAPI | null {
@@ -230,6 +231,19 @@ export function renderSettings(): HTMLElement {
 
               <div class="divider"></div>
 
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-weight: 600; font-size:var(--font-size-sm); margin-bottom: 2px;">${i18n.t('settings.lightSidebar' as any)}</div>
+                  <div style="font-size: var(--font-size-xs); color: var(--color-text-secondary);">${i18n.t('settings.lightSidebarSubtitle' as any)}</div>
+                </div>
+                <label class="toggle" aria-label="Toggle sidebar theme">
+                  <input type="checkbox" class="toggle-input" id="sidebar-theme-toggle" ${sidebarThemeService.current === 'light' ? 'checked' : ''} />
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div class="divider"></div>
+
               <div>
                 <div style="font-weight: 600; font-size:var(--font-size-sm); margin-bottom: var(--space-3);">${i18n.t('settings.themePreview' as any)}</div>
                 <div style="display: flex; gap: var(--space-4);">
@@ -429,6 +443,13 @@ export function renderSettings(): HTMLElement {
     });
     page.querySelector('#theme-dark')?.addEventListener('click', () => {
       themeManager.setTheme('dark');
+    });
+
+    // ── Sidebar theme toggle ─────────────────────────────────────────────────
+    const sidebarToggle = page.querySelector<HTMLInputElement>('#sidebar-theme-toggle');
+    sidebarToggle?.addEventListener('change', (e) => {
+      const isLight = (e.target as HTMLInputElement).checked;
+      sidebarThemeService.set(isLight ? 'light' : 'dark');
     });
 
     // ── Layout Style ────────────────────────────────────────────────────────

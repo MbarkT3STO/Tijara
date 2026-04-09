@@ -87,6 +87,8 @@
     "appearance": "Appearance",
     "darkMode": "Dark Mode",
     "darkModeSubtitle": "Switch between light and dark themes",
+    "lightSidebar": "Light Sidebar",
+    "lightSidebarSubtitle": "Use a light-colored sidebar instead of dark",
     "themePreview": "Theme Preview",
     "light": "Light",
     "dark": "Dark",

@@ -25,6 +25,7 @@ body {
   background-color: var(--color-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
   transition: background-color var(--transition-slow), color var(--transition-slow);
 }
 
@@ -52,6 +53,11 @@ h4,
 h5,
 h6 {
   overflow-wrap: break-word;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: var(--letter-spacing-tight);
 }
 
 a {
@@ -95,27 +101,34 @@ table {
   border-width: 0;
 }
 
-/* Focus styles */
+/* ── Focus styles ────────────────────────────────────────────────────────── */
+
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+*::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: var(--radius-full);
 }
 
-::-webkit-scrollbar-thumb:hover {
+*::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-tertiary);
 }
