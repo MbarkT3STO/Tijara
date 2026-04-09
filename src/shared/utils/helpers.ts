@@ -1,6 +1,4 @@
-/**
- * General utility functions used across the application.
- */
+import { i18n } from '@core/i18n';
 
 /** Generate a random UUID-like ID */
 export function generateId(): string {
@@ -24,6 +22,18 @@ export function setActiveCurrency(code: string): void {
 }
 
 /**
+ * Common locale mapping with forced numbering system (latn) and calendar (gregory).
+ */
+const getLocale = (lang: string) => {
+  const map: Record<string, string> = {
+    en: 'en-US',
+    fr: 'fr-FR',
+    ar: 'ar-u-nu-latn-ca-gregory' // Force Latin numerals and Gregorian calendar
+  };
+  return map[lang] || lang;
+};
+
+/**
  * Format a number as currency using the active profile currency.
  * Pass an explicit currency code to override (e.g. in PDF generation).
  * @param amount - The numeric amount
@@ -31,7 +41,9 @@ export function setActiveCurrency(code: string): void {
  */
 export function formatCurrency(amount: number, currency?: string): string {
   const code = currency || _activeCurrency;
-  return new Intl.NumberFormat('en-US', {
+  const lang = i18n.currentLanguage;
+  
+  return new Intl.NumberFormat(getLocale(lang), {
     style: 'currency',
     currency: code,
     minimumFractionDigits: 2,
@@ -43,7 +55,9 @@ export function formatCurrency(amount: number, currency?: string): string {
  * @param isoDate - ISO date string
  */
 export function formatDate(isoDate: string): string {
-  return new Intl.DateTimeFormat('en-US', {
+  const lang = i18n.currentLanguage;
+  
+  return new Intl.DateTimeFormat(getLocale(lang), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -55,7 +69,9 @@ export function formatDate(isoDate: string): string {
  * @param isoDate - ISO date string
  */
 export function formatDateTime(isoDate: string): string {
-  return new Intl.DateTimeFormat('en-US', {
+  const lang = i18n.currentLanguage;
+  
+  return new Intl.DateTimeFormat(getLocale(lang), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -122,7 +138,18 @@ export function getInitials(name: string): string {
 
 /**
  * Format a percentage value.
+ * @param value - Numeric value (e.g. 15.5 for 15.5%)
+ * @param decimals - Decimal places
+ * @param showSign - Whether to prefix with + or -
  */
-export function formatPercent(value: number, decimals = 1): string {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
+export function formatPercent(value: number, decimals = 1, showSign = true): string {
+  const lang = i18n.currentLanguage;
+  
+  const formatted = new Intl.NumberFormat(getLocale(lang), {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(Math.abs(value));
+
+  const sign = showSign ? (value >= 0 ? '+' : '-') : (value < 0 ? '-' : '');
+  return `${sign}${formatted}%`;
 }

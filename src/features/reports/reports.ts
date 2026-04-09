@@ -5,7 +5,7 @@
 
 import { reportsService } from '@services/reportsService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, formatPercent } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 
 export function renderReports(): HTMLElement {
@@ -62,7 +62,7 @@ function buildHTML(monthRange: number): string {
     <div class="reports-kpi-grid">
       ${buildKpi(i18n.t('reports.kpis.totalRevenue'), formatCurrency(summary.totalRevenue), Icons.dollarSign(), 'primary')}
       ${buildKpi(i18n.t('reports.kpis.totalProfit'), formatCurrency(summary.totalProfit), Icons.trendUp(), summary.totalProfit >= 0 ? 'success' : 'error')}
-      ${buildKpi(i18n.t('reports.kpis.profitMargin'), profitMargin.toFixed(1) + '%', Icons.pieChart(), profitMargin >= 20 ? 'success' : profitMargin >= 10 ? 'warning' : 'error')}
+      ${buildKpi(i18n.t('reports.kpis.profitMargin'), formatPercent(profitMargin, 1, false), Icons.pieChart(), profitMargin >= 20 ? 'success' : profitMargin >= 10 ? 'warning' : 'error')}
       ${buildKpi(i18n.t('reports.kpis.totalOrders'), String(summary.totalOrders), Icons.shoppingCart(), 'info')}
       ${buildKpi(i18n.t('reports.kpis.avgOrderValue'), formatCurrency(summary.avgOrderValue), Icons.barChart(), 'primary')}
       ${buildKpi(i18n.t('reports.kpis.purchaseSpend'), formatCurrency(summary.totalPurchaseSpend), Icons.truck(), 'warning')}
