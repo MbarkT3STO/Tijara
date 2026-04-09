@@ -4,6 +4,7 @@
 
 import { repository } from '@data/excelRepository';
 import { i18n } from '@core/i18n';
+import { getLocale } from '@shared/utils/helpers';
 
 export interface MonthlyRevenue {
   month: string;
@@ -86,7 +87,7 @@ export const reportsService = {
         .reduce((sum, p) => sum + p.total, 0);
 
       result.push({
-        month: d.toLocaleDateString(i18n.currentLanguage === 'ar' ? 'ar-SA' : i18n.currentLanguage, { month: 'short', year: 'numeric' }),
+        month: d.toLocaleDateString(getLocale(i18n.currentLanguage), { month: 'short', year: 'numeric' }),
         revenue,
         orders: monthSales.length,
         profit: revenue - cogs,

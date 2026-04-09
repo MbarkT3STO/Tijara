@@ -24,14 +24,14 @@ export function setActiveCurrency(code: string): void {
 /**
  * Common locale mapping with forced numbering system (latn) and calendar (gregory).
  */
-const getLocale = (lang: string) => {
+export function getLocale(lang: string): string {
   const map: Record<string, string> = {
     en: 'en-US',
     fr: 'fr-FR',
     ar: 'ar-u-nu-latn-ca-gregory' // Force Latin numerals and Gregorian calendar
   };
   return map[lang] || lang;
-};
+}
 
 /**
  * Format a number as currency using the active profile currency.
