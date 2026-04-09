@@ -85,6 +85,7 @@
     "pdfLanguageHint": "Les factures et rapports seront générés dans cette langue.",
     "logoSizeMsg": "Le fichier du logo doit faire moins de 2 Mo.",
     "saveProfile": "Enregistrer le profil",
+    "saveProfileSuccess": "Profil enregistré avec succès.",
     "appearance": "Apparence",
     "darkMode": "Mode sombre",
     "darkModeSubtitle": "Basculer entre les thèmes clair et sombre",

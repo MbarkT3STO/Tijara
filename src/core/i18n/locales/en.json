@@ -84,6 +84,7 @@
     "defaultPdfLanguage": "Default PDF Language",
     "pdfLanguageHint": "Invoices and reports will be generated in this language.",
     "saveProfile": "Save Profile",
+    "saveProfileSuccess": "Profile saved successfully.",
     "appearance": "Appearance",
     "darkMode": "Dark Mode",
     "darkModeSubtitle": "Switch between light and dark themes",

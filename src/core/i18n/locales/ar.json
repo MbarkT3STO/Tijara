@@ -85,6 +85,7 @@
     "pdfLanguageHint": "سيتم إنشاء الفواتير والتقارير بهذه اللغة.",
     "logoSizeMsg": "يجب أن يكون حجم ملف الشعار أقل من 2 ميجابايت.",
     "saveProfile": "حفظ الملف",
+    "saveProfileSuccess": "تم حفظ الملف بنجاح.",
     "appearance": "المظهر",
     "darkMode": "الوضع الداكن",
     "darkModeSubtitle": "التبديل بين السمة الفاتحة والداكنة",

@@ -410,7 +410,7 @@ export function renderSettings(): HTMLElement {
       if (!file) return;
 
       if (file.size > 2 * 1024 * 1024) {
-        notifications.error('Logo exceeds 2MB limit');
+        notifications.error(i18n.t('settings.logoSizeMsg' as any));
         return;
       }
 
@@ -485,7 +485,7 @@ export function renderSettings(): HTMLElement {
       };
 
       profileService.save(updated);
-      notifications.success(i18n.t('settings.saveProfileSuccess' as any) || 'Profile updated');
+      notifications.success(i18n.t('settings.saveProfileSuccess' as any));
     });
 
     // ── Data Path ───────────────────────────────────────────────────────────
@@ -500,23 +500,23 @@ export function renderSettings(): HTMLElement {
     // ── Export/Import ───────────────────────────────────────────────────────
     page.querySelector('#export-btn')?.addEventListener('click', async () => {
        await repository.exportToExcel();
-       if (isElectron) notifications.success('Data exported successfully');
+       if (isElectron) notifications.success(i18n.t('settings.notifications.exportSuccess' as any));
     });
 
     const handleImportFile = async (file: File) => {
       try {
         await repository.importFromExcel(file);
-        notifications.success('Data imported successfully. Reloading...');
+        notifications.success(i18n.t('settings.notifications.importSuccess' as any));
         setTimeout(() => window.location.reload(), 1500);
       } catch {
-        notifications.error('Failed to import data. Invalid file format.');
+        notifications.error(i18n.t('settings.notifications.importFailed' as any));
       }
     };
 
     if (isElectron) {
       page.querySelector('#import-btn')?.addEventListener('click', async () => {
         await repository.importFromExcel();
-        notifications.success('Data imported successfully. Reloading...');
+        notifications.success(i18n.t('settings.notifications.importSuccess' as any));
         setTimeout(() => window.location.reload(), 1500);
       });
     } else {
@@ -545,7 +545,7 @@ export function renderSettings(): HTMLElement {
           confirmClass: 'btn-danger',
           onConfirm: () => {
             localStorage.clear();
-            notifications.success('All data cleared. Resetting...');
+            notifications.success(i18n.t('settings.notifications.clearedSuccess' as any));
             setTimeout(() => window.location.reload(), 1500);
           }
         });
