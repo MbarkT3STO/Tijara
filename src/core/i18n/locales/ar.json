@@ -210,7 +210,19 @@
     "enterEmailPassword": "يرجى إدخال البريد الإلكتروني وكلمة المرور.",
     "allFieldsRequired": "جميع الحقول مطلوبة.",
     "passwordLength": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.",
-    "passwordsMatch": "كلمات المرور غير متطابقة."
+    "passwordsMatch": "كلمات المرور غير متطابقة.",
+    "loginFailed": "فشل تسجيل الدخول. يرجى التحقق من بياناتك.",
+    "registrationFailed": "فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.",
+    "togglePasswordVisibility": "إظهار/إخفاء كلمة المرور",
+    "passwordMinChars": "6 أحرف كحد أدنى",
+    "errors": {
+      "noAccount": "لا يوجد حساب مرتبط بهذا البريد الإلكتروني.",
+      "deactivated": "تم تعطيل هذا الحساب. تواصل مع المسؤول.",
+      "wrongPassword": "كلمة المرور غير صحيحة.",
+      "emailExists": "يوجد حساب مسجل بهذا البريد الإلكتروني.",
+      "notAuthenticated": "غير مصادق عليه.",
+      "wrongCurrentPassword": "كلمة المرور الحالية غير صحيحة."
+    }
   },
   "dashboard": {
     "totalRevenue": "إجمالي الإيرادات",

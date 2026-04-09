@@ -209,7 +209,19 @@
     "enterEmailPassword": "Please enter your email and password.",
     "allFieldsRequired": "All fields are required.",
     "passwordLength": "Password must be at least 6 characters.",
-    "passwordsMatch": "Passwords do not match."
+    "passwordsMatch": "Passwords do not match.",
+    "loginFailed": "Login failed. Please check your credentials.",
+    "registrationFailed": "Registration failed. Please try again.",
+    "togglePasswordVisibility": "Toggle password visibility",
+    "passwordMinChars": "Min. 6 characters",
+    "errors": {
+      "noAccount": "No account found with that email address.",
+      "deactivated": "This account has been deactivated. Contact an admin.",
+      "wrongPassword": "Incorrect password.",
+      "emailExists": "An account with this email already exists.",
+      "notAuthenticated": "Not authenticated.",
+      "wrongCurrentPassword": "Current password is incorrect."
+    }
   },
   "dashboard": {
     "totalRevenue": "Total Revenue",

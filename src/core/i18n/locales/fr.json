@@ -210,7 +210,21 @@
     "enterEmailPassword": "S'il vous plaît entrer votre email et mot de passe.",
     "allFieldsRequired": "Tous les champs sont requis.",
     "passwordLength": "Le mot de passe doit comporter au moins 6 caractères.",
-    "passwordsMatch": "Les mots de passe ne correspondent pas."
+    "passwordsMatch": "Les mots de passe ne correspondent pas.",
+    "loginFailed": "Échec de la connexion. Veuillez vérifier vos identifiants.",
+    "registrationFailed": "Échec de l'inscription. Veuillez réessayer.",
+    "togglePasswordVisibility": "Afficher/masquer le mot de passe",
+    "passwordMinChars": "Min. 6 caractères",
+    "rememberMe": "Se souvenir de moi pendant 30 jours",
+    "forgotPassword": "Mot de passe oublié ?",
+    "errors": {
+      "noAccount": "Aucun compte trouvé avec cette adresse e-mail.",
+      "deactivated": "Ce compte a été désactivé. Contactez un administrateur.",
+      "wrongPassword": "Mot de passe incorrect.",
+      "emailExists": "Un compte avec cet e-mail existe déjà.",
+      "notAuthenticated": "Non authentifié.",
+      "wrongCurrentPassword": "Le mot de passe actuel est incorrect."
+    }
   },
   "dashboard": {
     "totalRevenue": "Chiffre d'affaires total",

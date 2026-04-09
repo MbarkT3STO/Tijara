@@ -101,7 +101,7 @@ export function renderAuthScreen(onSuccess: (user: User) => void): HTMLElement {
       const user = await authService.login(email, password);
       onSuccess(user);
     } catch (err) {
-      showError(errEl, err instanceof Error ? err.message : 'Login failed.');
+      showError(errEl, resolveAuthError(err));
       setLoading(btn, false);
     }
   }
@@ -134,7 +134,7 @@ export function renderAuthScreen(onSuccess: (user: User) => void): HTMLElement {
       const user = await authService.register(name, email, password);
       onSuccess(user);
     } catch (err) {
-      showError(errEl, err instanceof Error ? err.message : 'Registration failed.');
+      showError(errEl, resolveAuthError(err));
       setLoading(btn, false);
     }
   }
@@ -232,7 +232,7 @@ function buildLoginForm(): string {
             autocomplete="current-password"
             required
           />
-          <button type="button" class="pw-toggle" data-toggle-pw="login-password" aria-label="Toggle password visibility">
+          <button type="button" class="pw-toggle" data-toggle-pw="login-password" aria-label="${i18n.t('auth.togglePasswordVisibility')}">
             ${Icons.eye(16)}
           </button>
         </div>
@@ -281,11 +281,11 @@ function buildRegisterForm(): string {
             type="password"
             id="reg-password"
             class="form-control"
-            placeholder="Min. 6 characters"
+            placeholder="${i18n.t('auth.passwordMinChars')}"
             autocomplete="new-password"
             required
           />
-          <button type="button" class="pw-toggle" data-toggle-pw="reg-password" aria-label="Toggle password visibility">
+          <button type="button" class="pw-toggle" data-toggle-pw="reg-password" aria-label="${i18n.t('auth.togglePasswordVisibility')}">
             ${Icons.eye(16)}
           </button>
         </div>
@@ -302,7 +302,7 @@ function buildRegisterForm(): string {
             autocomplete="new-password"
             required
           />
-          <button type="button" class="pw-toggle" data-toggle-pw="reg-confirm" aria-label="Toggle confirm password visibility">
+          <button type="button" class="pw-toggle" data-toggle-pw="reg-confirm" aria-label="${i18n.t('auth.togglePasswordVisibility')}">
             ${Icons.eye(16)}
           </button>
         </div>
@@ -316,6 +316,21 @@ function buildRegisterForm(): string {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+const AUTH_ERROR_KEYS: Record<string, string> = {
+  AUTH_NO_ACCOUNT:           'auth.errors.noAccount',
+  AUTH_DEACTIVATED:          'auth.errors.deactivated',
+  AUTH_WRONG_PASSWORD:       'auth.errors.wrongPassword',
+  AUTH_EMAIL_EXISTS:         'auth.errors.emailExists',
+  AUTH_NOT_AUTHENTICATED:    'auth.errors.notAuthenticated',
+  AUTH_WRONG_CURRENT_PASSWORD: 'auth.errors.wrongCurrentPassword',
+};
+
+function resolveAuthError(err: unknown): string {
+  const code = err instanceof Error ? err.message : '';
+  const key = AUTH_ERROR_KEYS[code];
+  return key ? i18n.t(key as any) : i18n.t('auth.loginFailed');
+}
 
 function showError(el: HTMLElement, msg: string): void {
   el.textContent = msg;

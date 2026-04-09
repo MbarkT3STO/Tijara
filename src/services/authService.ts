@@ -69,11 +69,11 @@ class AuthService {
     const users = repository.getAll('users');
     const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 
-    if (!user) throw new Error('No account found with that email address.');
-    if (!user.active) throw new Error('This account has been deactivated. Contact an admin.');
+    if (!user) throw new Error('AUTH_NO_ACCOUNT');
+    if (!user.active) throw new Error('AUTH_DEACTIVATED');
 
     const hash = await hashPassword(password);
-    if (user.passwordHash !== hash) throw new Error('Incorrect password.');
+    if (user.passwordHash !== hash) throw new Error('AUTH_WRONG_PASSWORD');
 
     // Update lastLogin
     repository.update('users', user.id, { lastLogin: getCurrentISODate() });
@@ -96,7 +96,7 @@ class AuthService {
     const users = repository.getAll('users');
 
     if (users.find((u) => u.email.toLowerCase() === email.toLowerCase())) {
-      throw new Error('An account with this email already exists.');
+      throw new Error('AUTH_EMAIL_EXISTS');
     }
 
     const passwordHash = await hashPassword(password);
@@ -140,9 +140,9 @@ class AuthService {
    * Requires the old password for verification.
    */
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {
-    if (!this.currentUser) throw new Error('Not authenticated.');
+    if (!this.currentUser) throw new Error('AUTH_NOT_AUTHENTICATED');
     const oldHash = await hashPassword(oldPassword);
-    if (this.currentUser.passwordHash !== oldHash) throw new Error('Current password is incorrect.');
+    if (this.currentUser.passwordHash !== oldHash) throw new Error('AUTH_WRONG_CURRENT_PASSWORD');
     const newHash = await hashPassword(newPassword);
     repository.update('users', this.currentUser.id, { passwordHash: newHash });
     this.currentUser = repository.getById('users', this.currentUser.id)!;
