@@ -32,6 +32,7 @@ const NAV_ITEMS: { route: Route; icon: (s?: number) => string; section?: string 
 
 const FLOAT_COLLAPSED_KEY = 'tijara_float_sidebar_collapsed';
 const FLOAT_EXPANDED_KEY  = 'tijara_float_sidebar_expanded';
+const CLASSIC_COLLAPSED_KEY = 'tijara_classic_sidebar_collapsed';
 
 /** Build and return the sidebar element */
 export function createSidebar(_currentUser?: User): HTMLElement {
@@ -143,14 +144,27 @@ export function createSidebar(_currentUser?: User): HTMLElement {
   sidebar.appendChild(railFooter);
   sidebar.appendChild(floatFooter);
 
-  // ── Classic collapse toggle ───────────────────────────────────────────────
-  let classicCollapsed = false;
+  // ── Classic collapse toggle (persisted) ──────────────────────────────────
+  let classicCollapsed = localStorage.getItem(CLASSIC_COLLAPSED_KEY) === 'true';
   const classicToggleBtn = footer.querySelector<HTMLButtonElement>('#sidebar-toggle')!;
+
+  const applyClassicCollapsed = (collapsed: boolean, animate = false) => {
+    if (!animate) sidebar.classList.add('no-transition');
+    sidebar.classList.toggle('collapsed', collapsed);
+    if (!animate) requestAnimationFrame(() => sidebar.classList.remove('no-transition'));
+    classicToggleBtn.innerHTML = collapsed ? Icons.chevronRight() : Icons.chevronLeft();
+    classicToggleBtn.style.transform = `scaleX(var(--icon-flip))`;
+  };
+
+  // Apply persisted state immediately (no animation on mount)
+  if (layoutService.currentLayout === 'classic') {
+    applyClassicCollapsed(classicCollapsed, false);
+  }
+
   classicToggleBtn.addEventListener('click', () => {
     classicCollapsed = !classicCollapsed;
-    sidebar.classList.toggle('collapsed', classicCollapsed);
-    classicToggleBtn.innerHTML = classicCollapsed ? Icons.chevronRight() : Icons.chevronLeft();
-    classicToggleBtn.style.transform = `scaleX(var(--icon-flip))`;
+    localStorage.setItem(CLASSIC_COLLAPSED_KEY, String(classicCollapsed));
+    applyClassicCollapsed(classicCollapsed, true);
   });
 
   // ── Floating collapse toggle (persisted) ──────────────────────────────────
@@ -216,8 +230,11 @@ export function createSidebar(_currentUser?: User): HTMLElement {
       if (!floatCollapsed && localStorage.getItem(FLOAT_EXPANDED_KEY) === 'true') {
         sidebar.classList.add('float-expanded-override');
       }
-    } else {
+    } else if (style === 'classic') {
       sidebar.classList.remove('float-collapsed', 'float-expanded-override');
+      applyClassicCollapsed(classicCollapsed, false);
+    } else {
+      sidebar.classList.remove('collapsed', 'float-collapsed', 'float-expanded-override');
     }
   });
 
