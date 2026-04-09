@@ -687,6 +687,11 @@ textarea.form-control {
   transform: scaleX(-1);
 }
 
+/* RTL: swap info (count) and controls (page buttons) sides */
+[dir='rtl'] .pagination {
+  flex-direction: row-reverse;
+}
+
 /* ── Divider ─────────────────────────────────────────────────────────────── */
 
 .divider {
