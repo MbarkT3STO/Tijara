@@ -9,6 +9,7 @@ import { Icons } from '@shared/components/icons';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { createLanguageSwitcher } from '@shared/components/languageSwitcher';
+import { repository } from '@data/excelRepository';
 import type { ElectronAPI } from '../../../electron/preload';
 
 function getElectron(): ElectronAPI | null {
@@ -17,7 +18,6 @@ function getElectron(): ElectronAPI | null {
 
 const isElectron = !!getElectron();
 
-/** Common world currencies for the selector */
 /** Common world currency codes for the selector */
 const CURRENCIES: string[] = [
   'USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'CAD', 'AUD', 'CHF', 'HKD',
@@ -28,432 +28,444 @@ const CURRENCIES: string[] = [
   'HUF', 'RON', 'HRK', 'BGN', 'CLP', 'COP', 'PEN', 'ARS',
 ];
 
-/** Render and return the settings page */
+/** Main Settings View */
 export function renderSettings(): HTMLElement {
   const page = document.createElement('div');
-  page.className = 'content-inner animate-fade-in';
+  page.className = 'page-container';
 
-  const profile = profileService.get();
+  let currentLogo = profileService.get().logo || '';
 
-  page.innerHTML = `
-    <div class="page-header">
-      <div>
-        <h2 class="page-title">${i18n.t('settings.title')}</h2>
-        <p class="page-subtitle">${i18n.t('settings.subtitle')}</p>
-      </div>
-    </div>
+  const render = () => {
+    const profile = profileService.get();
 
-    <div style="display: grid; gap: var(--space-5); max-width: 720px;">
-
-      <!-- Enterprise Profile -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">${i18n.t('settings.enterpriseProfile')}</h3>
-          <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('settings.enterpriseSubtitle')}</span>
+    page.innerHTML = `
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">${i18n.t('settings.title' as any)}</h2>
+          <p class="page-subtitle">${i18n.t('settings.subtitle' as any)}</p>
         </div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:var(--space-5);">
+        <div class="header-actions">
+           <button class="btn btn-primary" id="save-profile-btn">
+             ${Icons.check(16)} ${i18n.t('settings.saveProfile' as any)}
+           </button>
+        </div>
+      </div>
 
-          <!-- Logo upload -->
-          <div style="display:flex;align-items:center;gap:var(--space-5);">
-            <div id="logo-preview" style="
-              width:96px;height:96px;border-radius:var(--radius-md);
-              border:2px dashed var(--color-border);
-              display:flex;align-items:center;justify-content:center;
-              overflow:hidden;flex-shrink:0;background:var(--color-bg-secondary);
-              transition:border-color var(--transition-fast);
-            ">
-              ${profile.logo
-                ? `<img src="${profile.logo}" alt="Logo" style="width:100%;height:100%;object-fit:contain;" />`
-                : `<span style="color:var(--color-text-tertiary);">${Icons.upload(24)}</span>`
-              }
+      <div style="display: grid; gap: var(--space-6); max-width: 1000px;">
+
+        <!-- 1. BUSINESS IDENTITY -->
+        <div class="card overflow-hidden">
+          <div class="card-header" style="background: var(--color-bg-secondary); border-bottom: 1px solid var(--color-border-subtle);">
+            <div style="display:flex; align-items:center; gap:var(--space-3);">
+              <div style="color:var(--color-primary);">${Icons.building(20)}</div>
+              <h3 class="card-title">${i18n.t('settings.enterpriseProfile' as any)}</h3>
             </div>
-            <div style="display:flex;flex-direction:column;gap:var(--space-2);">
-              <div style="font-weight:500;">${i18n.t('settings.companyLogo')}</div>
-              <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${i18n.t('settings.logoHint')}</div>
-              <div style="display:flex;gap:var(--space-2);">
-                <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
-                  ${Icons.upload(14)} ${i18n.t('common.upload')}
-                  <input type="file" id="logo-input" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none;" />
-                </label>
-                ${profile.logo ? `<button class="btn btn-ghost btn-sm" id="logo-remove" style="color:var(--color-error);">${Icons.trash(14)} ${i18n.t('common.remove')}</button>` : ''}
+          </div>
+          <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6);">
+              
+              <!-- Logo Section -->
+              <div style="display:flex; flex-direction:column; gap:var(--space-4);">
+                <div style="font-weight:600; font-size:var(--font-size-sm); color:var(--color-text-secondary);">${i18n.t('settings.companyLogo' as any)}</div>
+                <div style="display:flex; align-items:center; gap:var(--space-4);">
+                  <div id="logo-preview" style="
+                    width:100px; height:100px; border-radius:var(--radius-md);
+                    border:2px dashed var(--color-border);
+                    display:flex; align-items:center; justify-content:center;
+                    overflow:hidden; flex-shrink:0; background:var(--color-surface);
+                    transition: border-color 0.2s;
+                  ">
+                    ${currentLogo
+                      ? `<img src="${currentLogo}" alt="Logo" style="width:100%; height:100%; object-fit:contain;" />`
+                      : `<span style="color:var(--color-text-tertiary);">${Icons.image(24)}</span>`
+                    }
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:var(--space-2);">
+                    <div style="font-size:var(--font-size-xs); color:var(--color-text-tertiary); max-width:200px;">${i18n.t('settings.logoHint' as any)}</div>
+                    <div style="display:flex; gap:var(--space-2);">
+                      <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                        ${Icons.upload(14)} ${i18n.t('common.upload' as any)}
+                        <input type="file" id="logo-input" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none;" />
+                      </label>
+                      ${currentLogo ? `<button class="btn btn-ghost btn-sm" id="logo-remove" style="color:var(--color-error);">${Icons.trash(14)}</button>` : ''}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Primary Info -->
+              <div style="display:flex; flex-direction:column; gap:var(--space-4);">
+                <div class="form-group">
+                  <label class="form-label" for="ep-name">${i18n.t('settings.companyName' as any)}</label>
+                  <input type="text" id="ep-name" class="form-control" placeholder="Acme Corporation" value="${profile.name}" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="ep-tagline">${i18n.t('settings.tagline' as any)}</label>
+                  <input type="text" id="ep-tagline" class="form-control" placeholder="Technology Solutions" value="${profile.tagline}" />
+                </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="divider"></div>
-
-          <!-- Company details -->
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="ep-name">${i18n.t('settings.companyName')}</label>
-              <input type="text" id="ep-name" class="form-control" placeholder="Acme Corporation" value="${profile.name}" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="ep-tagline">${i18n.t('settings.tagline')}</label>
-              <input type="text" id="ep-tagline" class="form-control" placeholder="Technology Solutions" value="${profile.tagline}" />
+        <!-- 2. CONTACT & LOCATION -->
+        <div class="card">
+          <div class="card-header" style="background: var(--color-bg-secondary); border-bottom: 1px solid var(--color-border-subtle);">
+            <div style="display:flex; align-items:center; gap:var(--space-3);">
+              <div style="color:var(--color-primary);">${Icons.mapPin(20)}</div>
+              <h3 class="card-title">${i18n.t('settings.contactDetails' as any)}</h3>
             </div>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="ep-email">${i18n.t('settings.email')}</label>
-              <input type="email" id="ep-email" class="form-control" placeholder="billing@company.com" value="${profile.email}" />
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="ep-email">${i18n.t('settings.email' as any)}</label>
+                <input type="email" id="ep-email" class="form-control" placeholder="billing@company.com" value="${profile.email}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ep-phone">${i18n.t('settings.phone' as any)}</label>
+                <input type="tel" id="ep-phone" class="form-control force-ltr" placeholder="+1-555-0100" value="${profile.phone}" />
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label" for="ep-phone">${i18n.t('settings.phone')}</label>
-              <input type="tel" id="ep-phone" class="form-control force-ltr" placeholder="+1-555-0100" value="${profile.phone}" />
+            <div class="form-group" style="margin-top:var(--space-4);">
+              <label class="form-label" for="ep-address">${i18n.t('settings.address' as any)}</label>
+              <input type="text" id="ep-address" class="form-control" placeholder="123 Business Ave" value="${profile.address}" />
             </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="ep-address">${i18n.t('settings.address')}</label>
-            <input type="text" id="ep-address" class="form-control" placeholder="123 Business Ave" value="${profile.address}" />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="ep-city">${i18n.t('settings.city')}</label>
-              <input type="text" id="ep-city" class="form-control" placeholder="New York" value="${profile.city}" />
+            <div class="form-row" style="margin-top:var(--space-4);">
+              <div class="form-group">
+                <label class="form-label" for="ep-city">${i18n.t('settings.city' as any)}</label>
+                <input type="text" id="ep-city" class="form-control" placeholder="New York" value="${profile.city}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ep-country">${i18n.t('settings.country' as any)}</label>
+                <input type="text" id="ep-country" class="form-control" placeholder="USA" value="${profile.country}" />
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label" for="ep-country">${i18n.t('settings.country')}</label>
-              <input type="text" id="ep-country" class="form-control" placeholder="USA" value="${profile.country}" />
+            <div class="form-row" style="margin-top:var(--space-4);">
+              <div class="form-group">
+                <label class="form-label" for="ep-website">${i18n.t('settings.website' as any)}</label>
+                <div style="position:relative;">
+                  <span style="position:absolute; left:var(--space-3); top:50%; transform:translateY(-50%); color:var(--color-text-tertiary);">${Icons.link(14)}</span>
+                  <input type="url" id="ep-website" class="form-control" style="padding-left:var(--space-8);" placeholder="https://company.com" value="${profile.website}" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ep-taxid">${i18n.t('settings.taxId' as any)}</label>
+                <input type="text" id="ep-taxid" class="form-control" placeholder="US-123456789" value="${profile.taxId}" />
+              </div>
             </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="ep-website">${i18n.t('settings.website')}</label>
-              <input type="url" id="ep-website" class="form-control" placeholder="https://company.com" value="${profile.website}" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="ep-taxid">${i18n.t('settings.taxId')}</label>
-              <input type="text" id="ep-taxid" class="form-control" placeholder="US-123456789" value="${profile.taxId}" />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="ep-default-tax">${i18n.t('settings.defaultTaxRate')}</label>
-              <input type="number" id="ep-default-tax" class="form-control" placeholder="0" min="0" max="100" step="0.01" value="${profile.defaultTaxRate ?? 0}" />
-              <span class="form-hint">${i18n.t('settings.defaultTaxHint')}</span>
-            </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="ep-currency">${i18n.t('settings.defaultCurrency')}</label>
-              <select id="ep-currency" class="form-control">
-                ${CURRENCIES.map((code) => `<option value="${code}" ${(profile.currency || 'USD') === code ? 'selected' : ''}>${code} — ${i18n.t(`currencies.${code}` as any)}</option>`).join('')}
-              </select>
-              <span class="form-hint">${i18n.t('settings.currencyHint')}</span>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="ep-pdf-lang">${i18n.t('settings.defaultPdfLanguage')}</label>
-              <select id="ep-pdf-lang" class="form-control">
-                <option value="en" ${profile.defaultPdfLanguage === 'en' ? 'selected' : ''}>English</option>
-                <option value="fr" ${profile.defaultPdfLanguage === 'fr' ? 'selected' : ''}>Français</option>
-                <option value="ar" ${profile.defaultPdfLanguage === 'ar' ? 'selected' : ''}>العربية</option>
-              </select>
-              <span class="form-hint">${i18n.t('settings.pdfLanguageHint')}</span>
-            </div>
-          </div>
-
-          <div style="display:flex;justify-content:flex-end;">
-            <button class="btn btn-primary" id="save-profile-btn">
-              ${Icons.check(16)} ${i18n.t('settings.saveProfile')}
-            </button>
           </div>
         </div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">${i18n.t('settings.appearance')}</h3>
-        </div>
-        <div class="card-body" style="display: flex; flex-direction: column; gap: var(--space-5);">
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: var(--space-6);">
           
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div>
-              <div style="font-weight: 500; margin-bottom: 4px;">${i18n.t('settings.language')}</div>
-              <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">${i18n.t('settings.selectLanguage')}</div>
-            </div>
-            <div id="settings-lang-switcher"></div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div>
-              <div style="font-weight: 500; margin-bottom: 4px;">${i18n.t('settings.darkMode')}</div>
-              <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">${i18n.t('settings.darkModeSubtitle')}</div>
-            </div>
-            <label class="toggle" aria-label="Toggle dark mode">
-              <input type="checkbox" class="toggle-input" id="dark-mode-toggle" ${themeManager.getTheme() === 'dark' ? 'checked' : ''} />
-              <span class="toggle-track"></span>
-            </label>
-          </div>
-
-          <div class="divider"></div>
-
-          <div>
-            <div style="font-weight: 500; margin-bottom: var(--space-3);">${i18n.t('settings.themePreview')}</div>
-            <div style="display: flex; gap: var(--space-3);">
-              <div id="theme-light" style="cursor: pointer; border: 2px solid ${themeManager.getTheme() === 'light' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-sm); padding: var(--space-2);">
-                <div style="background: #f8f7ff; border-radius: var(--radius-xs); padding: var(--space-3); height: 80px; display: flex; flex-direction: column; gap: 6px;">
-                  <div style="height: 8px; width: 60%; background: #9929ea; border-radius: 4px;"></div>
-                  <div style="height: 6px; width: 80%; background: #e5e0f5; border-radius: 4px;"></div>
-                  <div style="height: 6px; width: 70%; background: #e5e0f5; border-radius: 4px;"></div>
-                </div>
-                <div style="text-align: center; font-size: var(--font-size-xs); margin-top: var(--space-2); color: var(--color-text-secondary);">${i18n.t('settings.light')}</div>
+          <!-- 3. BILLING & INVOICING -->
+          <div class="card">
+            <div class="card-header" style="background: var(--color-bg-secondary); border-bottom: 1px solid var(--color-border-subtle);">
+              <div style="display:flex; align-items:center; gap:var(--space-3);">
+                <div style="color:var(--color-primary);">${Icons.invoices(20)}</div>
+                <h3 class="card-title">${i18n.t('nav.invoices' as any)}</h3>
               </div>
-              <div id="theme-dark" style="cursor: pointer; border: 2px solid ${themeManager.getTheme() === 'dark' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-sm); padding: var(--space-2);">
-                <div style="background: #0a0614; border-radius: var(--radius-xs); padding: var(--space-3); height: 80px; display: flex; flex-direction: column; gap: 6px;">
-                  <div style="height: 8px; width: 60%; background: #9929ea; border-radius: 4px;"></div>
-                  <div style="height: 6px; width: 80%; background: #2a1f45; border-radius: 4px;"></div>
-                  <div style="height: 6px; width: 70%; background: #2a1f45; border-radius: 4px;"></div>
+            </div>
+            <div class="card-body" style="display:flex; flex-direction:column; gap:var(--space-4);">
+              <div class="form-group">
+                <label class="form-label" for="ep-currency">${i18n.t('settings.defaultCurrency' as any)}</label>
+                <select id="ep-currency" class="form-control">
+                  ${CURRENCIES.map((code) => `<option value="${code}" ${(profile.currency || 'USD') === code ? 'selected' : ''}>${code} — ${i18n.t(`currencies.${code}` as any)}</option>`).join('')}
+                </select>
+                <span class="form-hint">${i18n.t('settings.currencyHint' as any)}</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ep-default-tax">${i18n.t('settings.defaultTaxRate' as any)}</label>
+                <div style="display:flex; align-items:center; gap:var(--space-2);">
+                   <input type="number" id="ep-default-tax" class="form-control" placeholder="0" min="0" max="100" step="0.01" value="${profile.defaultTaxRate ?? 0}" />
+                   <span style="font-weight:600; color:var(--color-text-tertiary);">%</span>
                 </div>
-                <div style="text-align: center; font-size: var(--font-size-xs); margin-top: var(--space-2); color: var(--color-text-secondary);">${i18n.t('settings.dark')}</div>
+                <span class="form-hint">${i18n.t('settings.defaultTaxHint' as any)}</span>
+              </div>
+              <div class="divider"></div>
+              <div class="form-group">
+                <label class="form-label" for="ep-pdf-lang">${i18n.t('settings.defaultPdfLanguage' as any)}</label>
+                <select id="ep-pdf-lang" class="form-control">
+                  <option value="en" ${profile.defaultPdfLanguage === 'en' ? 'selected' : ''}>🇺🇸 English</option>
+                  <option value="fr" ${profile.defaultPdfLanguage === 'fr' ? 'selected' : ''}>🇫🇷 Français</option>
+                  <option value="ar" ${profile.defaultPdfLanguage === 'ar' ? 'selected' : ''}>🇸🇦 العربية</option>
+                </select>
+                <span class="form-hint">${i18n.t('settings.pdfLanguageHint' as any)}</span>
               </div>
             </div>
           </div>
+
+          <!-- 4. APP PREFERENCES -->
+          <div class="card">
+            <div class="card-header" style="background: var(--color-bg-secondary); border-bottom: 1px solid var(--color-border-subtle);">
+              <div style="display:flex; align-items:center; gap:var(--space-3);">
+                <div style="color:var(--color-primary);">${Icons.settings(20)}</div>
+                <h3 class="card-title">${i18n.t('settings.appearance' as any)}</h3>
+              </div>
+            </div>
+            <div class="card-body" style="display:flex; flex-direction:column; gap:var(--space-5);">
+              
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-weight: 600; font-size:var(--font-size-sm); margin-bottom: 2px;">${i18n.t('settings.language' as any)}</div>
+                  <div style="font-size: var(--font-size-xs); color: var(--color-text-secondary);">${i18n.t('settings.selectLanguage' as any)}</div>
+                </div>
+                <div id="settings-lang-switcher"></div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-weight: 600; font-size:var(--font-size-sm); margin-bottom: 2px;">${i18n.t('settings.darkMode' as any)}</div>
+                  <div style="font-size: var(--font-size-xs); color: var(--color-text-secondary);">${i18n.t('settings.darkModeSubtitle' as any)}</div>
+                </div>
+                <label class="toggle" aria-label="Toggle dark mode">
+                  <input type="checkbox" class="toggle-input" id="dark-mode-toggle" ${themeManager.getTheme() === 'dark' ? 'checked' : ''} />
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div class="divider"></div>
+
+              <div>
+                <div style="font-weight: 600; font-size:var(--font-size-sm); margin-bottom: var(--space-3);">${i18n.t('settings.themePreview' as any)}</div>
+                <div style="display: flex; gap: var(--space-4);">
+                  <div id="theme-light" style="flex:1; cursor: pointer; border: 2px solid ${themeManager.getTheme() === 'light' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-2); transition: transform 0.2s;">
+                    <div style="background: #f8f7ff; border-radius: var(--radius-sm); padding: var(--space-3); height: 70px; display: flex; flex-direction: column; gap: 6px;">
+                      <div style="height: 8px; width: 60%; background: #9929ea; border-radius: 4px;"></div>
+                      <div style="height: 6px; width: 80%; background: #e5e0f5; border-radius: 4px;"></div>
+                    </div>
+                    <div style="text-align: center; font-size: 11px; font-weight:500; margin-top: var(--space-2); color: var(--color-text-secondary);">${i18n.t('settings.light' as any)}</div>
+                  </div>
+                  <div id="theme-dark" style="flex:1; cursor: pointer; border: 2px solid ${themeManager.getTheme() === 'dark' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-2); transition: transform 0.2s;">
+                    <div style="background: #0a0614; border-radius: var(--radius-sm); padding: var(--space-3); height: 70px; display: flex; flex-direction: column; gap: 6px;">
+                      <div style="height: 8px; width: 60%; background: #9929ea; border-radius: 4px;"></div>
+                      <div style="height: 6px; width: 80%; background: #2a1f45; border-radius: 4px;"></div>
+                    </div>
+                    <div style="text-align: center; font-size: 11px; font-weight:500; margin-top: var(--space-2); color: var(--color-text-secondary);">${i18n.t('settings.dark' as any)}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- 5. SYSTEM & DATA -->
+        <div class="card">
+          <div class="card-header" style="background: var(--color-bg-secondary); border-bottom: 1px solid var(--color-border-subtle);">
+            <div style="display:flex; align-items:center; gap:var(--space-3);">
+              <div style="color:var(--color-primary);">${Icons.database(20)}</div>
+              <h3 class="card-title">${i18n.t('settings.dataManagement' as any)}</h3>
+            </div>
+          </div>
+          <div class="card-body">
+            
+            ${isElectron ? `
+            <div style="padding:var(--space-4); background:var(--color-bg-secondary); border-radius:var(--radius-md); margin-bottom:var(--space-6); border:1px solid var(--color-border);">
+              <div style="display:flex; align-items:center; gap:var(--space-3); margin-bottom:var(--space-2);">
+                <div style="color:var(--color-info);">${Icons.info(16)}</div>
+                <div style="font-size:var(--font-size-sm); font-weight:600;">${i18n.t('settings.dataOnDisk' as any)}</div>
+              </div>
+              <div id="data-path" style="font-size:var(--font-size-xs); color:var(--color-text-tertiary); font-family:var(--font-mono); padding:var(--space-3); background:var(--color-surface); border-radius:var(--radius-sm); border:1px solid var(--color-border-subtle); word-break:break-all;">
+                ${i18n.t('common.loading' as any)}
+              </div>
+            </div>
+            ` : ''}
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6);">
+              
+              <!-- Export Card -->
+               <div style="display:flex; flex-direction:column; gap:var(--space-2); padding:var(--space-4); border:1px solid var(--color-border-subtle); border-radius:var(--radius-md);">
+                 <div style="color:var(--color-success);">${Icons.download(24)}</div>
+                 <div style="font-weight:600;">${i18n.t('settings.exportExcel' as any)}</div>
+                 <p style="font-size:var(--font-size-xs); color:var(--color-text-secondary); line-height:1.4;">
+                   ${isElectron ? i18n.t('settings.exportExcelSubtitleWin' as any) : i18n.t('settings.exportExcelSubtitleWeb' as any)}
+                 </p>
+                 <button class="btn btn-secondary btn-sm" id="export-btn" style="margin-top:auto;">
+                   ${Icons.download(14)} ${i18n.t('settings.exportData' as any)}
+                 </button>
+               </div>
+
+               <!-- Import Card -->
+               <div style="display:flex; flex-direction:column; gap:var(--space-2); padding:var(--space-4); border:1px solid var(--color-border-subtle); border-radius:var(--radius-md);">
+                 <div style="color:var(--color-info);">${Icons.upload(24)}</div>
+                 <div style="font-weight:600;">${i18n.t('settings.importExcel' as any)}</div>
+                 <p style="font-size:var(--font-size-xs); color:var(--color-text-secondary); line-height:1.4;">
+                   ${isElectron ? i18n.t('settings.importExcelSubtitleWin' as any) : i18n.t('settings.importExcelSubtitleWeb' as any)}
+                 </p>
+                 ${isElectron
+                   ? `<button class="btn btn-secondary btn-sm" id="import-btn" style="margin-top:auto;">${Icons.upload(14)} ${i18n.t('settings.importData' as any)}</button>`
+                   : `<label class="btn btn-secondary btn-sm" style="cursor:pointer; margin-top:auto;">${Icons.upload(14)} ${i18n.t('settings.importData' as any)}<input type="file" id="import-file" accept=".xlsx,.xls" style="display:none;" /></label>`
+                 }
+               </div>
+
+               <!-- Reset Card -->
+               <div style="display:flex; flex-direction:column; gap:var(--space-2); padding:var(--space-4); border:1px solid var(--color-error-subtle); background:var(--color-error-subtle-22); border-radius:var(--radius-md);">
+                 <div style="color:var(--color-error);">${Icons.alertTriangle(24)}</div>
+                 <div style="font-weight:600; color:var(--color-error);">${i18n.t('settings.clearAllData' as any)}</div>
+                 <p style="font-size:var(--font-size-xs); color:var(--color-text-secondary); line-height:1.4;">
+                   ${i18n.t('settings.clearAllDataSubtitle' as any)}
+                 </p>
+                 <button class="btn btn-ghost btn-sm" id="clear-btn" style="color:var(--color-error); border:1px solid rgba(239, 68, 68, 0.2); margin-top:auto;">
+                   ${Icons.trash(14)} ${i18n.t('common.delete' as any)}
+                 </button>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABOUT -->
+        <div style="text-align:center; padding:var(--space-8) 0; border-top:1px solid var(--color-border-subtle);">
+          <div style="font-size:var(--font-size-sm); font-weight:600; color:var(--color-text-primary);">${i18n.t('settings.about' as any)}</div>
+          <div style="font-size:var(--font-size-xs); color:var(--color-text-tertiary); margin-top:4px;">Version 1.0.0 · © 2024 Tijara App</div>
+        </div>
+
       </div>
+    `;
 
-      <!-- Data Management -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">${i18n.t('settings.dataManagement')}</h3>
-        </div>
-        <div class="card-body" style="display: flex; flex-direction: column; gap: var(--space-4);">
-
-          ${isElectron ? `
-          <div style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3); background: var(--color-bg-secondary); border-radius: var(--radius-sm);">
-            <span style="color: var(--color-primary); flex-shrink: 0; margin-top: 2px;">${Icons.info(16)}</span>
-            <div>
-              <div style="font-size: var(--font-size-sm); font-weight: 500; margin-bottom: 2px;">${i18n.t('settings.dataOnDisk')}</div>
-              <div id="data-path" style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); font-family: monospace; word-break: break-all;">${i18n.t('common.loading')}</div>
-            </div>
-          </div>
-          <div class="divider"></div>
-          ` : ''}
-
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3);">
-            <div>
-              <div style="font-weight: 500; margin-bottom: 4px;">${i18n.t('settings.exportExcel')}</div>
-              <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">${isElectron ? i18n.t('settings.exportExcelSubtitleWin') : i18n.t('settings.exportExcelSubtitleWeb')}</div>
-            </div>
-            <button class="btn btn-secondary" id="export-btn">
-              ${Icons.download(16)} ${i18n.t('settings.exportData')}
-            </button>
-          </div>
-
-          <div class="divider"></div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3);">
-            <div>
-              <div style="font-weight: 500; margin-bottom: 4px;">${i18n.t('settings.importExcel')}</div>
-              <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">${isElectron ? i18n.t('settings.importExcelSubtitleWin') : i18n.t('settings.importExcelSubtitleWeb')}</div>
-            </div>
-            ${isElectron
-              ? `<button class="btn btn-secondary" id="import-btn">${Icons.upload(16)} ${i18n.t('settings.importData')}</button>`
-              : `<label class="btn btn-secondary" style="cursor: pointer;">${Icons.upload(16)} ${i18n.t('settings.importData')}<input type="file" id="import-file" accept=".xlsx,.xls" style="display: none;" /></label>`
-            }
-          </div>
-
-          <div class="divider"></div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3);">
-            <div>
-              <div style="font-weight: 500; margin-bottom: 4px; color: var(--color-error);">${i18n.t('settings.clearAllData')}</div>
-              <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary);">${i18n.t('settings.clearAllDataSubtitle')}</div>
-            </div>
-            <button class="btn btn-danger" id="clear-data-btn">
-              ${Icons.trash(16)} ${i18n.t('settings.clearAllData')}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- About -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">${i18n.t('settings.about')}</h3>
-        </div>
-        <div class="card-body">
-          <div style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-4);">
-            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-primary);">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                <line x1="3" y1="6" x2="21" y2="6"/>
-                <path d="M16 10a4 4 0 0 1-8 0"/>
-              </svg>
-            </div>
-            <div>
-              <div style="font-size: var(--font-size-xl); font-weight: 700;">Tijara</div>
-              <div style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">Sales Management System</div>
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); font-size: var(--font-size-sm);">
-            <div style="color: var(--color-text-secondary);">${i18n.t('settings.version')}</div>
-            <div>1.0.0</div>
-            <div style="color: var(--color-text-secondary);">${i18n.t('settings.platform')}</div>
-            <div>${isElectron ? i18n.t('settings.desktop') : i18n.t('settings.web')}</div>
-            <div style="color: var(--color-text-secondary);">${i18n.t('settings.storage')}</div>
-            <div>${isElectron ? i18n.t('settings.appDataStorage') : i18n.t('settings.webStorage')}</div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  `;
-
-  // ── Enterprise Profile ──────────────────────────────────────────────────
-
-  let currentLogo = profile.logo;
-
-  // Logo upload
-  page.querySelector<HTMLInputElement>('#logo-input')?.addEventListener('change', (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      notifications.error(i18n.t('settings.logoSizeMsg' as any) || 'Logo file must be under 2 MB.');
-      return;
+    // ── Language Switcher ───────────────────────────────────────────────────
+    const langContainer = page.querySelector('#settings-lang-switcher');
+    if (langContainer) {
+      langContainer.appendChild(createLanguageSwitcher());
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      currentLogo = reader.result as string;
-      const preview = page.querySelector<HTMLElement>('#logo-preview')!;
-      preview.innerHTML = `<img src="${currentLogo}" alt="Logo" style="width:100%;height:100%;object-fit:contain;" />`;
-      preview.style.borderStyle = 'solid';
-      preview.style.borderColor = 'var(--color-primary)';
-    };
-    reader.readAsDataURL(file);
-  });
 
-  // Logo remove
-  page.querySelector('#logo-remove')?.addEventListener('click', () => {
-    currentLogo = '';
-    const preview = page.querySelector<HTMLElement>('#logo-preview')!;
-    preview.innerHTML = `<span style="color:var(--color-text-tertiary);">${Icons.upload(24)}</span>`;
-    preview.style.borderStyle = 'dashed';
-    preview.style.borderColor = 'var(--color-border)';
-  });
+    // ── Logo logic ──────────────────────────────────────────────────────────
+    const logoInput = page.querySelector<HTMLInputElement>('#logo-input')!;
+    const logoRemove = page.querySelector<HTMLButtonElement>('#logo-remove');
+    const logoPreview = page.querySelector<HTMLElement>('#logo-preview')!;
 
-  // Language switcher
-  page.querySelector('#settings-lang-switcher')?.appendChild(createLanguageSwitcher());
-
-  // Save profile
-  page.querySelector('#save-profile-btn')?.addEventListener('click', () => {
-    profileService.save({
-      name:           (page.querySelector('#ep-name')        as HTMLInputElement).value.trim(),
-      tagline:        (page.querySelector('#ep-tagline')     as HTMLInputElement).value.trim(),
-      email:          (page.querySelector('#ep-email')       as HTMLInputElement).value.trim(),
-      phone:          (page.querySelector('#ep-phone')       as HTMLInputElement).value.trim(),
-      address:        (page.querySelector('#ep-address')     as HTMLInputElement).value.trim(),
-      city:           (page.querySelector('#ep-city')        as HTMLInputElement).value.trim(),
-      country:        (page.querySelector('#ep-country')     as HTMLInputElement).value.trim(),
-      website:        (page.querySelector('#ep-website')     as HTMLInputElement).value.trim(),
-      taxId:          (page.querySelector('#ep-taxid')       as HTMLInputElement).value.trim(),
-      defaultTaxRate: parseFloat((page.querySelector('#ep-default-tax') as HTMLInputElement).value) || 0,
-      currency:       (page.querySelector('#ep-currency')    as HTMLSelectElement).value,
-      defaultPdfLanguage: (page.querySelector('#ep-pdf-lang') as HTMLSelectElement).value,
-      logo:           currentLogo,
-    });
-    notifications.success(i18n.t('settings.notifications.profileSaved' as any));
-  });
-
-  // ── Theme controls ──────────────────────────────────────────────────────
-
-  const toggle = page.querySelector<HTMLInputElement>('#dark-mode-toggle')!;
-  toggle.addEventListener('change', () => {
-    themeManager.setTheme(toggle.checked ? 'dark' : 'light');
-    updateThemePreviews();
-  });
-
-  page.querySelector('#theme-light')?.addEventListener('click', () => {
-    themeManager.setTheme('light');
-    toggle.checked = false;
-    updateThemePreviews();
-  });
-
-  page.querySelector('#theme-dark')?.addEventListener('click', () => {
-    themeManager.setTheme('dark');
-    toggle.checked = true;
-    updateThemePreviews();
-  });
-
-  function updateThemePreviews() {
-    const isDark = themeManager.getTheme() === 'dark';
-    const lightCard = page.querySelector<HTMLElement>('#theme-light');
-    const darkCard = page.querySelector<HTMLElement>('#theme-dark');
-    if (lightCard) lightCard.style.borderColor = !isDark ? 'var(--color-primary)' : 'var(--color-border)';
-    if (darkCard) darkCard.style.borderColor = isDark ? 'var(--color-primary)' : 'var(--color-border)';
-  }
-
-  // ── Data path (Electron only) ───────────────────────────────────────────
-
-  if (isElectron) {
-    getElectron()!.getDataPath().then((p) => {
-      const el = page.querySelector('#data-path');
-      if (el) el.textContent = p;
-    });
-  }
-
-  // ── Export ──────────────────────────────────────────────────────────────
-
-  page.querySelector('#export-btn')?.addEventListener('click', async () => {
-    const { repository } = await import('@data/excelRepository');
-    try {
-      await repository.exportToExcel();
-      notifications.success(isElectron ? i18n.t('settings.notifications.exportSuccess' as any) : i18n.t('settings.notifications.exportSuccess' as any));
-    } catch {
-      notifications.error(i18n.t('settings.notifications.exportFailed' as any));
-    }
-  });
-
-  // ── Import ──────────────────────────────────────────────────────────────
-
-  if (isElectron) {
-    page.querySelector('#import-btn')?.addEventListener('click', async () => {
-      const { repository } = await import('@data/excelRepository');
-      try {
-        await repository.importFromExcel();
-        notifications.success(i18n.t('settings.notifications.importSuccess' as any));
-        setTimeout(() => window.location.reload(), 1200);
-      } catch {
-        notifications.error(i18n.t('settings.notifications.importFailed' as any));
-      }
-    });
-  } else {
-    page.querySelector<HTMLInputElement>('#import-file')?.addEventListener('change', async (e) => {
+    logoInput.addEventListener('change', async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
-      const { repository } = await import('@data/excelRepository');
+
+      if (file.size > 2 * 1024 * 1024) {
+        notifications.error('Logo exceeds 2MB limit');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = ev.target?.result as string;
+        currentLogo = base64;
+        logoPreview.innerHTML = `<img src="${base64}" alt="Logo" style="width:100%; height:100%; object-fit:contain;" />`;
+        if (!page.querySelector('#logo-remove')) render(); // re-render to show remove button
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (logoRemove) {
+      logoRemove.addEventListener('click', () => {
+        currentLogo = '';
+        render();
+      });
+    }
+
+    // ── Theme logic ─────────────────────────────────────────────────────────
+    const darkToggle = page.querySelector<HTMLInputElement>('#dark-mode-toggle')!;
+    darkToggle.addEventListener('change', (e) => {
+      const isDark = (e.target as HTMLInputElement).checked;
+      themeManager.setTheme(isDark ? 'dark' : 'light');
+    });
+
+    page.querySelector('#theme-light')?.addEventListener('click', () => {
+      themeManager.setTheme('light');
+    });
+    page.querySelector('#theme-dark')?.addEventListener('click', () => {
+      themeManager.setTheme('dark');
+    });
+
+    // ── Save Profile ────────────────────────────────────────────────────────
+    page.querySelector('#save-profile-btn')?.addEventListener('click', () => {
+      const updated = {
+        name: page.querySelector<HTMLInputElement>('#ep-name')!.value.trim(),
+        tagline: page.querySelector<HTMLInputElement>('#ep-tagline')!.value.trim(),
+        email: page.querySelector<HTMLInputElement>('#ep-email')!.value.trim(),
+        phone: page.querySelector<HTMLInputElement>('#ep-phone')!.value.trim(),
+        address: page.querySelector<HTMLInputElement>('#ep-address')!.value.trim(),
+        city: page.querySelector<HTMLInputElement>('#ep-city')!.value.trim(),
+        country: page.querySelector<HTMLInputElement>('#ep-country')!.value.trim(),
+        website: page.querySelector<HTMLInputElement>('#ep-website')!.value.trim(),
+        taxId: page.querySelector<HTMLInputElement>('#ep-taxid')!.value.trim(),
+        defaultTaxRate: parseFloat(page.querySelector<HTMLInputElement>('#ep-default-tax')!.value) || 0,
+        currency: page.querySelector<HTMLSelectElement>('#ep-currency')!.value,
+        defaultPdfLanguage: page.querySelector<HTMLSelectElement>('#ep-pdf-lang')!.value,
+        logo: currentLogo,
+      };
+
+      profileService.save(updated);
+      notifications.success(i18n.t('settings.saveProfileSuccess' as any) || 'Profile updated');
+    });
+
+    // ── Data Path ───────────────────────────────────────────────────────────
+    if (isElectron) {
+      getElectron()!.getDataPath()
+        .then((path: string) => {
+          const pathEl = page.querySelector('#data-path');
+          if (pathEl) pathEl.textContent = path;
+        });
+    }
+
+    // ── Export/Import ───────────────────────────────────────────────────────
+    page.querySelector('#export-btn')?.addEventListener('click', async () => {
+       await repository.exportToExcel();
+       if (isElectron) notifications.success('Data exported successfully');
+    });
+
+    const handleImportFile = async (file: File) => {
       try {
         await repository.importFromExcel(file);
-        notifications.success(i18n.t('settings.notifications.importSuccess' as any));
-        setTimeout(() => window.location.reload(), 1200);
+        notifications.success('Data imported successfully. Reloading...');
+        setTimeout(() => window.location.reload(), 1500);
       } catch {
-        notifications.error(i18n.t('settings.notifications.importFailed' as any));
+        notifications.error('Failed to import data. Invalid file format.');
       }
-    });
-  }
+    };
 
-  // ── Clear data ──────────────────────────────────────────────────────────
+    if (isElectron) {
+      page.querySelector('#import-btn')?.addEventListener('click', async () => {
+        await repository.importFromExcel();
+        notifications.success('Data imported successfully. Reloading...');
+        setTimeout(() => window.location.reload(), 1500);
+      });
+    } else {
+      page.querySelector<HTMLInputElement>('#import-file')?.addEventListener('change', (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) handleImportFile(file);
+      });
+    }
 
-  page.querySelector('#clear-data-btn')?.addEventListener('click', () => {
-    import('@shared/components/modal').then(({ confirmDialog }) => {
-      confirmDialog(
-        i18n.t('settings.modals.clearDataTitle' as any),
-        i18n.t('settings.modals.clearDataMsg' as any),
-        async () => {
-          const electron = getElectron();
-          if (electron) {
-            await electron.writeData('');
-          } else {
-            localStorage.removeItem('tijara-data');
+    // ── Clear Data ──────────────────────────────────────────────────────────
+    page.querySelector('#clear-btn')?.addEventListener('click', () => {
+      import('@shared/components/modal').then(({ openModal }) => {
+        const content = document.createElement('div');
+        content.innerHTML = `
+          <div style="display:flex; flex-direction:column; align-items:center; gap:var(--space-4); text-align:center; padding:var(--space-2) 0;">
+            <div style="width:56px; height:56px; border-radius:var(--radius-full); background:var(--color-error-subtle); color:var(--color-error); display:flex; align-items:center; justify-content:center;">
+              ${Icons.alertTriangle(24)}
+            </div>
+            <p style="color:var(--color-text-secondary);">${i18n.t('settings.clearAllDataSubtitle' as any)}</p>
+          </div>
+        `;
+        openModal({
+          title: i18n.t('settings.clearAllData' as any),
+          content,
+          confirmText: i18n.t('common.delete' as any),
+          confirmClass: 'btn-danger',
+          onConfirm: () => {
+            localStorage.clear();
+            notifications.success('All data cleared. Resetting...');
+            setTimeout(() => window.location.reload(), 1500);
           }
-          notifications.success(i18n.t('settings.notifications.clearedSuccess' as any));
-          setTimeout(() => window.location.reload(), 1500);
-        },
-        i18n.t('settings.modals.clearDataTitle' as any),
-        'btn-danger'
-      );
+        });
+      });
     });
-  });
+  };
+
+  render();
+  themeManager.subscribe(render);
+  i18n.onLanguageChange(render);
 
   return page;
 }

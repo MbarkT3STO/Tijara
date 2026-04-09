@@ -9,7 +9,6 @@ import { router } from '@core/router';
 import { Icons } from './icons';
 import { getInitials } from '@shared/utils/helpers';
 import { alertService } from '@services/alertService';
-import { createLanguageSwitcher } from './languageSwitcher';
 import { i18n } from '@core/i18n';
 import type { User } from '@core/types';
 import type { SystemAlert } from '@services/alertService';
@@ -73,16 +72,12 @@ export function createTopbar(
   themeBtn.addEventListener('click', () => { themeManager.toggle(); updateThemeIcon(); });
   themeManager.subscribe(updateThemeIcon);
 
-  // Language switcher
-  const langSwitcher = createLanguageSwitcher();
-
   // Notifications bell
   const bellWrapper = buildBellButton();
 
   // User menu trigger
   const userTrigger = buildUserTrigger(currentUser);
 
-  right.appendChild(langSwitcher);
   right.appendChild(themeBtn);
   right.appendChild(bellWrapper);
   right.appendChild(userTrigger);

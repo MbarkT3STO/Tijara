@@ -65,6 +65,7 @@
     "subtitle": "Manage your application preferences and data.",
     "enterpriseProfile": "Enterprise Profile",
     "enterpriseSubtitle": "Appears on all invoices",
+    "contactDetails": "Contact & Location",
     "companyLogo": "Company Logo",
     "logoHint": "PNG, JPG or SVG · Max 2 MB · Recommended 400x200px",
     "companyName": "Company Name",
