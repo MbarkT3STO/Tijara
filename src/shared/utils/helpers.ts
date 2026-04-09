@@ -157,3 +157,29 @@ export function formatPercent(value: number, decimals = 1, showSign = true, lang
   const sign = showSign ? (value >= 0 ? '+' : '-') : (value < 0 ? '-' : '');
   return `${sign}${formatted}%`;
 }
+
+const AUTO_NOTE_PREFIX = '__auto__:';
+
+/**
+ * Encode a system-generated movement note as a translatable token.
+ * Format: __auto__:<key>:<ref>
+ */
+export function autoNote(key: string, ref: string): string {
+  return `${AUTO_NOTE_PREFIX}${key}:${ref}`;
+}
+
+/**
+ * Resolve a movement note for display.
+ * If it's an auto-generated token, translate it; otherwise return as-is.
+ */
+export function resolveMovementNote(note: string | undefined): string {
+  if (!note) return '—';
+  if (!note.startsWith(AUTO_NOTE_PREFIX)) return note;
+
+  const body = note.slice(AUTO_NOTE_PREFIX.length);
+  const colonIdx = body.indexOf(':');
+  const key = colonIdx === -1 ? body : body.slice(0, colonIdx);
+  const ref = colonIdx === -1 ? '' : body.slice(colonIdx + 1);
+
+  return i18n.t(`inventory.autoNotes.${key}` as any, { ref });
+}

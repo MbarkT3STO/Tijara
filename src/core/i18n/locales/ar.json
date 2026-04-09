@@ -278,8 +278,27 @@
       "newStockLevel": "مستوى المخزون الجديد",
       "reason": "السبب / ملاحظات",
       "poNumber": "رقم طلب الشراء / المرجع",
+      "adjustFailed": "فشل التعديل. المنتج غير موجود.",
+      "restockFailed": "فشل إعادة التموين. المنتج غير موجود.",
+      "reorderSaved": "تم حفظ إعدادات إعادة الطلب.",
+      "qtyPlaceholder": "مثال: -5 أو +10",
       "suggestedQty": "الكمية المقترحة: {{count}}",
       "selectProduct": "اختر المنتج..."
+    },
+    "autoNotes": {
+      "soldViaOrder": "تم البيع عبر الطلب {{ref}}",
+      "stockRestoredCancelled": "تمت استعادة المخزون — تم إلغاء الطلب {{ref}}",
+      "stockRedecrementedReactivated": "تم خصم المخزون مجدداً — تم إعادة تفعيل الطلب {{ref}}",
+      "stockRestoredDeleted": "تمت استعادة المخزون — تم حذف الطلب {{ref}}",
+      "itemEditRestoring": "تعديل الصنف — استعادة الكمية القديمة ({{ref}})",
+      "itemEditApplying": "تعديل الصنف — تطبيق الكمية الجديدة ({{ref}})",
+      "receivedViaPO": "تم الاستلام عبر طلب الشراء {{ref}}",
+      "stockReversedUnreceived": "تم عكس المخزون — طلب الشراء {{ref}} غير مستلم",
+      "stockReversedPODeleted": "تم عكس المخزون — تم حذف طلب الشراء {{ref}}",
+      "stockReversedReturnUnapproved": "تم عكس المخزون — تم إلغاء الموافقة على المرتجع {{ref}}",
+      "stockReversedReturnDeleted": "تم عكس المخزون — تم حذف المرتجع {{ref}}",
+      "returnedVia": "تم الإرجاع عبر {{ref}}",
+      "initialStock": "مخزون أولي عند إنشاء المنتج"
     }
   },
   "products": {

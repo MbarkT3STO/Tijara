@@ -7,7 +7,7 @@
 import { repository } from '@data/excelRepository';
 import { inventoryService } from './inventoryService';
 import type { Purchase, PurchaseItem } from '@core/types';
-import { generateId, getCurrentISODate } from '@shared/utils/helpers';
+import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';
 
 let poCounter = 1000;
 
@@ -78,7 +78,7 @@ export const purchaseService = {
           'adjustment',
           -item.quantity,
           prev.poNumber,
-          `Stock reversed — PO ${prev.poNumber} un-received`
+          autoNote('stockReversedUnreceived', prev.poNumber)
         );
       });
     }
@@ -116,7 +116,7 @@ export const purchaseService = {
           'adjustment',
           -item.quantity,
           purchase.poNumber,
-          `Stock reversed — PO ${purchase.poNumber} deleted`
+          autoNote('stockReversedPODeleted', purchase.poNumber)
         );
       });
     }
@@ -159,7 +159,7 @@ export const purchaseService = {
         'purchase',
         item.quantity,
         purchase.poNumber,
-        `Received via PO ${purchase.poNumber}`
+        autoNote('receivedViaPO', purchase.poNumber)
       );
     });
   },

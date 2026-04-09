@@ -277,8 +277,27 @@
       "newStockLevel": "New Stock Level",
       "reason": "Reason / Notes",
       "poNumber": "PO / Reference Number",
+      "adjustFailed": "Adjustment failed. Product not found.",
+      "restockFailed": "Restock failed. Product not found.",
+      "reorderSaved": "Reorder settings saved.",
+      "qtyPlaceholder": "e.g. -5 or +10",
       "suggestedQty": "Suggested quantity: {{count}}",
       "selectProduct": "Select product..."
+    },
+    "autoNotes": {
+      "soldViaOrder": "Sold via order {{ref}}",
+      "stockRestoredCancelled": "Stock restored — order {{ref}} cancelled",
+      "stockRedecrementedReactivated": "Stock re-decremented — order {{ref}} reactivated",
+      "stockRestoredDeleted": "Stock restored — order {{ref}} deleted",
+      "itemEditRestoring": "Item edit — restoring old qty ({{ref}})",
+      "itemEditApplying": "Item edit — applying new qty ({{ref}})",
+      "receivedViaPO": "Received via PO {{ref}}",
+      "stockReversedUnreceived": "Stock reversed — PO {{ref}} un-received",
+      "stockReversedPODeleted": "Stock reversed — PO {{ref}} deleted",
+      "stockReversedReturnUnapproved": "Stock reversed — return {{ref}} un-approved",
+      "stockReversedReturnDeleted": "Stock reversed — return {{ref}} deleted",
+      "returnedVia": "Returned via {{ref}}",
+      "initialStock": "Initial stock on product creation"
     }
   },
   "products": {

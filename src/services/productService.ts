@@ -5,7 +5,7 @@
 import { repository } from '@data/excelRepository';
 import { inventoryService } from './inventoryService';
 import type { Product } from '@core/types';
-import { generateId, getCurrentISODate } from '@shared/utils/helpers';
+import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';
 
 export const productService = {
   getAll(): Product[] {
@@ -39,7 +39,7 @@ export const productService = {
         'initial',
         product.stock,
         undefined,
-        'Initial stock on product creation'
+        autoNote('initialStock', '')
       );
     }
 

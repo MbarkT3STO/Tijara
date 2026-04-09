@@ -6,7 +6,7 @@
 import { repository } from '@data/excelRepository';
 import { inventoryService } from './inventoryService';
 import type { Sale, OrderItem } from '@core/types';
-import { generateId, getCurrentISODate } from '@shared/utils/helpers';
+import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';
 
 let orderCounter = 1000;
 
@@ -52,7 +52,7 @@ export const saleService = {
           'sale',
           -item.quantity,
           sale.orderNumber,
-          `Sold via order ${sale.orderNumber}`
+          autoNote('soldViaOrder', sale.orderNumber)
         );
       });
     }
@@ -71,7 +71,7 @@ export const saleService = {
           'return',
           item.quantity,
           prev.orderNumber,
-          `Stock restored – order ${prev.orderNumber} cancelled`
+          autoNote('stockRestoredCancelled', prev.orderNumber)
         );
       });
     }
@@ -84,7 +84,7 @@ export const saleService = {
           'sale',
           -item.quantity,
           prev.orderNumber,
-          `Stock re-decremented – order ${prev.orderNumber} reactivated`
+          autoNote('stockRedecrementedReactivated', prev.orderNumber)
         );
       });
     }
@@ -111,7 +111,7 @@ export const saleService = {
           'return',
           item.quantity,
           sale.orderNumber,
-          `Stock restored – order ${sale.orderNumber} deleted`
+          autoNote('stockRestoredDeleted', sale.orderNumber)
         );
       });
     }

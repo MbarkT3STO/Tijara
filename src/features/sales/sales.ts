@@ -9,7 +9,7 @@ import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, autoNote } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import type { Sale, OrderItem, Product } from '@core/types';
@@ -676,11 +676,11 @@ function openSaleEditModal(sale: Sale, onSave: () => void): void {
         import('@services/inventoryService').then(({ inventoryService }) => {
           // Restore old items
           sale.items.forEach((item) => {
-            inventoryService.recordMovement(item.productId, 'return', item.quantity, sale.orderNumber, 'Item edit – restoring old qty');
+            inventoryService.recordMovement(item.productId, 'return', item.quantity, sale.orderNumber, autoNote('itemEditRestoring', sale.orderNumber));
           });
           // Decrement new items
           items.forEach((item) => {
-            inventoryService.recordMovement(item.productId, 'sale', -item.quantity, sale.orderNumber, 'Item edit – applying new qty');
+            inventoryService.recordMovement(item.productId, 'sale', -item.quantity, sale.orderNumber, autoNote('itemEditApplying', sale.orderNumber));
           });
         });
       }

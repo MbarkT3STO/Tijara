@@ -7,7 +7,7 @@
 import { repository } from '@data/excelRepository';
 import { inventoryService } from './inventoryService';
 import type { Return, ReturnItem } from '@core/types';
-import { generateId, getCurrentISODate } from '@shared/utils/helpers';
+import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';
 
 let returnCounter = 1000;
 
@@ -89,7 +89,7 @@ export const returnService = {
           'adjustment',
           -item.quantity,
           prev.returnNumber,
-          `Stock reversed — return ${prev.returnNumber} un-approved`
+          autoNote('stockReversedReturnUnapproved', prev.returnNumber)
         );
       });
     }
@@ -120,7 +120,7 @@ export const returnService = {
           'adjustment',
           -item.quantity,
           ret.returnNumber,
-          `Stock reversed — return ${ret.returnNumber} deleted`
+          autoNote('stockReversedReturnDeleted', ret.returnNumber)
         );
       });
     }
@@ -141,7 +141,7 @@ export const returnService = {
         item.productId,
         item.quantity,
         ret.returnNumber,
-        `Returned via ${ret.returnNumber} — ${ret.reason.replace(/_/g, ' ')}`
+        autoNote('returnedVia', ret.returnNumber)
       );
     });
   },

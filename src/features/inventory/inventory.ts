@@ -8,7 +8,7 @@ import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
 import { openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDateTime, debounce } from '@shared/utils/helpers';
+import { formatCurrency, formatDateTime, debounce, resolveMovementNote } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { StockMovement, StockMovementType, Product } from '@core/types';
 
@@ -345,7 +345,7 @@ function buildHTML(state: State): string {
                       <td style="color:var(--color-text-secondary);">${m.stockBefore}</td>
                       <td style="font-weight:500;">${m.stockAfter}</td>
                       <td style="color:var(--color-text-secondary);">${m.reference ? `<code style="font-size:var(--font-size-xs);background:var(--color-bg-secondary);padding:2px 6px;border-radius:var(--radius-xs);">${m.reference}</code>` : '—'}</td>
-                      <td style="color:var(--color-text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.notes ?? ''}">${m.notes ?? '—'}</td>
+                      <td style="color:var(--color-text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${resolveMovementNote(m.notes)}">${resolveMovementNote(m.notes)}</td>
                     </tr>`;
                 }).join('')
             }
@@ -389,7 +389,7 @@ function openAdjustModal(onSave: () => void): void {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label required" for="adj-qty">${i18n.t('inventory.qtyChange')}</label>
-        <input type="number" id="adj-qty" class="form-control" placeholder="e.g. -5 o +10" step="1" />
+        <input type="number" id="adj-qty" class="form-control" placeholder="${i18n.t('inventory.modals.qtyPlaceholder')}" step="1" />
       </div>
       <div class="form-group">
         <label class="form-label" for="adj-preview">${i18n.t('inventory.modals.newStockLevel')}</label>
@@ -440,7 +440,7 @@ function openAdjustModal(onSave: () => void): void {
         notifications.success(`${i18n.t('inventory.type.adjustment')}: ${product.name} → ${result.stockAfter} ${product.unit}`);
         onSave();
       } else {
-        showModalError(form, 'Adjustment failed. Product not found.');
+        showModalError(form, i18n.t('inventory.modals.adjustFailed'));
         return false;
       }
     },
@@ -502,7 +502,7 @@ function openRestockModal(onSave: () => void, preselected?: Product): void {
         notifications.success(`${i18n.t('inventory.restock')}: ${product.name} +${qty} → ${result.stockAfter} ${product.unit}`);
         onSave();
       } else {
-        showModalError(form, 'Restock failed. Product not found.');
+        showModalError(form, i18n.t('inventory.modals.restockFailed'));
         return false;
       }
     },
@@ -550,7 +550,7 @@ function openReorderSettingsModal(onSave: () => void): void {
         const qty = parseInt(qtyInp.value) || 0;
         inventoryService.updateReorderSettings(id, point, qty);
       });
-      notifications.success('Reorder settings saved.');
+      notifications.success(i18n.t('inventory.modals.reorderSaved'));
       onSave();
     },
   });

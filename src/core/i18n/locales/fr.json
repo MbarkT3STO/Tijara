@@ -45,7 +45,7 @@
     "upload": "Téléverser",
     "remove": "Retirer",
     "all": "Tout",
-    "notes": "Par remarques",
+    "notes": "Notes",
     "amount": "Montant",
     "showing": "Affichage de",
     "net": "Net",
@@ -256,6 +256,7 @@
     "reference": "Référence",
     "product": "Produit",
     "category": "Catégorie",
+    "notes": "Notes",
     "allTypes": "Tous les types",
     "type": {
       "purchase": "Achat",
@@ -277,8 +278,27 @@
       "newStockLevel": "Nouveau niveau de stock",
       "reason": "Raison / Notes",
       "poNumber": "N° de bon de commande / Référence",
+      "adjustFailed": "Échec de l'ajustement. Produit introuvable.",
+      "restockFailed": "Échec du réapprovisionnement. Produit introuvable.",
+      "reorderSaved": "Paramètres de réapprovisionnement enregistrés.",
+      "qtyPlaceholder": "ex. -5 ou +10",
       "suggestedQty": "Quantité suggérée : {{count}}",
       "selectProduct": "Sélectionner un produit..."
+    },
+    "autoNotes": {
+      "soldViaOrder": "Vendu via la commande {{ref}}",
+      "stockRestoredCancelled": "Stock restauré — commande {{ref}} annulée",
+      "stockRedecrementedReactivated": "Stock re-décrémenté — commande {{ref}} réactivée",
+      "stockRestoredDeleted": "Stock restauré — commande {{ref}} supprimée",
+      "itemEditRestoring": "Modification article — restauration ancienne qté ({{ref}})",
+      "itemEditApplying": "Modification article — application nouvelle qté ({{ref}})",
+      "receivedViaPO": "Reçu via BC {{ref}}",
+      "stockReversedUnreceived": "Stock annulé — BC {{ref}} non reçu",
+      "stockReversedPODeleted": "Stock annulé — BC {{ref}} supprimé",
+      "stockReversedReturnUnapproved": "Stock annulé — retour {{ref}} désapprouvé",
+      "stockReversedReturnDeleted": "Stock annulé — retour {{ref}} supprimé",
+      "returnedVia": "Retourné via {{ref}}",
+      "initialStock": "Stock initial à la création du produit"
     }
   },
   "products": {
