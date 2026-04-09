@@ -173,7 +173,7 @@ function buildHTML(state: State): string {
               <th>${i18n.t('products.price')}</th>
               <th>${i18n.t('products.cost')}</th>
               <th>${i18n.t('products.stock')}</th>
-              <th>${i18n.t('reports.margin' as any)}</th>
+              <th>${i18n.t('products.margin' as any)}</th>
               <th>${i18n.t('common.actions')}</th>
             </tr>
           </thead>

@@ -288,6 +288,7 @@
     "cost": "Coût",
     "stock": "Stock",
     "unit": "Unité",
+    "margin": "Marge",
     "allCategories": "Toutes les catégories",
     "modals": {
       "addTitle": "Ajouter un produit",

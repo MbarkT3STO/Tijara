@@ -291,6 +291,7 @@
     "cost": "التكلفة",
     "stock": "المخزون",
     "unit": "الوحدة",
+    "margin": "الهامش",
     "allCategories": "جميع الفئات",
     "modals": {
       "addTitle": "إضافة منتج",
