@@ -8,6 +8,8 @@ import type { Invoice, EnterpriseProfile } from '@core/types';
 import { profileService } from '@services/profileService';
 import { formatCurrency, formatDate } from './helpers';
 import type { ElectronAPI } from '../../../electron/preload';
+import { i18n } from '@core/i18n';
+import type { Language } from '@core/i18n/types';
 
 function getElectron(): ElectronAPI | null {
   return (window as unknown as { electron?: ElectronAPI }).electron ?? null;
@@ -19,9 +21,15 @@ function getElectron(): ElectronAPI | null {
 export function buildInvoiceHTML(invoice: Invoice): string {
   const profile  = profileService.get();
   const currency = profile.currency || 'USD';
+  const pdfLang  = (profile.defaultPdfLanguage || 'en') as Language;
+  const dir      = i18n.getDirectionFor(pdfLang);
 
-  /** Currency-aware formatter for this invoice */
-  const fmt = (n: number) => formatCurrency(n, currency);
+  /** Locale-aware translator for this PDF */
+  const t = (key: any, vars?: any) => i18n.tFor(pdfLang, key, vars);
+
+  /** Locale-aware formatters for this invoice */
+  const fmt = (n: number) => formatCurrency(n, currency, pdfLang);
+  const dfmt = (d: string) => formatDate(d, pdfLang);
 
   const statusColor: Record<string, string> = {
     draft: '#6b7280',
@@ -46,29 +54,32 @@ export function buildInvoiceHTML(invoice: Invoice): string {
     .join('');
 
   const brandBlock = buildBrandBlock(profile);
-  const fromBlock  = buildFromBlock(profile);
+  const fromBlock  = buildFromBlock(profile, pdfLang);
 
   const netDays = Math.round(
     (new Date(invoice.dueDate).getTime() - new Date(invoice.createdAt).getTime()) / 86400000
   );
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${pdfLang}" dir="${dir}">
 <head>
   <meta charset="UTF-8" />
-  <title>Invoice ${invoice.invoiceNumber}</title>
+  <title>${t('invoices.invoiceNumber')} ${invoice.invoiceNumber}</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 13px; color: #111827; background: #fff;
       padding: 48px; line-height: 1.5;
+      direction: ${dir};
+      text-align: ${dir === 'rtl' ? 'right' : 'left'};
     }
     .header {
       display: flex; justify-content: space-between; align-items: flex-start;
       margin-bottom: 40px; padding-bottom: 24px; border-bottom: 2px solid #9929ea;
+      flex-direction: ${dir === 'rtl' ? 'row-reverse' : 'row'};
     }
-    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand { display: flex; align-items: center; gap: 14px; flex-direction: ${dir === 'rtl' ? 'row-reverse' : 'row'}; }
     .brand-logo {
       max-height: 56px; max-width: 160px;
       object-fit: contain; display: block;
@@ -80,7 +91,7 @@ export function buildInvoiceHTML(invoice: Invoice): string {
     }
     .brand-name { font-size: 24px; font-weight: 700; color: #9929ea; letter-spacing: -0.02em; }
     .brand-tagline { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
-    .invoice-meta { text-align: right; }
+    .invoice-meta { text-align: ${dir === 'rtl' ? 'left' : 'right'}; }
     .invoice-number { font-size: 22px; font-weight: 700; color: #111827; }
     .invoice-date { font-size: 12px; color: #6b7280; margin-top: 4px; }
     .status-badge {
@@ -89,7 +100,7 @@ export function buildInvoiceHTML(invoice: Invoice): string {
       text-transform: uppercase; letter-spacing: 0.05em;
       background: ${color}22; color: ${color}; border: 1px solid ${color}44;
     }
-    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px; }
+    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px; direction: ${dir}; }
     .party-label {
       font-size: 10px; font-weight: 600; text-transform: uppercase;
       letter-spacing: 0.08em; color: #9ca3af; margin-bottom: 6px;
@@ -99,30 +110,32 @@ export function buildInvoiceHTML(invoice: Invoice): string {
     .dates-row {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
       background: #f9fafb; border-radius: 8px; padding: 16px 20px; margin-bottom: 32px;
+      direction: ${dir};
     }
     .date-item-label {
       font-size: 10px; font-weight: 600; text-transform: uppercase;
       letter-spacing: 0.06em; color: #9ca3af; margin-bottom: 4px;
     }
     .date-item-value { font-size: 13px; font-weight: 500; color: #111827; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; direction: ${dir}; }
     thead tr { background: #9929ea; color: white; }
     thead th {
       padding: 10px 14px; font-size: 11px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.05em; text-align: left;
+      text-transform: uppercase; letter-spacing: 0.05em; text-align: ${dir === 'rtl' ? 'right' : 'left'};
     }
     thead th.center { text-align: center; }
-    thead th.right  { text-align: right; }
-    tbody td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f3f4f6; }
+    thead th.right  { text-align: ${dir === 'rtl' ? 'left' : 'right'}; }
+    tbody td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f3f4f6; text-align: ${dir === 'rtl' ? 'right' : 'left'}; }
     td.center { text-align: center; }
-    td.right  { text-align: right; }
+    td.right  { text-align: ${dir === 'rtl' ? 'left' : 'right'}; }
     .row-even { background: #fff; }
     .row-odd  { background: #faf5ff; }
-    .totals { display: flex; justify-content: flex-end; margin-bottom: 32px; }
+    .totals { display: flex; justify-content: flex-end; margin-bottom: 32px; flex-direction: ${dir === 'rtl' ? 'row-reverse' : 'row'}; }
     .totals-box { width: 280px; }
     .totals-row {
       display: flex; justify-content: space-between;
       padding: 6px 0; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6;
+      flex-direction: ${dir === 'rtl' ? 'row-reverse' : 'row'};
     }
     .totals-row.grand {
       font-size: 16px; font-weight: 700; color: #9929ea;
@@ -131,8 +144,8 @@ export function buildInvoiceHTML(invoice: Invoice): string {
     .totals-row.paid-row { color: #22c55e; font-weight: 500; }
     .totals-row.due-row  { color: ${invoice.amountDue > 0 ? '#ef4444' : '#22c55e'}; font-weight: 600; }
     .notes {
-      background: #f9fafb; border-left: 3px solid #9929ea;
-      border-radius: 0 6px 6px 0; padding: 12px 16px; margin-bottom: 32px;
+      background: #f9fafb; border-${dir === 'rtl' ? 'right' : 'left'}: 3px solid #9929ea;
+      border-radius: ${dir === 'rtl' ? '6px 0 0 6px' : '0 6px 6px 0'}; padding: 12px 16px; margin-bottom: 32px;
     }
     .notes-label {
       font-size: 10px; font-weight: 600; text-transform: uppercase;
@@ -143,6 +156,7 @@ export function buildInvoiceHTML(invoice: Invoice): string {
       text-align: center; font-size: 11px; color: #9ca3af;
       padding-top: 24px; border-top: 1px solid #e5e7eb;
     }
+    .force-ltr { direction: ltr !important; unicode-bidi: isolate; display: inline-block; }
     @media print {
       body { padding: 24px; }
       @page { margin: 16mm; size: A4; }
@@ -155,45 +169,45 @@ export function buildInvoiceHTML(invoice: Invoice): string {
     ${brandBlock}
     <div class="invoice-meta">
       <div class="invoice-number">${invoice.invoiceNumber}</div>
-      <div class="invoice-date">Issued: ${formatDate(invoice.createdAt)}</div>
-      <div class="status-badge">${invoice.status.toUpperCase()}</div>
+      <div class="invoice-date">${t('invoices.modals.issued')}: ${dfmt(invoice.createdAt)}</div>
+      <div class="status-badge">${t(`invoices.statuses.${invoice.status}` as any).toUpperCase()}</div>
     </div>
   </div>
 
   <div class="parties">
     <div>
-      <div class="party-label">Bill To</div>
+      <div class="party-label">${t('invoices.modals.billTo')}</div>
       <div class="party-name">${invoice.customerName}</div>
     </div>
     <div>
-      <div class="party-label">From</div>
+      <div class="party-label">${t('invoices.modals.from')}</div>
       ${fromBlock}
     </div>
   </div>
 
   <div class="dates-row">
     <div>
-      <div class="date-item-label">Invoice Date</div>
-      <div class="date-item-value">${formatDate(invoice.createdAt)}</div>
+      <div class="date-item-label">${t('invoices.modals.invoiceDate')}</div>
+      <div class="date-item-value">${dfmt(invoice.createdAt)}</div>
     </div>
     <div>
-      <div class="date-item-label">Due Date</div>
-      <div class="date-item-value">${formatDate(invoice.dueDate)}</div>
+      <div class="date-item-label">${t('invoices.dueDate')}</div>
+      <div class="date-item-value">${dfmt(invoice.dueDate)}</div>
     </div>
     <div>
-      <div class="date-item-label">Payment Terms</div>
-      <div class="date-item-value">Net ${netDays > 0 ? netDays : 30} days</div>
+      <div class="date-item-label">${t('invoices.modals.paymentTermsLabel')}</div>
+      <div class="date-item-value">${t('common.net' as any)} ${netDays > 0 ? netDays : 30} ${t('common.days' as any)}</div>
     </div>
   </div>
 
   <table>
     <thead>
       <tr>
-        <th>Description</th>
-        <th class="center">Qty</th>
-        <th class="right">Unit Price</th>
-        <th class="center">Discount</th>
-        <th class="right">Amount</th>
+        <th>${t('common.description' as any)}</th>
+        <th class="center">${t('common.quantity' as any)}</th>
+        <th class="right">${t('products.price')}</th>
+        <th class="center">${t('sales.discount')}</th>
+        <th class="right">${t('common.amount' as any)}</th>
       </tr>
     </thead>
     <tbody>${itemRows}</tbody>
@@ -201,28 +215,28 @@ export function buildInvoiceHTML(invoice: Invoice): string {
 
   <div class="totals">
     <div class="totals-box">
-      <div class="totals-row"><span>Subtotal</span><span>${fmt(invoice.subtotal)}</span></div>
-      ${invoice.discount > 0 ? `<div class="totals-row"><span>Discount</span><span>-${fmt(invoice.discount)}</span></div>` : ''}
-      <div class="totals-row"><span>Tax (${invoice.taxRate}%)</span><span>${fmt(invoice.taxAmount)}</span></div>
-      <div class="totals-row grand"><span>Total</span><span>${fmt(invoice.total)}</span></div>
+      <div class="totals-row"><span>${t('invoices.modals.summary' as any)}</span><span>${fmt(invoice.subtotal)}</span></div>
+      ${invoice.discount > 0 ? `<div class="totals-row"><span>${t('sales.discount')}</span><span>-${fmt(invoice.discount)}</span></div>` : ''}
+      <div class="totals-row"><span>${t('invoices.tax' as any)} (${invoice.taxRate}%)</span><span>${fmt(invoice.taxAmount)}</span></div>
+      <div class="totals-row grand"><span>${t('common.total')}</span><span>${fmt(invoice.total)}</span></div>
       ${invoice.amountPaid > 0 ? `
-        <div class="totals-row paid-row"><span>Amount Paid</span><span>${fmt(invoice.amountPaid)}</span></div>
-        <div class="totals-row due-row"><span>Balance Due</span><span>${fmt(invoice.amountDue)}</span></div>
+        <div class="totals-row paid-row"><span>${t('invoices.paid')}</span><span>${fmt(invoice.amountPaid)}</span></div>
+        <div class="totals-row due-row"><span>${t('invoices.modals.balanceDue')}</span><span>${fmt(invoice.amountDue)}</span></div>
       ` : ''}
     </div>
   </div>
 
   ${invoice.notes ? `
   <div class="notes">
-    <div class="notes-label">Notes</div>
+    <div class="notes-label">${t('common.notes')}</div>
     <div class="notes-text">${invoice.notes}</div>
   </div>` : ''}
 
   <div class="footer">
-    Thank you for your business
+    ${t('common.thankYou' as any)}
     ${profile.name ? ` · ${profile.name}` : ''}
-    · Generated by Tijara
-    · ${formatDate(new Date().toISOString())}
+    · ${t('common.generatedBy' as any)}
+    · ${dfmt(new Date().toISOString())}
   </div>
 
 </body>
@@ -278,7 +292,8 @@ function buildBrandBlock(profile: EnterpriseProfile): string {
 }
 
 /** Build the "From" section with enterprise contact details */
-function buildFromBlock(profile: EnterpriseProfile): string {
+function buildFromBlock(profile: EnterpriseProfile, lang: Language): string {
+  const t = (key: any) => i18n.tFor(lang, key);
   if (!profile.name) {
     return `
       <div class="party-name">Tijara Inc.</div>
@@ -289,9 +304,9 @@ function buildFromBlock(profile: EnterpriseProfile): string {
   lines.push(`<div class="party-name">${profile.name}</div>`);
   if (profile.address) lines.push(`<div class="party-detail">${profile.address}${profile.city ? ', ' + profile.city : ''}${profile.country ? ', ' + profile.country : ''}</div>`);
   if (profile.email)   lines.push(`<div class="party-detail">${profile.email}</div>`);
-  if (profile.phone)   lines.push(`<div class="party-detail">${profile.phone}</div>`);
+  if (profile.phone)   lines.push(`<div class="party-detail"><span class="force-ltr">${profile.phone}</span></div>`);
   if (profile.website) lines.push(`<div class="party-detail">${profile.website}</div>`);
-  if (profile.taxId)   lines.push(`<div class="party-detail">Tax ID: ${profile.taxId}</div>`);
+  if (profile.taxId)   lines.push(`<div class="party-detail">${t('settings.taxId')}: ${profile.taxId}</div>`);
   return lines.join('');
 }
 

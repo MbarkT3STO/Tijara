@@ -38,10 +38,11 @@ const getLocale = (lang: string) => {
  * Pass an explicit currency code to override (e.g. in PDF generation).
  * @param amount - The numeric amount
  * @param currency - ISO 4217 code; defaults to the active profile currency
+ * @param langOverride - Optional language code to use for formatting
  */
-export function formatCurrency(amount: number, currency?: string): string {
+export function formatCurrency(amount: number, currency?: string, langOverride?: string): string {
   const code = currency || _activeCurrency;
-  const lang = i18n.currentLanguage;
+  const lang = langOverride || i18n.currentLanguage;
   
   return new Intl.NumberFormat(getLocale(lang), {
     style: 'currency',
@@ -53,9 +54,10 @@ export function formatCurrency(amount: number, currency?: string): string {
 /**
  * Format a date string for display.
  * @param isoDate - ISO date string
+ * @param langOverride - Optional language code to use for formatting
  */
-export function formatDate(isoDate: string): string {
-  const lang = i18n.currentLanguage;
+export function formatDate(isoDate: string, langOverride?: string): string {
+  const lang = langOverride || i18n.currentLanguage;
   
   return new Intl.DateTimeFormat(getLocale(lang), {
     year: 'numeric',
@@ -67,9 +69,10 @@ export function formatDate(isoDate: string): string {
 /**
  * Format a date string with time.
  * @param isoDate - ISO date string
+ * @param langOverride - Optional language code to use for formatting
  */
-export function formatDateTime(isoDate: string): string {
-  const lang = i18n.currentLanguage;
+export function formatDateTime(isoDate: string, langOverride?: string): string {
+  const lang = langOverride || i18n.currentLanguage;
   
   return new Intl.DateTimeFormat(getLocale(lang), {
     year: 'numeric',
@@ -141,9 +144,10 @@ export function getInitials(name: string): string {
  * @param value - Numeric value (e.g. 15.5 for 15.5%)
  * @param decimals - Decimal places
  * @param showSign - Whether to prefix with + or -
+ * @param langOverride - Optional language code to use for formatting
  */
-export function formatPercent(value: number, decimals = 1, showSign = true): string {
-  const lang = i18n.currentLanguage;
+export function formatPercent(value: number, decimals = 1, showSign = true, langOverride?: string): string {
+  const lang = langOverride || i18n.currentLanguage;
   
   const formatted = new Intl.NumberFormat(getLocale(lang), {
     minimumFractionDigits: decimals,

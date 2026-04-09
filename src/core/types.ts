@@ -173,6 +173,7 @@ export interface EnterpriseProfile {
   logo: string;           // base64 data URL or empty string
   defaultTaxRate: number; // default tax % applied to new orders (0–100)
   currency: string;       // ISO 4217 currency code, e.g. "USD", "EUR"
+  defaultPdfLanguage: string; // e.g. "en", "fr", "ar"
 }
 
 /** Purchase order line item */

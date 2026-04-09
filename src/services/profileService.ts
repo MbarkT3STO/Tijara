@@ -22,6 +22,7 @@ const DEFAULT_PROFILE: EnterpriseProfile = {
   logo: '',
   defaultTaxRate: 0,
   currency: 'USD',
+  defaultPdfLanguage: 'en',
 };
 
 class ProfileService {

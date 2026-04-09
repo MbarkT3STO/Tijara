@@ -54,7 +54,11 @@
     "of": "من",
     "itemsCount": "{{count}} عناصر",
     "pdfExportSuccess": "تم تصدير الفاتورة كـ PDF.",
-    "pdfExportError": "فشل تصدير PDF."
+    "pdfExportError": "فشل تصدير PDF.",
+    "description": "الوصف",
+    "thankYou": "شكراً لتعاملكم معنا",
+    "days": "أيام",
+    "generatedBy": "تم الإنشاء بواسطة تجارة"
   },
   "settings": {
     "title": "الإعدادات",
@@ -76,6 +80,8 @@
     "defaultTaxHint": "معبأ مسبقًا في كل طلبية وفاتورة جديدة",
     "defaultCurrency": "العملة الافتراضية",
     "currencyHint": "العملة المستخدمة في جميع المبالغ والتصديرات",
+    "defaultPdfLanguage": "لغة ملفات PDF الافتراضية",
+    "pdfLanguageHint": "سيتم إنشاء الفواتير والتقارير بهذه اللغة.",
     "logoSizeMsg": "يجب أن يكون حجم ملف الشعار أقل من 2 ميجابايت.",
     "saveProfile": "حفظ الملف",
     "appearance": "المظهر",
@@ -449,6 +455,7 @@
     "paid": "المدفوع",
     "due": "المستحق",
     "dueDate": "تاريخ الاستحقاق",
+    "tax": "الضريبة",
     "stats": {
       "totalCollected": "إجمالي المحصل",
       "outstanding": "المبالغ المستحقة",

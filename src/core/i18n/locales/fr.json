@@ -54,7 +54,11 @@
     "of": "sur",
     "itemsCount": "{{count}} articles",
     "pdfExportSuccess": "Facture exportée en PDF.",
-    "pdfExportError": "Échec de l'exportation PDF."
+    "pdfExportError": "Échec de l'exportation PDF.",
+    "description": "Description",
+    "thankYou": "Merci de votre confiance",
+    "days": "jours",
+    "generatedBy": "Généré par Tijara"
   },
   "settings": {
     "title": "Paramètres",
@@ -76,6 +80,8 @@
     "defaultTaxHint": "Pré-rempli sur chaque nouvelle commande et facture",
     "defaultCurrency": "Devise par défaut",
     "currencyHint": "Utilisé pour tous les montants, factures et rapports",
+    "defaultPdfLanguage": "Langue PDF par défaut",
+    "pdfLanguageHint": "Les factures et rapports seront générés dans cette langue.",
     "logoSizeMsg": "Le fichier du logo doit faire moins de 2 Mo.",
     "saveProfile": "Enregistrer le profil",
     "appearance": "Apparence",
@@ -132,6 +138,40 @@
     "signOutConfirm": "Se déconnecter de Tijara?",
     "signOutHint": "Vos données sont enregistrées automatiquement. Vous pouvez vous reconnecter à tout moment.",
     "stay": "Rester"
+  },
+  "alerts": {
+    "outOfStock": {
+      "title": "Rupture de stock",
+      "msg": "{{count}} produits sont en rupture de stock"
+    },
+    "lowStock": {
+      "title": "Stock bas",
+      "msg": "{{count}} produits sont en dessous du seuil"
+    },
+    "unpaidInvoices": {
+      "title": "Factures impayées",
+      "msg": "{{count}} factures sont impayées ou en retard"
+    },
+    "dueSoonInvoices": {
+      "title": "Échéances proches",
+      "msg": "{{count}} factures arrivent à échéance sous 7 jours"
+    },
+    "pendingPOs": {
+      "title": "Achats en attente",
+      "msg": "{{count}} commandes d'achat sont actuellement ouvertes"
+    },
+    "overduePOs": {
+      "title": "Livraisons en retard",
+      "msg": "{{count}} achats ont dépassé la date prévue"
+    },
+    "pendingReturns": {
+      "title": "Retours en attente",
+      "msg": "{{count}} retours clients doivent être examinés"
+    },
+    "unpaidPOs": {
+      "title": "Achats non payés",
+      "msg": "{{count}} commandes reçues doivent être payées"
+    }
   },
   "auth": {
     "welcomeBack": "Bon retour",
@@ -409,6 +449,7 @@
     "paid": "Payé",
     "due": "Dû",
     "dueDate": "Date d'échéance",
+    "tax": "Taxe",
     "stats": {
       "totalCollected": "Total encaissé",
       "outstanding": "Restant dû",

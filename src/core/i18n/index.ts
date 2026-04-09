@@ -32,12 +32,17 @@ class I18nService {
   }
 
   t(key: TranslationKey, variables?: Record<string, string | number>): string {
+    return this.tFor(this._currentLanguage, key, variables);
+  }
+
+  /** Translate a key into a specific language */
+  tFor(lang: Language, key: TranslationKey, variables?: Record<string, string | number>): string {
     const keys = key.split('.');
-    let result: any = translations[this._currentLanguage];
+    let result: any = translations[lang] || translations['en'];
 
     for (const k of keys) {
       if (!result || result[k] === undefined) {
-        console.warn(`Translation missing for key: ${key}`);
+        console.warn(`Translation missing for key: ${key} in ${lang}`);
         return key;
       }
       result = result[k];
@@ -52,6 +57,10 @@ class I18nService {
     }
 
     return text;
+  }
+
+  getDirectionFor(lang: Language): Direction {
+    return lang === 'ar' ? 'rtl' : 'ltr';
   }
 
   setLanguage(lang: Language): void {

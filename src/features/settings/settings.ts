@@ -133,12 +133,22 @@ export function renderSettings(): HTMLElement {
               <input type="number" id="ep-default-tax" class="form-control" placeholder="0" min="0" max="100" step="0.01" value="${profile.defaultTaxRate ?? 0}" />
               <span class="form-hint">${i18n.t('settings.defaultTaxHint')}</span>
             </div>
+          <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="ep-currency">${i18n.t('settings.defaultCurrency')}</label>
               <select id="ep-currency" class="form-control">
                 ${CURRENCIES.map((code) => `<option value="${code}" ${(profile.currency || 'USD') === code ? 'selected' : ''}>${code} — ${i18n.t(`currencies.${code}` as any)}</option>`).join('')}
               </select>
               <span class="form-hint">${i18n.t('settings.currencyHint')}</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ep-pdf-lang">${i18n.t('settings.defaultPdfLanguage')}</label>
+              <select id="ep-pdf-lang" class="form-control">
+                <option value="en" ${profile.defaultPdfLanguage === 'en' ? 'selected' : ''}>English</option>
+                <option value="fr" ${profile.defaultPdfLanguage === 'fr' ? 'selected' : ''}>Français</option>
+                <option value="ar" ${profile.defaultPdfLanguage === 'ar' ? 'selected' : ''}>العربية</option>
+              </select>
+              <span class="form-hint">${i18n.t('settings.pdfLanguageHint')}</span>
             </div>
           </div>
 
@@ -339,6 +349,7 @@ export function renderSettings(): HTMLElement {
       taxId:          (page.querySelector('#ep-taxid')       as HTMLInputElement).value.trim(),
       defaultTaxRate: parseFloat((page.querySelector('#ep-default-tax') as HTMLInputElement).value) || 0,
       currency:       (page.querySelector('#ep-currency')    as HTMLSelectElement).value,
+      defaultPdfLanguage: (page.querySelector('#ep-pdf-lang') as HTMLSelectElement).value,
       logo:           currentLogo,
     });
     notifications.success(i18n.t('settings.notifications.profileSaved' as any));
