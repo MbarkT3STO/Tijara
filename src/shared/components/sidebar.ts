@@ -1,15 +1,19 @@
 /**
  * Sidebar navigation component.
+ * Supports Classic (full sidebar), Modern (icon rail), and Floating layouts.
+ * Floating sidebar is collapsible with persisted state.
  */
 
 import { router } from '@core/router';
 import { Icons } from './icons';
 import { i18n } from '@core/i18n';
+import { layoutService } from '@core/layout';
+import { themeManager } from '@core/theme';
+import { getInitials } from '@shared/utils/helpers';
 import type { Route } from '@core/types';
+import type { User } from '@core/types';
 
-
-
-const NAV_ITEMS: { route: Route; icon: (s?: any) => string; section?: string }[] = [
+const NAV_ITEMS: { route: Route; icon: (s?: number) => string; section?: string }[] = [
   { route: 'dashboard', icon: (s) => Icons.dashboard(s), section: 'main' },
   { route: 'customers', icon: (s) => Icons.customers(s), section: 'management' },
   { route: 'products',  icon: (s) => Icons.products(s) },
@@ -24,13 +28,17 @@ const NAV_ITEMS: { route: Route; icon: (s?: any) => string; section?: string }[]
   { route: 'settings',  icon: (s) => Icons.settings(s) },
 ];
 
+const FLOAT_COLLAPSED_KEY = 'tijara_float_sidebar_collapsed';
+const FLOAT_EXPANDED_KEY = 'tijara_float_sidebar_expanded';
+
 /** Build and return the sidebar element */
-export function createSidebar(): HTMLElement {
+export function createSidebar(currentUser?: User): HTMLElement {
   const sidebar = document.createElement('aside');
   sidebar.className = 'sidebar';
   sidebar.setAttribute('aria-label', 'Main navigation');
+  sidebar.setAttribute('data-layout', layoutService.currentLayout);
 
-  // Logo
+  // ── Logo ──────────────────────────────────────────────────────────────────
   const logo = document.createElement('div');
   logo.className = 'sidebar-logo';
   logo.innerHTML = `
@@ -44,7 +52,7 @@ export function createSidebar(): HTMLElement {
     <span class="sidebar-logo-text">Ti<span>jara</span></span>
   `;
 
-  // Nav
+  // ── Nav ───────────────────────────────────────────────────────────────────
   const nav = document.createElement('nav');
   nav.className = 'sidebar-nav';
   nav.setAttribute('role', 'navigation');
@@ -54,6 +62,11 @@ export function createSidebar(): HTMLElement {
     let currentSection = '';
     NAV_ITEMS.forEach((item) => {
       if (item.section && item.section !== currentSection) {
+        if (currentSection !== '') {
+          const gap = document.createElement('div');
+          gap.className = 'rail-section-gap';
+          nav.appendChild(gap);
+        }
         currentSection = item.section;
         const label = document.createElement('div');
         label.className = 'sidebar-section-label';
@@ -66,6 +79,7 @@ export function createSidebar(): HTMLElement {
       btn.setAttribute('data-route', item.route);
       const labelText = i18n.t(`nav.${item.route}` as any);
       btn.setAttribute('aria-label', labelText);
+      btn.setAttribute('data-nav-label', labelText);
       btn.innerHTML = `
         <span class="nav-icon" aria-hidden="true">${item.icon(20)}</span>
         <span class="nav-label">${labelText}</span>
@@ -80,7 +94,7 @@ export function createSidebar(): HTMLElement {
   renderNav();
   i18n.onLanguageChange(renderNav);
 
-  // Footer with collapse toggle
+  // ── Classic footer (collapse toggle) ─────────────────────────────────────
   const footer = document.createElement('div');
   footer.className = 'sidebar-footer';
   footer.innerHTML = `
@@ -89,21 +103,103 @@ export function createSidebar(): HTMLElement {
     </button>
   `;
 
+  // ── Modern rail footer ────────────────────────────────────────────────────
+  const railFooter = document.createElement('div');
+  railFooter.className = 'rail-footer';
+
+  if (currentUser) {
+    const avatarBtn = document.createElement('button');
+    avatarBtn.className = 'nav-item';
+    avatarBtn.setAttribute('aria-label', currentUser.name);
+    avatarBtn.setAttribute('data-nav-label', currentUser.name);
+    avatarBtn.style.cssText = 'width:34px;height:34px;padding:0;justify-content:center;border-radius:50%;';
+    avatarBtn.innerHTML = `<div class="avatar avatar-sm" style="pointer-events:none;">${getInitials(currentUser.name)}</div>`;
+    railFooter.appendChild(avatarBtn);
+  }
+
+  const settingsBtn = document.createElement('button');
+  settingsBtn.className = 'nav-item';
+  const settingsLabel = i18n.t('nav.settings' as any);
+  settingsBtn.setAttribute('aria-label', settingsLabel);
+  settingsBtn.setAttribute('data-nav-label', settingsLabel);
+  settingsBtn.innerHTML = `<span class="nav-icon" aria-hidden="true">${Icons.settings(20)}</span>`;
+  settingsBtn.addEventListener('click', () => router.navigate('settings'));
+  railFooter.appendChild(settingsBtn);
+
+  const themeBtn = document.createElement('button');
+  themeBtn.className = 'nav-item';
+  themeBtn.setAttribute('aria-label', i18n.t('topbar.toggleTheme' as any));
+  themeBtn.setAttribute('data-nav-label', i18n.t('topbar.toggleTheme' as any));
+  const updateThemeIcon = () => {
+    themeBtn.innerHTML = `<span class="nav-icon" aria-hidden="true">${themeManager.getTheme() === 'dark' ? Icons.sun(20) : Icons.moon(20)}</span>`;
+  };
+  updateThemeIcon();
+  themeBtn.addEventListener('click', () => { themeManager.toggle(); updateThemeIcon(); });
+  themeManager.subscribe(updateThemeIcon);
+  railFooter.appendChild(themeBtn);
+
+  // ── Floating footer (collapse toggle) ─────────────────────────────────────
+  const floatFooter = document.createElement('div');
+  floatFooter.className = 'sidebar-float-footer';
+  floatFooter.innerHTML = `
+    <button class="sidebar-toggle-btn float-collapse-btn" aria-label="Toggle sidebar" id="float-sidebar-toggle">
+      ${Icons.chevronLeft()}
+    </button>
+  `;
+
   sidebar.appendChild(logo);
   sidebar.appendChild(nav);
   sidebar.appendChild(footer);
+  sidebar.appendChild(railFooter);
+  sidebar.appendChild(floatFooter);
 
-  // Collapse toggle
-  let collapsed = false;
-  const toggleBtn = footer.querySelector<HTMLButtonElement>('#sidebar-toggle')!;
-  toggleBtn.addEventListener('click', () => {
-    collapsed = !collapsed;
-    sidebar.classList.toggle('collapsed', collapsed);
-    toggleBtn.innerHTML = collapsed ? Icons.chevronRight() : Icons.chevronLeft();
+  // ── Classic collapse toggle ───────────────────────────────────────────────
+  let classicCollapsed = false;
+  const classicToggleBtn = footer.querySelector<HTMLButtonElement>('#sidebar-toggle')!;
+  classicToggleBtn.addEventListener('click', () => {
+    classicCollapsed = !classicCollapsed;
+    sidebar.classList.toggle('collapsed', classicCollapsed);
+    classicToggleBtn.innerHTML = classicCollapsed ? Icons.chevronRight() : Icons.chevronLeft();
   });
 
-  // Highlight active route
-  function updateActive(route: Route) {
+  // ── Floating collapse toggle (persisted) ──────────────────────────────────
+  let floatCollapsed = localStorage.getItem(FLOAT_COLLAPSED_KEY) === 'true';
+  // User explicitly expanded on a medium screen — override auto-collapse
+  const floatExpandedOverride = localStorage.getItem(FLOAT_EXPANDED_KEY) === 'true';
+
+  const applyFloatCollapsed = (collapsed: boolean, animate = false) => {
+    if (!animate) sidebar.classList.add('no-transition');
+    sidebar.classList.toggle('float-collapsed', collapsed);
+    // If user explicitly expands, mark the override so CSS media query doesn't re-collapse
+    if (!collapsed) {
+      sidebar.classList.add('float-expanded-override');
+      localStorage.setItem(FLOAT_EXPANDED_KEY, 'true');
+    } else {
+      sidebar.classList.remove('float-expanded-override');
+      localStorage.removeItem(FLOAT_EXPANDED_KEY);
+    }
+    if (!animate) requestAnimationFrame(() => sidebar.classList.remove('no-transition'));
+    const btn = floatFooter.querySelector<HTMLButtonElement>('#float-sidebar-toggle')!;
+    btn.innerHTML = collapsed ? Icons.chevronRight() : Icons.chevronLeft();
+    btn.style.transform = `scaleX(var(--icon-flip))`;
+  };
+
+  // Apply persisted state immediately (no animation on mount)
+  if (layoutService.currentLayout === 'floating') {
+    applyFloatCollapsed(floatCollapsed, false);
+    if (floatExpandedOverride && !floatCollapsed) {
+      sidebar.classList.add('float-expanded-override');
+    }
+  }
+
+  floatFooter.querySelector<HTMLButtonElement>('#float-sidebar-toggle')!.addEventListener('click', () => {
+    floatCollapsed = !floatCollapsed;
+    localStorage.setItem(FLOAT_COLLAPSED_KEY, String(floatCollapsed));
+    applyFloatCollapsed(floatCollapsed, true);
+  });
+
+  // ── Active route highlight ────────────────────────────────────────────────
+  function updateActive(route: Route): void {
     nav.querySelectorAll<HTMLButtonElement>('.nav-item').forEach((btn) => {
       const isActive = btn.getAttribute('data-route') === route;
       btn.classList.toggle('active', isActive);
@@ -112,6 +208,19 @@ export function createSidebar(): HTMLElement {
   }
 
   router.subscribe(updateActive);
+
+  // ── Respond to layout changes ─────────────────────────────────────────────
+  layoutService.onLayoutChange((style) => {
+    sidebar.setAttribute('data-layout', style);
+    if (style === 'floating') {
+      applyFloatCollapsed(floatCollapsed, false);
+      if (!floatCollapsed && localStorage.getItem(FLOAT_EXPANDED_KEY) === 'true') {
+        sidebar.classList.add('float-expanded-override');
+      }
+    } else {
+      sidebar.classList.remove('float-collapsed', 'float-expanded-override');
+    }
+  });
 
   return sidebar;
 }

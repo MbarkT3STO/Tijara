@@ -1,9 +1,11 @@
 /**
  * Application entry point.
  * Imports global styles and bootstraps the app.
+ * Layout preference is applied synchronously before first paint via LayoutService.
  */
 
 import '@styles/main.css';
+import '@core/layout'; // apply data-layout to <body> before first paint
 import { bootstrap } from '@core/app';
 
 const root = document.getElementById('app');

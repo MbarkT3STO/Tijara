@@ -2,6 +2,7 @@
  * Top navigation bar component.
  * Shows page title, theme toggle, notifications bell, and user menu.
  * Both dropdowns use body portals to avoid overflow clipping.
+ * In Modern layout: slim 36px height with breadcrumb trail.
  */
 
 import { themeManager } from '@core/theme';
@@ -10,6 +11,7 @@ import { Icons } from './icons';
 import { getInitials } from '@shared/utils/helpers';
 import { alertService } from '@services/alertService';
 import { i18n } from '@core/i18n';
+import { layoutService } from '@core/layout';
 import type { User } from '@core/types';
 import type { SystemAlert } from '@services/alertService';
 
@@ -53,8 +55,25 @@ export function createTopbar(
   title.id = 'page-title';
   title.textContent = i18n.t(`nav.${router.getRoute()}` as any) || router.getRoute();
 
+  // Breadcrumb (visible in Modern layout only via CSS)
+  const breadcrumb = document.createElement('nav');
+  breadcrumb.className = 'topbar-breadcrumb';
+  breadcrumb.setAttribute('aria-label', 'breadcrumb');
+
+  const updateBreadcrumb = () => {
+    const pageName = i18n.t(`nav.${router.getRoute()}` as any) || router.getRoute();
+    const appName = i18n.t('app.name' as any);
+    breadcrumb.innerHTML = `
+      <span style="color:var(--color-text-tertiary);">${appName}</span>
+      <span style="color:var(--color-text-tertiary);margin:0 4px;">/</span>
+      <span style="color:var(--color-text-secondary);">${pageName}</span>
+    `;
+  };
+  updateBreadcrumb();
+
   left.appendChild(menuBtn);
   left.appendChild(title);
+  left.appendChild(breadcrumb);
 
   // ── Right ─────────────────────────────────────────────────────────────────
   const right = document.createElement('div');
@@ -85,9 +104,18 @@ export function createTopbar(
   topbar.appendChild(left);
   topbar.appendChild(right);
 
+  // In Modern layout, hide theme toggle (it's in the rail footer)
+  const updateTopbarForLayout = (style: string) => {
+    themeBtn.style.display = style === 'modern' ? 'none' : '';
+    menuBtn.style.display = (style === 'modern' || style === 'floating') ? 'none' : '';
+  };
+  updateTopbarForLayout(layoutService.currentLayout);
+  layoutService.onLayoutChange(updateTopbarForLayout);
+
   // Update title on route change
   const updateTitle = () => {
     title.textContent = i18n.t(`nav.${router.getRoute()}` as any);
+    updateBreadcrumb();
   };
   router.subscribe(() => {
     updateTitle();

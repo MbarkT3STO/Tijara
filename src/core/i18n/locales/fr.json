@@ -125,7 +125,14 @@
       "clearDataMsg": "Cela supprimera définitivement TOUTES les données, y compris les clients, les produits, les ventes et les factures. Cette action est irréversible."
     },
     "language": "Langue",
-    "selectLanguage": "Sélectionner la langue"
+    "selectLanguage": "Sélectionner la langue",
+    "layoutStyle": "Style de mise en page",
+    "layoutClassic": "Classique",
+    "layoutModern": "Moderne",
+    "layoutClassicDesc": "Barre latérale traditionnelle avec étiquettes de navigation",
+    "layoutModernDesc": "Rail d'icônes compact avec info-bulles au survol",
+    "layoutFloating": "Flottant",
+    "layoutFloatingDesc": "Tous les panneaux flottent comme des cartes arrondies détachées"
   },
   "topbar": {
     "toggleMenu": "Basculer le menu de navigation",

@@ -11,6 +11,7 @@ import { profileService } from '@services/profileService';
 import { createSidebar } from '@shared/components/sidebar';
 import { createTopbar } from '@shared/components/topbar';
 import { initToasts } from '@shared/components/toast';
+import { initRailTooltips } from '@shared/components/rail-tooltip';
 import { repository } from '@data/excelRepository';
 import type { Route, User } from './types';
 
@@ -68,7 +69,7 @@ function buildShell(root: HTMLElement, user: User): void {
   const shell = document.createElement('div');
   shell.className = 'app-shell';
 
-  const sidebar = createSidebar();
+  const sidebar = createSidebar(user);
 
   const overlay = document.createElement('div');
   overlay.className = 'sidebar-overlay';
@@ -89,12 +90,21 @@ function buildShell(root: HTMLElement, user: User): void {
   contentArea.setAttribute('role', 'main');
   contentArea.setAttribute('aria-labelledby', 'page-title');
 
-  mainArea.appendChild(topbar);
-  mainArea.appendChild(contentArea);
+  // layout-right-col wraps topbar + content; transparent in Classic/Modern,
+  // becomes a flex column in Floating layout
+  const rightCol = document.createElement('div');
+  rightCol.className = 'layout-right-col';
+  rightCol.appendChild(topbar);
+  rightCol.appendChild(contentArea);
+
+  mainArea.appendChild(rightCol);
   shell.appendChild(sidebar);
   shell.appendChild(mainArea);
   root.appendChild(overlay);
   root.appendChild(shell);
+
+  // Init rail tooltips after sidebar is in the DOM
+  initRailTooltips(sidebar);
 
   router.subscribe((route) => loadPage(route, contentArea, sidebar, overlay));
   void loadPage(router.getRoute(), contentArea, sidebar, overlay);

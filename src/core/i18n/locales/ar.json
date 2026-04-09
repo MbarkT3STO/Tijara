@@ -125,7 +125,14 @@
       "clearDataMsg": "سيؤدي هذا إلى حذف جميع البيانات بشكل دائم بما في ذلك العملاء والمنتجات والمبيعات والفواتير. لا يمكن التراجع عن هذا الإجراء."
     },
     "language": "اللغة",
-    "selectLanguage": "اختر اللغة"
+    "selectLanguage": "اختر اللغة",
+    "layoutStyle": "نمط التخطيط",
+    "layoutClassic": "كلاسيكي",
+    "layoutModern": "حديث",
+    "layoutClassicDesc": "شريط جانبي تقليدي مع تسميات التنقل",
+    "layoutModernDesc": "شريط أيقونات مدمج مع تلميحات عند التمرير",
+    "layoutFloating": "عائم",
+    "layoutFloatingDesc": "جميع الألواح تطفو كبطاقات مستقلة ذات زوايا مدورة"
   },
   "topbar": {
     "toggleMenu": "تبديل قائمة التنقل",

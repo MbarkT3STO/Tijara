@@ -10,6 +10,7 @@ import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { createLanguageSwitcher } from '@shared/components/languageSwitcher';
 import { repository } from '@data/excelRepository';
+import { layoutService } from '@core/layout';
 import type { ElectronAPI } from '../../../electron/preload';
 
 function getElectron(): ElectronAPI | null {
@@ -248,6 +249,60 @@ export function renderSettings(): HTMLElement {
                   </div>
                 </div>
               </div>
+
+              <div class="divider"></div>
+
+              <div>
+                <div style="font-weight: 600; font-size:var(--font-size-sm); margin-bottom: var(--space-3);">${i18n.t('settings.layoutStyle' as any)}</div>
+                <div style="display: flex; gap: var(--space-4);">
+                  <div id="layout-classic" style="flex:1; cursor:pointer; border: 1.5px solid ${layoutService.currentLayout === 'classic' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-3); background: ${layoutService.currentLayout === 'classic' ? 'var(--color-primary-subtle)' : 'transparent'}; transition: border-color 0.2s, background 0.2s;">
+                    <div style="background: var(--color-bg-secondary); border-radius: var(--radius-sm); height: 60px; display: flex; overflow: hidden; margin-bottom: var(--space-2);">
+                      <div style="width: 28px; background: #0f0a1e; display: flex; flex-direction: column; gap: 3px; padding: 6px 4px;">
+                        <div style="height: 4px; background: #9929ea; border-radius: 2px;"></div>
+                        <div style="height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+                        <div style="height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+                        <div style="height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+                      </div>
+                      <div style="flex:1; padding: 6px; display: flex; flex-direction: column; gap: 3px;">
+                        <div style="height: 4px; width: 70%; background: var(--color-border); border-radius: 2px;"></div>
+                        <div style="height: 3px; width: 50%; background: var(--color-border-subtle); border-radius: 2px;"></div>
+                      </div>
+                    </div>
+                    <div style="text-align:center; font-size:11px; font-weight:500; color:var(--color-text-secondary);">${i18n.t('settings.layoutClassic' as any)}</div>
+                    <div style="text-align:center; font-size:10px; color:var(--color-text-tertiary); margin-top:2px;">${i18n.t('settings.layoutClassicDesc' as any)}</div>
+                  </div>
+                  <div id="layout-modern" style="flex:1; cursor:pointer; border: 1.5px solid ${layoutService.currentLayout === 'modern' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-3); background: ${layoutService.currentLayout === 'modern' ? 'var(--color-primary-subtle)' : 'transparent'}; transition: border-color 0.2s, background 0.2s;">
+                    <div style="background: var(--color-bg-secondary); border-radius: var(--radius-sm); height: 60px; display: flex; overflow: hidden; margin-bottom: var(--space-2);">
+                      <div style="width: 14px; background: #0f0a1e; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px;">
+                        <div style="width: 8px; height: 8px; background: #9929ea; border-radius: 2px;"></div>
+                        <div style="width: 6px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 1px;"></div>
+                        <div style="width: 6px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 1px;"></div>
+                      </div>
+                      <div style="flex:1; padding: 6px; display: flex; flex-direction: column; gap: 3px;">
+                        <div style="height: 4px; width: 70%; background: var(--color-border); border-radius: 2px;"></div>
+                        <div style="height: 3px; width: 50%; background: var(--color-border-subtle); border-radius: 2px;"></div>
+                      </div>
+                    </div>
+                    <div style="text-align:center; font-size:11px; font-weight:500; color:var(--color-text-secondary);">${i18n.t('settings.layoutModern' as any)}</div>
+                    <div style="text-align:center; font-size:10px; color:var(--color-text-tertiary); margin-top:2px;">${i18n.t('settings.layoutModernDesc' as any)}</div>
+                  </div>
+                  <div id="layout-floating" style="flex:1; cursor:pointer; border: 1.5px solid ${layoutService.currentLayout === 'floating' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-3); background: ${layoutService.currentLayout === 'floating' ? 'var(--color-primary-subtle)' : 'transparent'}; transition: border-color 0.2s, background 0.2s;">
+                    <div style="background: var(--color-bg-secondary); border-radius: var(--radius-sm); height: 60px; display: flex; gap: 3px; padding: 5px; margin-bottom: var(--space-2); overflow: hidden;">
+                      <div style="width: 22px; background: var(--color-sidebar-bg); border-radius: 4px; display: flex; flex-direction: column; gap: 2px; padding: 4px 3px; flex-shrink:0;">
+                        <div style="height: 3px; background: var(--color-primary); border-radius: 2px;"></div>
+                        <div style="height: 2px; background: var(--color-sidebar-border); border-radius: 2px;"></div>
+                        <div style="height: 2px; background: var(--color-sidebar-border); border-radius: 2px;"></div>
+                      </div>
+                      <div style="flex:1; display: flex; flex-direction: column; gap: 3px;">
+                        <div style="height: 10px; background: var(--color-surface); border-radius: 4px; border: 1px solid var(--color-border-subtle);"></div>
+                        <div style="flex:1; background: var(--color-surface); border-radius: 4px; border: 1px solid var(--color-border-subtle);"></div>
+                      </div>
+                    </div>
+                    <div style="text-align:center; font-size:11px; font-weight:500; color:var(--color-text-secondary);">${i18n.t('settings.layoutFloating' as any)}</div>
+                    <div style="text-align:center; font-size:10px; color:var(--color-text-tertiary); margin-top:2px;">${i18n.t('settings.layoutFloatingDesc' as any)}</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -374,6 +429,20 @@ export function renderSettings(): HTMLElement {
     });
     page.querySelector('#theme-dark')?.addEventListener('click', () => {
       themeManager.setTheme('dark');
+    });
+
+    // ── Layout Style ────────────────────────────────────────────────────────
+    page.querySelector('#layout-classic')?.addEventListener('click', () => {
+      layoutService.setLayout('classic');
+      render();
+    });
+    page.querySelector('#layout-modern')?.addEventListener('click', () => {
+      layoutService.setLayout('modern');
+      render();
+    });
+    page.querySelector('#layout-floating')?.addEventListener('click', () => {
+      layoutService.setLayout('floating');
+      render();
     });
 
     // ── Save Profile ────────────────────────────────────────────────────────

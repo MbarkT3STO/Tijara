@@ -124,7 +124,14 @@
       "clearDataMsg": "This will permanently delete ALL data including customers, products, sales, and invoices. This cannot be undone."
     },
     "language": "Language",
-    "selectLanguage": "Select Language"
+    "selectLanguage": "Select Language",
+    "layoutStyle": "Layout Style",
+    "layoutClassic": "Classic",
+    "layoutModern": "Modern",
+    "layoutClassicDesc": "Traditional sidebar with navigation labels",
+    "layoutModernDesc": "Compact icon rail with hover tooltips",
+    "layoutFloating": "Floating",
+    "layoutFloatingDesc": "All panels float as detached rounded cards"
   },
   "topbar": {
     "toggleMenu": "Toggle navigation menu",
