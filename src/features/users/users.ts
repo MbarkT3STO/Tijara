@@ -9,6 +9,7 @@ import { confirmDialog, openModal, showModalError } from '@shared/components/mod
 import { Icons } from '@shared/components/icons';
 import { formatDate, formatDateTime, getInitials, debounce } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { resolveAuthError } from '@features/auth/auth';
 import type { User, UserRole } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -336,7 +337,12 @@ function openUserModal(user: User | null, onSave: () => void): void {
           showModalError(form, i18n.t('users.modals.pwMatch'), ['u-password', 'u-confirm']);
           return false;
         }
-        await authService.register(name, email, password, role);
+        try {
+          await authService.register(name, email, password, role);
+        } catch (err) {
+          showModalError(form, resolveAuthError(err), ['u-email']);
+          return false;
+        }
         if (!active) {
           const users = userService.getAll();
           const created = users.find((u) => u.email === email);

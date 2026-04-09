@@ -318,15 +318,15 @@ function buildRegisterForm(): string {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const AUTH_ERROR_KEYS: Record<string, string> = {
-  AUTH_NO_ACCOUNT:           'auth.errors.noAccount',
-  AUTH_DEACTIVATED:          'auth.errors.deactivated',
-  AUTH_WRONG_PASSWORD:       'auth.errors.wrongPassword',
-  AUTH_EMAIL_EXISTS:         'auth.errors.emailExists',
-  AUTH_NOT_AUTHENTICATED:    'auth.errors.notAuthenticated',
+  AUTH_NO_ACCOUNT:             'auth.errors.noAccount',
+  AUTH_DEACTIVATED:            'auth.errors.deactivated',
+  AUTH_WRONG_PASSWORD:         'auth.errors.wrongPassword',
+  AUTH_EMAIL_EXISTS:           'auth.errors.emailExists',
+  AUTH_NOT_AUTHENTICATED:      'auth.errors.notAuthenticated',
   AUTH_WRONG_CURRENT_PASSWORD: 'auth.errors.wrongCurrentPassword',
 };
 
-function resolveAuthError(err: unknown): string {
+export function resolveAuthError(err: unknown): string {
   const code = err instanceof Error ? err.message : '';
   const key = AUTH_ERROR_KEYS[code];
   return key ? i18n.t(key as any) : i18n.t('auth.loginFailed');
