@@ -11,8 +11,37 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&family=Cairo:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('tijara-theme');
+          if (!theme) {
+            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.setAttribute('data-theme', theme);
+          
+          var lang = localStorage.getItem('tijara_lang');
+          if (lang === 'ar') {
+            document.documentElement.setAttribute('dir', 'rtl');
+            document.documentElement.lang = 'ar';
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
+    <script>
+      (function() {
+        try {
+          var sidebar = localStorage.getItem('tijara_sidebar_theme') || 'dark';
+          document.body.setAttribute('data-sidebar', sidebar);
+          
+          var layout = localStorage.getItem('tijara_layout');
+          if (!layout) layout = 'classic';
+          document.body.setAttribute('data-layout', layout);
+        } catch (e) {}
+      })();
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
