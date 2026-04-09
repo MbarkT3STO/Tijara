@@ -4,28 +4,24 @@
 
 import { router } from '@core/router';
 import { Icons } from './icons';
+import { i18n } from '@core/i18n';
 import type { Route } from '@core/types';
 
-interface NavItem {
-  route: Route;
-  label: string;
-  icon: string;
-  section?: string;
-}
 
-const NAV_ITEMS: NavItem[] = [
-  { route: 'dashboard', label: 'Dashboard',  icon: Icons.dashboard(),  section: 'Main' },
-  { route: 'customers', label: 'Customers',  icon: Icons.customers(),  section: 'Management' },
-  { route: 'products',  label: 'Products',   icon: Icons.products() },
-  { route: 'inventory', label: 'Inventory',  icon: Icons.package() },
-  { route: 'suppliers', label: 'Suppliers',  icon: Icons.truck() },
-  { route: 'purchases', label: 'Purchases',  icon: Icons.shoppingCart() },
-  { route: 'returns',   label: 'Returns',    icon: Icons.refresh() },
-  { route: 'sales',     label: 'Sales',      icon: Icons.sales() },
-  { route: 'invoices',  label: 'Invoices',   icon: Icons.invoices() },
-  { route: 'reports',   label: 'Reports',    icon: Icons.barChart(),   section: 'Analytics' },
-  { route: 'users',     label: 'Users',      icon: Icons.users(),      section: 'Admin' },
-  { route: 'settings',  label: 'Settings',   icon: Icons.settings() },
+
+const NAV_ITEMS: { route: Route; icon: (s?: any) => string; section?: string }[] = [
+  { route: 'dashboard', icon: (s) => Icons.dashboard(s), section: 'main' },
+  { route: 'customers', icon: (s) => Icons.customers(s), section: 'management' },
+  { route: 'products',  icon: (s) => Icons.products(s) },
+  { route: 'inventory', icon: (s) => Icons.package(s) },
+  { route: 'suppliers', icon: (s) => Icons.truck(s) },
+  { route: 'purchases', icon: (s) => Icons.shoppingCart(s) },
+  { route: 'returns',   icon: (s) => Icons.refresh(s) },
+  { route: 'sales',     icon: (s) => Icons.sales(s) },
+  { route: 'invoices',  icon: (s) => Icons.invoices(s) },
+  { route: 'reports',   icon: (s) => Icons.barChart(s),  section: 'analytics' },
+  { route: 'users',     icon: (s) => Icons.users(s),     section: 'admin' },
+  { route: 'settings',  icon: (s) => Icons.settings(s) },
 ];
 
 /** Build and return the sidebar element */
@@ -53,34 +49,42 @@ export function createSidebar(): HTMLElement {
   nav.className = 'sidebar-nav';
   nav.setAttribute('role', 'navigation');
 
-  let currentSection = '';
-  NAV_ITEMS.forEach((item) => {
-    if (item.section && item.section !== currentSection) {
-      currentSection = item.section;
-      const label = document.createElement('div');
-      label.className = 'sidebar-section-label';
-      label.textContent = item.section;
-      nav.appendChild(label);
-    }
+  const renderNav = () => {
+    nav.innerHTML = '';
+    let currentSection = '';
+    NAV_ITEMS.forEach((item) => {
+      if (item.section && item.section !== currentSection) {
+        currentSection = item.section;
+        const label = document.createElement('div');
+        label.className = 'sidebar-section-label';
+        label.textContent = i18n.t(`nav.${item.section}` as any);
+        nav.appendChild(label);
+      }
 
-    const btn = document.createElement('button');
-    btn.className = 'nav-item';
-    btn.setAttribute('data-route', item.route);
-    btn.setAttribute('aria-label', item.label);
-    btn.innerHTML = `
-      <span class="nav-icon" aria-hidden="true">${item.icon}</span>
-      <span class="nav-label">${item.label}</span>
-    `;
+      const btn = document.createElement('button');
+      btn.className = 'nav-item';
+      btn.setAttribute('data-route', item.route);
+      const labelText = i18n.t(`nav.${item.route}` as any);
+      btn.setAttribute('aria-label', labelText);
+      btn.innerHTML = `
+        <span class="nav-icon" aria-hidden="true">${item.icon(20)}</span>
+        <span class="nav-label">${labelText}</span>
+      `;
 
-    btn.addEventListener('click', () => router.navigate(item.route));
-    nav.appendChild(btn);
-  });
+      btn.addEventListener('click', () => router.navigate(item.route));
+      nav.appendChild(btn);
+    });
+    updateActive(router.getRoute());
+  };
+
+  renderNav();
+  i18n.onLanguageChange(renderNav);
 
   // Footer with collapse toggle
   const footer = document.createElement('div');
   footer.className = 'sidebar-footer';
   footer.innerHTML = `
-    <button class="sidebar-toggle-btn" aria-label="Toggle sidebar" id="sidebar-toggle">
+    <button class="sidebar-toggle-btn" aria-label="Toggle sidebar" id="sidebar-toggle" style="transform: scaleX(var(--icon-flip));">
       ${Icons.chevronLeft()}
     </button>
   `;
@@ -108,7 +112,6 @@ export function createSidebar(): HTMLElement {
   }
 
   router.subscribe(updateActive);
-  updateActive(router.getRoute());
 
   return sidebar;
 }

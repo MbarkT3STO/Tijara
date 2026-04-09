@@ -6,6 +6,8 @@
 import { authService } from '@services/authService';
 import { themeManager } from '@core/theme';
 import { Icons } from '@shared/components/icons';
+import { i18n } from '@core/i18n';
+import { createLanguageSwitcher } from '@shared/components/languageSwitcher';
 import type { User } from '@core/types';
 
 type AuthView = 'login' | 'register';
@@ -26,6 +28,8 @@ export function renderAuthScreen(onSuccess: (user: User) => void): HTMLElement {
     attachEvents();
   }
 
+  i18n.onLanguageChange(render);
+
   function attachEvents() {
     // View toggle
     root.querySelector('#switch-view')?.addEventListener('click', () => {
@@ -38,6 +42,12 @@ export function renderAuthScreen(onSuccess: (user: User) => void): HTMLElement {
       themeManager.toggle();
       updateThemeIcon();
     });
+
+    // Language switcher
+    const langContainer = root.querySelector('#auth-lang-switcher');
+    if (langContainer) {
+      langContainer.appendChild(createLanguageSwitcher());
+    }
 
     // Form submit
     if (view === 'login') {
@@ -80,7 +90,7 @@ export function renderAuthScreen(onSuccess: (user: User) => void): HTMLElement {
     const errEl = root.querySelector<HTMLElement>('#login-error')!;
 
     if (!email || !password) {
-      showError(errEl, 'Please enter your email and password.');
+      showError(errEl, i18n.t('auth.enterEmailPassword'));
       return;
     }
 
@@ -105,15 +115,15 @@ export function renderAuthScreen(onSuccess: (user: User) => void): HTMLElement {
     const errEl = root.querySelector<HTMLElement>('#register-error')!;
 
     if (!name || !email || !password) {
-      showError(errEl, 'All fields are required.');
+      showError(errEl, i18n.t('auth.allFieldsRequired'));
       return;
     }
     if (password.length < 6) {
-      showError(errEl, 'Password must be at least 6 characters.');
+      showError(errEl, i18n.t('auth.passwordLength'));
       return;
     }
     if (password !== confirm) {
-      showError(errEl, 'Passwords do not match.');
+      showError(errEl, i18n.t('auth.passwordsMatch'));
       return;
     }
 
@@ -140,8 +150,11 @@ function buildHTML(view: AuthView): string {
     <div class="auth-bg">
       <div class="auth-card">
 
-        <!-- Theme toggle -->
-        <button class="btn btn-ghost btn-icon auth-theme-btn" id="auth-theme-btn" aria-label="Toggle theme"></button>
+        <!-- Theme & Language toggle -->
+        <div class="auth-controls">
+          <button class="btn btn-ghost btn-icon auth-theme-btn" id="auth-theme-btn" aria-label="${i18n.t('topbar.toggleTheme')}"></button>
+          <div id="auth-lang-switcher"></div>
+        </div>
 
         <!-- Logo -->
         <div class="auth-logo">
@@ -153,24 +166,24 @@ function buildHTML(view: AuthView): string {
             </svg>
           </div>
           <div>
-            <div class="auth-logo-name">Tijara</div>
-            <div class="auth-logo-tagline">Sales Management</div>
+            <div class="auth-logo-name">${i18n.t('app.name')}</div>
+            <div class="auth-logo-tagline">${i18n.t('app.tagline')}</div>
           </div>
         </div>
 
         <!-- Heading -->
         <div class="auth-heading">
-          <h1 class="auth-title">${view === 'login' ? 'Welcome back' : 'Create account'}</h1>
-          <p class="auth-subtitle">${view === 'login' ? 'Sign in to your account to continue' : 'Set up your Tijara account'}</p>
+          <h1 class="auth-title">${view === 'login' ? i18n.t('auth.welcomeBack') : i18n.t('auth.createAccount')}</h1>
+          <p class="auth-subtitle">${view === 'login' ? i18n.t('auth.enterCredentials') : i18n.t('auth.setupAccount')}</p>
         </div>
 
         ${view === 'login' ? buildLoginForm() : buildRegisterForm()}
 
         <!-- Switch view -->
         <p class="auth-switch">
-          ${view === 'login' ? "Don't have an account?" : 'Already have an account?'}
+          ${view === 'login' ? i18n.t('auth.dontHaveAccount') : i18n.t('auth.alreadyHaveAccount')}
           <button class="auth-switch-btn" id="switch-view">
-            ${view === 'login' ? 'Create one' : 'Sign in'}
+            ${view === 'login' ? i18n.t('auth.createOne') : i18n.t('auth.signIn')}
           </button>
         </p>
 
@@ -186,12 +199,12 @@ function buildHTML(view: AuthView): string {
               <path d="M16 10a4 4 0 0 1-8 0"/>
             </svg>
           </div>
-          <h2 class="auth-panel-title">Manage your business smarter</h2>
+          <h2 class="auth-panel-title">${i18n.t('auth.manageBusinessSmarter')}</h2>
           <ul class="auth-panel-features">
-            <li>${Icons.check(16)} Customers &amp; contacts</li>
-            <li>${Icons.check(16)} Products &amp; inventory</li>
-            <li>${Icons.check(16)} Sales &amp; orders</li>
-            <li>${Icons.check(16)} Invoices &amp; payments</li>
+            <li>${Icons.check(16)} ${i18n.t('auth.featureCustomers')}</li>
+            <li>${Icons.check(16)} ${i18n.t('auth.featureProducts')}</li>
+            <li>${Icons.check(16)} ${i18n.t('auth.featureSales')}</li>
+            <li>${Icons.check(16)} ${i18n.t('auth.featureInvoices')}</li>
           </ul>
         </div>
       </div>
@@ -205,7 +218,7 @@ function buildLoginForm(): string {
       <div id="login-error" class="auth-error" role="alert" aria-live="polite"></div>
 
       <div class="form-group">
-        <label class="form-label" for="login-email">Email address</label>
+        <label class="form-label" for="login-email">${i18n.t('auth.emailAddress')}</label>
         <input
           type="email"
           id="login-email"
@@ -217,7 +230,7 @@ function buildLoginForm(): string {
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="login-password">Password</label>
+        <label class="form-label" for="login-password">${i18n.t('auth.password')}</label>
         <div class="pw-field">
           <input
             type="password"
@@ -234,7 +247,7 @@ function buildLoginForm(): string {
       </div>
 
       <button type="submit" class="btn btn-primary btn-full" id="login-submit">
-        Sign in
+        ${i18n.t('auth.signIn')}
       </button>
     </form>
   `;
@@ -246,19 +259,19 @@ function buildRegisterForm(): string {
       <div id="register-error" class="auth-error" role="alert" aria-live="polite"></div>
 
       <div class="form-group">
-        <label class="form-label" for="reg-name">Full name</label>
+        <label class="form-label" for="reg-name">${i18n.t('auth.fullName')}</label>
         <input
           type="text"
           id="reg-name"
           class="form-control"
-          placeholder="John Doe"
+          placeholder="${i18n.t('auth.fullName')}"
           autocomplete="name"
           required
         />
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="reg-email">Email address</label>
+        <label class="form-label" for="reg-email">${i18n.t('auth.emailAddress')}</label>
         <input
           type="email"
           id="reg-email"
@@ -270,7 +283,7 @@ function buildRegisterForm(): string {
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="reg-password">Password</label>
+        <label class="form-label" for="reg-password">${i18n.t('auth.password')}</label>
         <div class="pw-field">
           <input
             type="password"
@@ -287,13 +300,13 @@ function buildRegisterForm(): string {
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="reg-confirm">Confirm password</label>
+        <label class="form-label" for="reg-confirm">${i18n.t('auth.confirmPassword')}</label>
         <div class="pw-field">
           <input
             type="password"
             id="reg-confirm"
             class="form-control"
-            placeholder="Repeat password"
+            placeholder="${i18n.t('auth.repeatPassword')}"
             autocomplete="new-password"
             required
           />
@@ -304,7 +317,7 @@ function buildRegisterForm(): string {
       </div>
 
       <button type="submit" class="btn btn-primary btn-full" id="register-submit">
-        Create account
+        ${i18n.t('auth.signUp')}
       </button>
     </form>
   `;
@@ -325,11 +338,11 @@ function clearError(el: HTMLElement): void {
 function setLoading(btn: HTMLButtonElement, loading: boolean): void {
   btn.disabled = loading;
   btn.innerHTML = loading
-    ? `<span class="spinner" style="width:16px;height:16px;border-width:2px;"></span> Please wait…`
+    ? `<span class="spinner" style="width:16px;height:16px;border-width:2px;"></span> ${i18n.t('auth.pleaseWait')}`
     : btn.getAttribute('data-label') ?? btn.textContent ?? '';
   if (!loading) {
     // restore original label
-    const label = btn.id === 'login-submit' ? 'Sign in' : 'Create account';
+    const label = btn.id === 'login-submit' ? i18n.t('auth.signIn') : i18n.t('auth.signUp');
     btn.textContent = label;
   }
 }

@@ -257,7 +257,7 @@
 
 .data-table th {
   padding: var(--space-3) var(--space-4);
-  text-align: left;
+  text-align: start;
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
@@ -372,13 +372,13 @@
 
 .search-bar .search-icon {
   position: absolute;
-  left: var(--space-3);
+  inset-inline-start: var(--space-3);
   color: var(--color-text-tertiary);
   pointer-events: none;
 }
 
 .search-bar .form-control {
-  padding-left: calc(var(--space-3) + 20px + var(--space-2));
+  padding-inline-start: calc(var(--space-3) + 20px + var(--space-2));
 }
 
 /* ── Page header ─────────────────────────────────────────────────────────── */
@@ -629,7 +629,7 @@ select.form-control {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239b92b0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right var(--space-3) center;
-  padding-right: var(--space-8);
+  padding-inline-end: var(--space-8);
 }
 
 /* ── Textarea ────────────────────────────────────────────────────────────── */
@@ -713,7 +713,7 @@ textarea.form-control {
 .dropdown-menu {
   position: absolute;
   top: calc(100% + var(--space-1));
-  right: 0;
+  inset-inline-end: 0;
   min-width: 180px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -736,7 +736,7 @@ textarea.form-control {
   border: none;
   background: none;
   width: 100%;
-  text-align: left;
+  text-align: start;
 }
 
 .dropdown-item:hover {
@@ -853,7 +853,7 @@ textarea.form-control {
 }
 
 .user-dropdown {
-  right: 0;
+  inset-inline-end: 0;
   min-width: 220px;
   /* Portal-based: rendered into document.body via JS, not shown here */
   display: none;

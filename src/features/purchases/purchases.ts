@@ -11,6 +11,7 @@ import { confirmDialog, openModal, showModalError } from '@shared/components/mod
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
+import { i18n } from '@core/i18n';
 import type { Purchase, PurchaseItem, Product } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -105,14 +106,14 @@ export function renderPurchases(): HTMLElement {
         const po = purchaseService.getById(btn.getAttribute('data-receive')!);
         if (!po) return;
         confirmDialog(
-          'Receive Purchase Order',
-          `Mark PO "${po.poNumber}" as received? This will add the items to inventory.`,
+          i18n.t('purchases.modals.receiveTitle'),
+          i18n.t('purchases.modals.receiveMsg', { no: po.poNumber }),
           () => {
             purchaseService.updateStatus(po.id, 'received');
-            notifications.success(`PO ${po.poNumber} received — inventory updated.`);
+            notifications.success(i18n.t('purchases.modals.receiveTitle'));
             state.purchases = purchaseService.getAll(); applyFilters(); render();
           },
-          'Mark Received',
+          i18n.t('purchases.modals.receiveConfirm'),
           'btn-primary'
         );
       });
@@ -122,9 +123,9 @@ export function renderPurchases(): HTMLElement {
       btn.addEventListener('click', () => {
         const po = purchaseService.getById(btn.getAttribute('data-delete')!);
         if (!po) return;
-        confirmDialog('Delete Purchase Order', `Delete PO "${po.poNumber}"?`, () => {
+        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${po.poNumber}"?`, () => {
           purchaseService.delete(po.id);
-          notifications.success('Purchase order deleted.');
+          notifications.success(i18n.t('common.save'));
           state.purchases = purchaseService.getAll(); applyFilters(); render();
         });
       });
@@ -160,10 +161,10 @@ function buildHTML(state: State): string {
   return `
     <div class="page-header">
       <div>
-        <h2 class="page-title">Purchases</h2>
-        <p class="page-subtitle">Restocking orders and supplier spend</p>
+        <h2 class="page-title">${i18n.t('purchases.title')}</h2>
+        <p class="page-subtitle">${i18n.t('purchases.subtitle')}</p>
       </div>
-      <button class="btn btn-primary" id="add-po-btn">${Icons.plus()} New Purchase Order</button>
+      <button class="btn btn-primary" id="add-po-btn">${Icons.plus()} ${i18n.t('purchases.addNew')}</button>
     </div>
 
     <!-- KPI strip -->
@@ -171,22 +172,22 @@ function buildHTML(state: State): string {
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-primary-subtle);color:var(--color-primary);">${Icons.truck()}</div>
         <div class="stat-card-value">${all.length}</div>
-        <div class="stat-card-label">Total Orders</div>
+        <div class="stat-card-label">${i18n.t('purchases.totalOrders')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning);">${Icons.alertCircle()}</div>
         <div class="stat-card-value">${pending}</div>
-        <div class="stat-card-label">Pending Delivery</div>
+        <div class="stat-card-label">${i18n.t('purchases.pendingDelivery')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success);">${Icons.dollarSign()}</div>
         <div class="stat-card-value">${formatCurrency(totalSpend)}</div>
-        <div class="stat-card-label">Total Spend (Received)</div>
+        <div class="stat-card-label">${i18n.t('purchases.totalSpend')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-error-subtle);color:var(--color-error);">${Icons.alertCircle()}</div>
         <div class="stat-card-value">${formatCurrency(unpaidAmount)}</div>
-        <div class="stat-card-label">Unpaid Balance</div>
+        <div class="stat-card-label">${i18n.t('purchases.unpaidBalance')}</div>
       </div>
     </div>
 
@@ -195,14 +196,14 @@ function buildHTML(state: State): string {
         <div class="search-bar" style="flex:1;max-width:360px;">
           <span class="search-icon">${Icons.search(16)}</span>
           <input type="search" id="po-search" class="form-control"
-            placeholder="Search by PO # or supplier..." value="${state.search}" aria-label="Search purchase orders" />
+            placeholder="${i18n.t('common.search')}..." value="${state.search}" aria-label="${i18n.t('common.search')}" />
         </div>
-        <select id="po-status-filter" class="form-control" style="width:auto;" aria-label="Filter by status">
-          <option value="">All Statuses</option>
-          <option value="draft"     ${state.statusFilter === 'draft'     ? 'selected' : ''}>Draft</option>
-          <option value="ordered"   ${state.statusFilter === 'ordered'   ? 'selected' : ''}>Ordered</option>
-          <option value="received"  ${state.statusFilter === 'received'  ? 'selected' : ''}>Received</option>
-          <option value="cancelled" ${state.statusFilter === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+        <select id="po-status-filter" class="form-control" style="width:auto;" aria-label="${i18n.t('purchases.status')}">
+          <option value="">${i18n.t('purchases.allStatuses')}</option>
+          <option value="draft"     ${state.statusFilter === 'draft'     ? 'selected' : ''}>${i18n.t('purchases.statuses.draft')}</option>
+          <option value="ordered"   ${state.statusFilter === 'ordered'   ? 'selected' : ''}>${i18n.t('purchases.statuses.ordered')}</option>
+          <option value="received"  ${state.statusFilter === 'received'  ? 'selected' : ''}>${i18n.t('purchases.statuses.received')}</option>
+          <option value="cancelled" ${state.statusFilter === 'cancelled' ? 'selected' : ''}>${i18n.t('purchases.statuses.cancelled')}</option>
         </select>
       </div>
 
@@ -210,14 +211,14 @@ function buildHTML(state: State): string {
         <table class="data-table" aria-label="Purchase orders list">
           <thead>
             <tr>
-              <th>PO #</th>
-              <th>Supplier</th>
-              <th>Items</th>
-              <th>Total</th>
-              <th>Status</th>
-              <th>Payment</th>
-              <th>Date</th>
-              <th>Actions</th>
+              <th>${i18n.t('purchases.poNumber')}</th>
+              <th>${i18n.t('purchases.supplier')}</th>
+              <th>${i18n.t('purchases.items')}</th>
+              <th>${i18n.t('purchases.total')}</th>
+              <th>${i18n.t('purchases.status')}</th>
+              <th>${i18n.t('purchases.payment')}</th>
+              <th>${i18n.t('purchases.date')}</th>
+              <th>${i18n.t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -225,27 +226,27 @@ function buildHTML(state: State): string {
               ? `<tr><td colspan="8">
                   <div class="empty-state">
                     <div class="empty-state-icon">${Icons.truck(32)}</div>
-                    <p class="empty-state-title">No purchase orders found</p>
-                    <p class="empty-state-desc">${state.search ? 'Try a different search.' : 'Create your first purchase order.'}</p>
+                    <p class="empty-state-title">${i18n.t('common.noData')}</p>
+                    <p class="empty-state-desc">${state.search ? i18n.t('common.noData') : i18n.t('purchases.addNew')}</p>
                   </div>
                 </td></tr>`
               : pageData.map((po) => `
                 <tr>
                   <td><span style="font-weight:600;color:var(--color-primary);">${po.poNumber}</span></td>
                   <td>${po.supplierName}</td>
-                  <td style="color:var(--color-text-secondary);">${po.items.length} item${po.items.length !== 1 ? 's' : ''}</td>
+                  <td style="color:var(--color-text-secondary);">${i18n.t('common.itemsCount', { count: po.items.length })}</td>
                   <td><strong>${formatCurrency(po.total)}</strong></td>
-                  <td><span class="badge ${STATUS_BADGE[po.status] ?? 'badge-neutral'}">${po.status}</span></td>
-                  <td><span class="badge ${PAY_BADGE[po.paymentStatus] ?? 'badge-neutral'}">${po.paymentStatus}</span></td>
+                  <td><span class="badge ${STATUS_BADGE[po.status.toLowerCase()] ?? 'badge-neutral'}">${i18n.t(`purchases.statuses.${po.status.toLowerCase()}` as any)}</span></td>
+                  <td><span class="badge ${PAY_BADGE[po.paymentStatus.toLowerCase()] ?? 'badge-neutral'}">${i18n.t(`sales.payments.${po.paymentStatus.toLowerCase()}` as any)}</span></td>
                   <td style="color:var(--color-text-secondary);">${formatDate(po.createdAt)}</td>
                   <td>
                     <div class="table-actions">
-                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${po.id}" aria-label="View" data-tooltip="View">${Icons.eye(16)}</button>
+                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${po.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">${Icons.eye(16)}</button>
                       ${po.status !== 'received' && po.status !== 'cancelled'
-                        ? `<button class="btn btn-ghost btn-icon btn-sm" data-edit="${po.id}" aria-label="Edit" data-tooltip="Edit">${Icons.edit(16)}</button>
-                           <button class="btn btn-ghost btn-icon btn-sm" data-receive="${po.id}" aria-label="Mark received" data-tooltip="Mark Received" style="color:var(--color-success);">${Icons.check(16)}</button>`
+                        ? `<button class="btn btn-ghost btn-icon btn-sm" data-edit="${po.id}" aria-label="${i18n.t('common.edit')}" data-tooltip="${i18n.t('common.edit')}">${Icons.edit(16)}</button>
+                           <button class="btn btn-ghost btn-icon btn-sm" data-receive="${po.id}" aria-label="${i18n.t('purchases.modals.receiveConfirm')}" data-tooltip="${i18n.t('purchases.modals.receiveConfirm')}" style="color:var(--color-success);">${Icons.check(16)}</button>`
                         : ''}
-                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${po.id}" aria-label="Delete" data-tooltip="Delete" style="color:var(--color-error);">${Icons.trash(16)}</button>
+                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${po.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>
                     </div>
                   </td>
                 </tr>`).join('')
@@ -263,7 +264,7 @@ function buildPagination(page: number, totalPages: number, total: number, start:
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   return `
     <div class="pagination">
-      <span class="pagination-info">Showing ${start + 1}–${start + count} of ${total}</span>
+      <span class="pagination-info">${i18n.t('common.showing' as any)} ${start + 1}–${start + count} ${i18n.t('common.of')} ${total}</span>
       <div class="pagination-controls">
         <button class="pagination-btn" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>${Icons.chevronLeft(16)}</button>
         ${pages.map((p) => `<button class="pagination-btn ${p === page ? 'active' : ''}" data-page="${p}">${p}</button>`).join('')}
@@ -279,31 +280,31 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
   content.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Supplier</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('purchases.supplier')}</div>
         <div style="font-weight:500;">${po.supplierName}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Date</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('common.date')}</div>
         <div>${formatDate(po.createdAt)}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Status</div>
-        <span class="badge ${STATUS_BADGE[po.status]}">${po.status}</span>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('purchases.status')}</div>
+        <span class="badge ${STATUS_BADGE[po.status]}">${i18n.t(`purchases.statuses.${po.status}` as any)}</span>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Payment</div>
-        <span class="badge ${PAY_BADGE[po.paymentStatus]}">${po.paymentStatus}</span>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('purchases.payment')}</div>
+        <span class="badge ${PAY_BADGE[po.paymentStatus]}">${i18n.t(`sales.payments.${po.paymentStatus}` as any)}</span>
       </div>
       ${po.expectedDate ? `
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Expected Date</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('purchases.expectedDate')}</div>
         <div>${formatDate(po.expectedDate)}</div>
       </div>` : ''}
     </div>
 
     <div class="table-container" style="margin-bottom:var(--space-4);">
       <table class="data-table">
-        <thead><tr><th>Product</th><th>Qty</th><th>Unit Cost</th><th>Total</th></tr></thead>
+        <thead><tr><th>${i18n.t('products.modals.name')}</th><th>${i18n.t('sales.modals.addItem')}</th><th>${i18n.t('purchases.unitCost')}</th><th>${i18n.t('purchases.total')}</th></tr></thead>
         <tbody>
           ${po.items.map((item) => `
             <tr>
@@ -317,11 +318,11 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
     </div>
 
     <div style="display:flex;flex-direction:column;gap:var(--space-2);align-items:flex-end;">
-      <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);"><span style="color:var(--color-text-secondary);">Subtotal</span><span>${formatCurrency(po.subtotal)}</span></div>
-      <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);"><span style="color:var(--color-text-secondary);">Tax (${po.taxRate}%)</span><span>${formatCurrency(po.taxAmount)}</span></div>
-      ${po.shippingCost > 0 ? `<div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);"><span style="color:var(--color-text-secondary);">Shipping</span><span>${formatCurrency(po.shippingCost)}</span></div>` : ''}
+      <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);"><span style="color:var(--color-text-secondary);">${i18n.t('purchases.subtotal')}</span><span>${formatCurrency(po.subtotal)}</span></div>
+      <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);"><span style="color:var(--color-text-secondary);">${i18n.t('purchases.tax')} (${po.taxRate}%)</span><span>${formatCurrency(po.taxAmount)}</span></div>
+      ${po.shippingCost > 0 ? `<div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);"><span style="color:var(--color-text-secondary);">${i18n.t('purchases.shipping')}</span><span>${formatCurrency(po.shippingCost)}</span></div>` : ''}
       <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-lg);font-weight:700;border-top:1px solid var(--color-border);padding-top:var(--space-2);margin-top:var(--space-1);">
-        <span>Total</span><span style="color:var(--color-primary);">${formatCurrency(po.total)}</span>
+        <span>${i18n.t('purchases.total')}</span><span style="color:var(--color-primary);">${formatCurrency(po.total)}</span>
       </div>
     </div>
 
@@ -329,18 +330,18 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
 
     ${po.status === 'received' && po.paymentStatus !== 'paid' ? `
     <div style="margin-top:var(--space-5);padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);border:1px solid var(--color-border);">
-      <div style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-3);">Record Payment</div>
+      <div style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-3);">${i18n.t('purchases.modals.recordPayment')}</div>
       <div style="display:flex;gap:var(--space-2);">
-        <input type="number" id="po-payment-amount" class="form-control" placeholder="Amount"
+        <input type="number" id="po-payment-amount" class="form-control" placeholder="${i18n.t('common.amount')}"
           min="0" step="0.01" value="${po.total}" />
-        <button type="button" class="btn btn-primary" id="po-record-payment-btn">Record</button>
+        <button type="button" class="btn btn-primary" id="po-record-payment-btn">${i18n.t('common.save')}</button>
       </div>
     </div>` : ''}
 
     ${po.status !== 'received' && po.status !== 'cancelled' ? `
     <div style="margin-top:var(--space-4);display:flex;gap:var(--space-3);">
-      <button class="btn btn-secondary" id="detail-status-ordered" ${po.status === 'ordered' ? 'disabled' : ''}>Mark Ordered</button>
-      <button class="btn btn-primary" id="detail-status-received">Mark Received</button>
+      <button class="btn btn-secondary" id="detail-status-ordered" ${po.status === 'ordered' ? 'disabled' : ''}>${i18n.t('purchases.modals.markOrdered')}</button>
+      <button class="btn btn-primary" id="detail-status-received">${i18n.t('purchases.modals.markReceived')}</button>
     </div>` : ''}
   `;
 
@@ -348,29 +349,29 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
 
   content.querySelector('#po-record-payment-btn')?.addEventListener('click', () => {
     const amount = parseFloat((content.querySelector('#po-payment-amount') as HTMLInputElement).value);
-    if (isNaN(amount) || amount <= 0) { notifications.error('Enter a valid amount.'); return; }
+    if (isNaN(amount) || amount <= 0) { notifications.error(i18n.t('errors.required')); return; }
     const newStatus: Purchase['paymentStatus'] = amount >= po.total ? 'paid' : 'partial';
     purchaseService.updatePaymentStatus(po.id, newStatus);
-    notifications.success('Payment recorded.');
+    notifications.success(i18n.t('common.save'));
     close(); onUpdate();
   });
 
   content.querySelector('#detail-status-ordered')?.addEventListener('click', () => {
     purchaseService.updateStatus(po.id, 'ordered');
-    notifications.success('PO marked as ordered.');
+    notifications.success(i18n.t('common.save'));
     close(); onUpdate();
   });
 
   content.querySelector('#detail-status-received')?.addEventListener('click', () => {
     confirmDialog(
-      'Receive Purchase Order',
-      `Mark PO "${po.poNumber}" as received? This will add the items to inventory.`,
+      i18n.t('purchases.modals.receiveTitle'),
+      i18n.t('purchases.modals.receiveMsg', { no: po.poNumber }),
       () => {
         purchaseService.updateStatus(po.id, 'received');
-        notifications.success(`PO ${po.poNumber} received — inventory updated.`);
+        notifications.success(i18n.t('common.save'));
         close(); onUpdate();
       },
-      'Mark Received',
+      i18n.t('purchases.modals.receiveConfirm'),
       'btn-primary'
     );
   });
@@ -388,11 +389,11 @@ function buildItemRow(item: PurchaseItem, idx: number, products: Product[], pref
       </div>
       <div class="form-group" style="margin:0;">
         <input type="number" class="form-control ${prefix}-item-qty" data-idx="${idx}"
-          value="${item.quantity}" min="1" placeholder="Qty" />
+          value="${item.quantity}" min="1" placeholder="${i18n.t('sales.modals.addItem')}" />
       </div>
       <div class="form-group" style="margin:0;">
         <input type="number" class="form-control ${prefix}-item-cost" data-idx="${idx}"
-          value="${item.unitCost}" min="0" step="0.01" placeholder="Unit cost" />
+          value="${item.unitCost}" min="0" step="0.01" placeholder="${i18n.t('purchases.unitCost')}" />
       </div>
       <button type="button" class="btn btn-ghost btn-icon btn-sm ${prefix}-remove-item"
         data-idx="${idx}" style="color:var(--color-error);margin-top:2px;">${Icons.trash(16)}</button>
@@ -402,7 +403,6 @@ function buildItemRow(item: PurchaseItem, idx: number, products: Product[], pref
 function attachItemEvents(
   container: HTMLElement,
   items: PurchaseItem[],
-  products: Product[],
   prefix: string,
   onRender: () => void,
   onTotals: () => void
@@ -455,7 +455,7 @@ function openPurchaseModal(po: Purchase | null, onSave: () => void): void {
   const currency   = profileService.getCurrencySymbol();
   const prefix     = 'po';
 
-  let items: PurchaseItem[] = po
+  const items: PurchaseItem[] = po
     ? po.items.map((i) => ({ ...i }))
     : [];
 
@@ -463,9 +463,9 @@ function openPurchaseModal(po: Purchase | null, onSave: () => void): void {
   form.innerHTML = `
     <div class="form-row" style="margin-bottom:var(--space-4);">
       <div class="form-group">
-        <label class="form-label required" for="po-supplier">Supplier</label>
+        <label class="form-label required" for="po-supplier">${i18n.t('purchases.supplier')}</label>
         <select id="po-supplier" class="form-control" ${isEdit ? 'disabled' : ''}>
-          <option value="">Select supplier...</option>
+          <option value="">${i18n.t('purchases.modals.selectSupplier')}</option>
           ${suppliers.map((s) => `<option value="${s.id}" ${po?.supplierId === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
         </select>
         ${suppliers.length === 0
@@ -473,26 +473,26 @@ function openPurchaseModal(po: Purchase | null, onSave: () => void): void {
           : ''}
       </div>
       <div class="form-group">
-        <label class="form-label" for="po-status">Status</label>
+        <label class="form-label" for="po-status">${i18n.t('purchases.status')}</label>
         <select id="po-status" class="form-control">
-          <option value="draft"   ${(!po || po.status === 'draft')   ? 'selected' : ''}>Draft</option>
-          <option value="ordered" ${po?.status === 'ordered'         ? 'selected' : ''}>Ordered</option>
+          <option value="draft"   ${(!po || po.status === 'draft')   ? 'selected' : ''}>${i18n.t('purchases.statuses.draft')}</option>
+          <option value="ordered" ${po?.status === 'ordered'         ? 'selected' : ''}>${i18n.t('purchases.statuses.ordered')}</option>
         </select>
       </div>
     </div>
 
     <div class="form-row" style="margin-bottom:var(--space-4);">
       <div class="form-group">
-        <label class="form-label" for="po-payment-method">Payment Method</label>
+        <label class="form-label" for="po-payment-method">${i18n.t('sales.paymentMethod')}</label>
         <select id="po-payment-method" class="form-control">
-          <option value="transfer" ${po?.paymentMethod === 'transfer' ? 'selected' : ''}>Bank Transfer</option>
-          <option value="cash"     ${po?.paymentMethod === 'cash'     ? 'selected' : ''}>Cash</option>
-          <option value="card"     ${po?.paymentMethod === 'card'     ? 'selected' : ''}>Card</option>
-          <option value="other"    ${po?.paymentMethod === 'other'    ? 'selected' : ''}>Other</option>
+          <option value="transfer" ${po?.paymentMethod === 'transfer' ? 'selected' : ''}>${i18n.t('sales.payments.transfer')}</option>
+          <option value="cash"     ${po?.paymentMethod === 'cash'     ? 'selected' : ''}>${i18n.t('sales.payments.cash')}</option>
+          <option value="card"     ${po?.paymentMethod === 'card'     ? 'selected' : ''}>${i18n.t('sales.payments.card')}</option>
+          <option value="other"    ${po?.paymentMethod === 'other'    ? 'selected' : ''}>${i18n.t('sales.payments.other')}</option>
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label" for="po-expected-date">Expected Delivery</label>
+        <label class="form-label" for="po-expected-date">${i18n.t('purchases.expectedDate')}</label>
         <input type="date" id="po-expected-date" class="form-control"
           value="${po?.expectedDate ? po.expectedDate.slice(0, 10) : ''}" />
       </div>
@@ -502,15 +502,15 @@ function openPurchaseModal(po: Purchase | null, onSave: () => void): void {
     <div style="margin-bottom:var(--space-4);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);">
         <div>
-          <label class="form-label" style="margin:0;">Order Items</label>
+          <label class="form-label" style="margin:0;">${i18n.t('purchases.orderItems')}</label>
           <div style="display:grid;grid-template-columns:1fr 90px 130px 32px;gap:var(--space-2);margin-top:var(--space-2);">
-            <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">Product</span>
-            <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">Qty</span>
-            <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">Unit Cost (${currency})</span>
+            <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('products.modals.name')}</span>
+            <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('sales.modals.addItem')}</span>
+            <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('purchases.unitCost')} (${currency})</span>
             <span></span>
           </div>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm" id="po-add-item-btn">${Icons.plus(16)} Add Item</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="po-add-item-btn">${Icons.plus(16)} ${i18n.t('purchases.modals.addItem')}</button>
       </div>
       <div id="po-items-container"></div>
       <div id="po-totals" style="margin-top:var(--space-3);text-align:right;font-size:var(--font-size-sm);color:var(--color-text-secondary);"></div>
@@ -518,17 +518,17 @@ function openPurchaseModal(po: Purchase | null, onSave: () => void): void {
 
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" for="po-tax">Tax Rate (%)</label>
+        <label class="form-label" for="po-tax">${i18n.t('purchases.tax')} (%)</label>
         <input type="number" id="po-tax" class="form-control" value="${po?.taxRate ?? 0}" min="0" max="100" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="po-shipping">Shipping Cost (${currency})</label>
+        <label class="form-label" for="po-shipping">${i18n.t('purchases.shipping')} (${currency})</label>
         <input type="number" id="po-shipping" class="form-control" value="${po?.shippingCost ?? 0}" min="0" step="0.01" />
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label" for="po-notes">Notes</label>
-      <textarea id="po-notes" class="form-control" placeholder="Optional notes...">${po?.notes ?? ''}</textarea>
+      <label class="form-label" for="po-notes">${i18n.t('common.notes')}</label>
+      <textarea id="po-notes" class="form-control" placeholder="${i18n.t('common.notes')}">${po?.notes ?? ''}</textarea>
     </div>
   `;
 
@@ -537,22 +537,22 @@ function openPurchaseModal(po: Purchase | null, onSave: () => void): void {
     const shippingCost = parseFloat((form.querySelector('#po-shipping') as HTMLInputElement).value) || 0;
     const { subtotal, taxAmount, total } = purchaseService.calculateTotals(items, taxRate, shippingCost);
     form.querySelector('#po-totals')!.innerHTML = `
-      <div>Subtotal: <strong>${formatCurrency(subtotal)}</strong></div>
-      <div>Tax: <strong>${formatCurrency(taxAmount)}</strong></div>
-      ${shippingCost > 0 ? `<div>Shipping: <strong>${formatCurrency(shippingCost)}</strong></div>` : ''}
-      <div style="font-size:var(--font-size-base);font-weight:700;color:var(--color-primary);margin-top:4px;">Total: ${formatCurrency(total)}</div>`;
+      <div>${i18n.t('purchases.subtotal')}: <strong>${formatCurrency(subtotal)}</strong></div>
+      <div>${i18n.t('purchases.tax')}: <strong>${formatCurrency(taxAmount)}</strong></div>
+      ${shippingCost > 0 ? `<div>${i18n.t('purchases.shipping')}: <strong>${formatCurrency(shippingCost)}</strong></div>` : ''}
+      <div style="font-size:var(--font-size-base);font-weight:700;color:var(--color-primary);margin-top:4px;">${i18n.t('purchases.total')}: ${formatCurrency(total)}</div>`;
   };
 
   const renderItems = () => {
     const container = form.querySelector('#po-items-container')!;
     container.innerHTML = items.length === 0
-      ? `<div style="text-align:center;padding:var(--space-4);color:var(--color-text-tertiary);font-size:var(--font-size-sm);border:1px dashed var(--color-border);border-radius:var(--radius-sm);">No items added yet</div>`
+      ? `<div style="text-align:center;padding:var(--space-4);color:var(--color-text-tertiary);font-size:var(--font-size-sm);border:1px dashed var(--color-border);border-radius:var(--radius-sm);">${i18n.t('purchases.modals.noItems')}</div>`
       : items.map((item, idx) => buildItemRow(item, idx, products, prefix)).join('');
-    attachItemEvents(container as HTMLElement, items, products, prefix, renderItems, updateTotals);
+    attachItemEvents(container as HTMLElement, items, prefix, renderItems, updateTotals);
   };
 
   form.querySelector('#po-add-item-btn')?.addEventListener('click', () => {
-    if (products.length === 0) { notifications.warning('No products available.'); return; }
+    if (products.length === 0) { notifications.warning(i18n.t('errors.loadFailed')); return; }
     const first = products[0];
     items.push({ productId: first.id, productName: first.name, quantity: 1, unitCost: first.cost, total: first.cost });
     renderItems(); updateTotals();
@@ -563,17 +563,17 @@ function openPurchaseModal(po: Purchase | null, onSave: () => void): void {
   renderItems(); updateTotals();
 
   openModal({
-    title: isEdit ? `Edit ${po!.poNumber}` : 'New Purchase Order',
+    title: isEdit ? `${i18n.t('common.edit')} ${po!.poNumber}` : i18n.t('purchases.modals.addTitle'),
     content: form,
     size: 'lg',
-    confirmText: isEdit ? 'Save Changes' : 'Create PO',
+    confirmText: isEdit ? i18n.t('common.save') : i18n.t('common.confirm'),
     onConfirm: () => {
       const supplierSelect = form.querySelector<HTMLSelectElement>('#po-supplier')!;
       const supplierId   = isEdit ? po!.supplierId : supplierSelect.value;
       const supplierName = isEdit ? po!.supplierName : (supplierSelect.selectedOptions[0]?.text ?? '');
 
-      if (!supplierId) { showModalError(form, 'Please select a supplier.', ['po-supplier']); return false; }
-      if (items.length === 0) { showModalError(form, 'Please add at least one item.'); return false; }
+      if (!supplierId) { showModalError(form, i18n.t('errors.required'), ['po-supplier']); return false; }
+      if (items.length === 0) { showModalError(form, i18n.t('purchases.modals.noItems')); return false; }
 
       const taxRate      = parseFloat((form.querySelector('#po-tax')      as HTMLInputElement).value) || 0;
       const shippingCost = parseFloat((form.querySelector('#po-shipping') as HTMLInputElement).value) || 0;
@@ -584,10 +584,10 @@ function openPurchaseModal(po: Purchase | null, onSave: () => void): void {
 
       if (isEdit) {
         purchaseService.update(po!.id, { items, taxRate, shippingCost, status, paymentMethod, expectedDate, notes });
-        notifications.success('Purchase order updated.');
+        notifications.success(i18n.t('common.save'));
       } else {
         purchaseService.create({ supplierId, supplierName, items, taxRate, shippingCost, status, paymentStatus: 'unpaid', paymentMethod, expectedDate, notes });
-        notifications.success('Purchase order created.');
+        notifications.success(i18n.t('common.save'));
       }
       onSave();
     },

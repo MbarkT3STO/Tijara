@@ -4,6 +4,16 @@
  */
 
 :root {
+  /* Language & Direction variables */
+  --dir: ltr;
+  --start: left;
+  --end: right;
+  --sidebar-side: left;
+  --sidebar-translate: -100%;
+  --text-align-start: left;
+  --text-align-end: right;
+  --icon-flip: 1;
+
   /* Brand / Accent */
   --color-primary: #9929ea;
   --color-primary-light: #cc66da;
@@ -135,4 +145,17 @@
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
   --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+}
+
+/* RTL overrides */
+[dir="rtl"] {
+  --dir: rtl;
+  --start: right;
+  --end: left;
+  --sidebar-side: right;
+  --sidebar-translate: 100%;
+  --text-align-start: right;
+  --text-align-end: left;
+  --icon-flip: -1;
+  font-family: 'Cairo', 'Inter', sans-serif;
 }

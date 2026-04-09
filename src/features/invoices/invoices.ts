@@ -10,6 +10,7 @@ import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
 import { printInvoice, exportInvoicePDF } from '@shared/utils/invoicePdf';
 import { profileService } from '@services/profileService';
+import { i18n } from '@core/i18n';
 import type { Invoice } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -29,6 +30,10 @@ const STATUS_BADGE: Record<string, string> = {
   overdue: 'badge-error',
   cancelled: 'badge-neutral',
 };
+
+function getStatusLabel(status: string): string {
+  return i18n.t(`invoices.statuses.${status.toLowerCase()}` as any) || status;
+}
 
 /** Render and return the invoices page */
 export function renderInvoices(): HTMLElement {
@@ -119,13 +124,13 @@ export function renderInvoices(): HTMLElement {
       menu.setAttribute('role', 'menu');
       menu.setAttribute('aria-label', `Actions for invoice ${invNumber}`);
       menu.innerHTML = `
-        <button class="dropdown-item" data-action="view"   role="menuitem">${Icons.eye(16)}      View</button>
-        <button class="dropdown-item" data-action="edit"   role="menuitem">${Icons.edit(16)}     Edit</button>
+        <button class="dropdown-item" data-action="view"   role="menuitem">${Icons.eye(16)}      ${i18n.t('common.view')}</button>
+        <button class="dropdown-item" data-action="edit"   role="menuitem">${Icons.edit(16)}     ${i18n.t('common.edit')}</button>
         <div class="dropdown-divider"></div>
-        <button class="dropdown-item" data-action="pdf"    role="menuitem" style="color:var(--color-primary);">${Icons.fileText(16)}  Export PDF</button>
-        <button class="dropdown-item" data-action="print"  role="menuitem">${Icons.printer(16)}  Print</button>
+        <button class="dropdown-item" data-action="pdf"    role="menuitem" style="color:var(--color-primary);">${Icons.fileText(16)}  ${i18n.t('common.export' as any)} PDF</button>
+        <button class="dropdown-item" data-action="print"  role="menuitem">${Icons.printer(16)}  ${i18n.t('common.print')}</button>
         <div class="dropdown-divider"></div>
-        <button class="dropdown-item danger" data-action="delete" role="menuitem">${Icons.trash(16)} Delete</button>
+        <button class="dropdown-item danger" data-action="delete" role="menuitem">${Icons.trash(16)} ${i18n.t('common.delete')}</button>
       `;
 
       // Position: align right edge of menu with right edge of trigger
@@ -192,9 +197,9 @@ export function renderInvoices(): HTMLElement {
               item.setAttribute('disabled', 'true');
               try {
                 await exportInvoicePDF(invoice);
-                notifications.success('Invoice exported as PDF.');
+                notifications.success(i18n.t('common.pdfExportSuccess' as any));
               } catch {
-                notifications.error('PDF export failed.');
+                notifications.error(i18n.t('common.pdfExportError' as any));
               } finally {
                 item.removeAttribute('disabled');
               }
@@ -205,9 +210,9 @@ export function renderInvoices(): HTMLElement {
               break;
 
             case 'delete':
-              confirmDialog('Delete Invoice', `Delete invoice "${invoice.invoiceNumber}"?`, () => {
+              confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${invoice.invoiceNumber}"?`, () => {
                 invoiceService.delete(invId);
-                notifications.success('Invoice deleted.');
+                notifications.success(i18n.t('common.delete'));
                 state.invoices = invoiceService.getAll();
                 applyFilters();
                 render();
@@ -265,11 +270,11 @@ function buildHTML(state: State): string {
   return `
     <div class="page-header">
       <div>
-        <h2 class="page-title">Invoices</h2>
-        <p class="page-subtitle">${total} invoice${total !== 1 ? 's' : ''} total</p>
+        <h2 class="page-title">${i18n.t('invoices.title')}</h2>
+        <p class="page-subtitle">${total === 1 ? i18n.t('invoices.countTotal', { count: total }) : i18n.t('invoices.countPlural', { count: total })}</p>
       </div>
       <button class="btn btn-primary" id="create-invoice-btn">
-        ${Icons.plus()} Create Invoice
+        ${Icons.plus()} ${i18n.t('invoices.modals.createTitle')}
       </button>
     </div>
 
@@ -277,17 +282,17 @@ function buildHTML(state: State): string {
       <div class="card stat-card">
         <div class="stat-card-icon" style="background: var(--color-success-subtle); color: var(--color-success);">${Icons.check()}</div>
         <div class="stat-card-value">${formatCurrency(totalRevenue)}</div>
-        <div class="stat-card-label">Total Collected</div>
+        <div class="stat-card-label">${i18n.t('invoices.stats.totalCollected')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background: var(--color-warning-subtle); color: var(--color-warning);">${Icons.alertCircle()}</div>
         <div class="stat-card-value">${formatCurrency(totalDue)}</div>
-        <div class="stat-card-label">Outstanding</div>
+        <div class="stat-card-label">${i18n.t('invoices.stats.outstanding')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background: var(--color-error-subtle); color: var(--color-error);">${Icons.alertCircle()}</div>
         <div class="stat-card-value">${state.invoices.filter((i) => i.status === 'overdue').length}</div>
-        <div class="stat-card-label">Overdue</div>
+        <div class="stat-card-label">${i18n.t('invoices.stats.overdue')}</div>
       </div>
     </div>
 
@@ -295,15 +300,15 @@ function buildHTML(state: State): string {
       <div class="card-header" style="gap: var(--space-3); flex-wrap: wrap;">
         <div class="search-bar" style="flex: 1; max-width: 360px;">
           <span class="search-icon">${Icons.search(16)}</span>
-          <input type="search" id="invoice-search" class="form-control" placeholder="Search invoices..." value="${state.search}" aria-label="Search invoices" />
+          <input type="search" id="invoice-search" class="form-control" placeholder="${i18n.t('common.search')}..." value="${state.search}" aria-label="${i18n.t('common.search')}" />
         </div>
-        <select id="inv-status-filter" class="form-control" style="width: auto;" aria-label="Filter by status">
-          <option value="">All Statuses</option>
-          <option value="draft" ${state.statusFilter === 'draft' ? 'selected' : ''}>Draft</option>
-          <option value="sent" ${state.statusFilter === 'sent' ? 'selected' : ''}>Sent</option>
-          <option value="paid" ${state.statusFilter === 'paid' ? 'selected' : ''}>Paid</option>
-          <option value="overdue" ${state.statusFilter === 'overdue' ? 'selected' : ''}>Overdue</option>
-          <option value="cancelled" ${state.statusFilter === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+        <select id="inv-status-filter" class="form-control" style="width: auto;" aria-label="${i18n.t('common.filter')}">
+          <option value="">${i18n.t('common.all')}</option>
+          <option value="draft" ${state.statusFilter === 'draft' ? 'selected' : ''}>${getStatusLabel('draft')}</option>
+          <option value="sent" ${state.statusFilter === 'sent' ? 'selected' : ''}>${getStatusLabel('sent')}</option>
+          <option value="paid" ${state.statusFilter === 'paid' ? 'selected' : ''}>${getStatusLabel('paid')}</option>
+          <option value="overdue" ${state.statusFilter === 'overdue' ? 'selected' : ''}>${getStatusLabel('overdue')}</option>
+          <option value="cancelled" ${state.statusFilter === 'cancelled' ? 'selected' : ''}>${getStatusLabel('cancelled')}</option>
         </select>
       </div>
 
@@ -311,14 +316,14 @@ function buildHTML(state: State): string {
         <table class="data-table" aria-label="Invoices list">
           <thead>
             <tr>
-              <th>Invoice #</th>
-              <th>Customer</th>
-              <th>Total</th>
-              <th>Paid</th>
-              <th>Due</th>
-              <th>Status</th>
-              <th>Due Date</th>
-              <th>Actions</th>
+              <th>${i18n.t('invoices.invoiceNumber')}</th>
+              <th>${i18n.t('invoices.customer')}</th>
+              <th>${i18n.t('invoices.total')}</th>
+              <th>${i18n.t('invoices.paid')}</th>
+              <th>${i18n.t('invoices.due')}</th>
+              <th>${i18n.t('common.status')}</th>
+              <th>${i18n.t('invoices.dueDate')}</th>
+              <th>${i18n.t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -327,8 +332,8 @@ function buildHTML(state: State): string {
                 ? `<tr><td colspan="8">
                     <div class="empty-state">
                       <div class="empty-state-icon">${Icons.invoices(32)}</div>
-                      <p class="empty-state-title">No invoices found</p>
-                      <p class="empty-state-desc">${state.search ? 'Try a different search.' : 'Create your first invoice.'}</p>
+                      <p class="empty-state-title">${i18n.t('common.noData')}</p>
+                      <p class="empty-state-desc">${state.search ? i18n.t('errors.loadFailed') : i18n.t('invoices.modals.createTitle')}</p>
                     </div>
                   </td></tr>`
                 : pageData
@@ -340,13 +345,14 @@ function buildHTML(state: State): string {
                 <td><strong>${formatCurrency(inv.total)}</strong></td>
                 <td style="color: var(--color-success);">${formatCurrency(inv.amountPaid)}</td>
                 <td style="color: ${inv.amountDue > 0 ? 'var(--color-error)' : 'var(--color-text-secondary)'}; font-weight: ${inv.amountDue > 0 ? '600' : '400'};">${formatCurrency(inv.amountDue)}</td>
-                <td><span class="badge ${STATUS_BADGE[inv.status] ?? 'badge-neutral'}">${inv.status}</span></td>
+                <td><span class="badge ${STATUS_BADGE[inv.status] ?? 'badge-neutral'}">${getStatusLabel(inv.status)}</span></td>
                 <td style="color: var(--color-text-secondary);">${formatDate(inv.dueDate)}</td>
                 <td>
                   <div class="inv-action-menu" data-inv-id="${inv.id}" data-inv-number="${inv.invoiceNumber}">
                     <button
                       class="btn btn-ghost btn-icon btn-sm inv-menu-trigger"
-                      aria-label="Actions for invoice ${inv.invoiceNumber}"
+                      aria-label="${i18n.t('common.actions')}"
+                      data-tooltip="${i18n.t('common.actions')}"
                       aria-haspopup="true"
                       aria-expanded="false"
                     >
@@ -379,7 +385,7 @@ function buildPagination(
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   return `
     <div class="pagination">
-      <span class="pagination-info">Showing ${start + 1}–${start + count} of ${total}</span>
+      <span class="pagination-info">${i18n.t('common.showing' as any)} ${start + 1}–${start + count} / ${total}</span>
       <div class="pagination-controls">
         <button class="pagination-btn" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>${Icons.chevronLeft(16)}</button>
         ${pages.map((p) => `<button class="pagination-btn ${p === page ? 'active' : ''}" data-page="${p}">${p}</button>`).join('')}
@@ -445,7 +451,7 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
         </div>
         <div>
           <div style="font-size:var(--font-size-xl);font-weight:700;color:var(--color-primary);">Tijara</div>
-          <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;">Sales Management</div>
+          <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;">${i18n.t('settings.aboutSubtitle' as any)}</div>
         </div>
       </div>`;
   }
@@ -458,7 +464,7 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
     if (profile.email)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.email}</div>`;
     if (profile.phone)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.phone}</div>`;
     if (profile.website) fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.website}</div>`;
-    if (profile.taxId)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">Tax ID: ${profile.taxId}</div>`;
+    if (profile.taxId)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${i18n.t('settings.taxId')}: ${profile.taxId}</div>`;
   } else {
     fromHTML = `<div style="font-weight:600;color:var(--color-text-primary);">Tijara Inc.</div><div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">billing@tijara.app</div>`;
   }
@@ -483,9 +489,9 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
         ${brandHTML}
         <div style="text-align:right;flex-shrink:0;">
           <div style="font-size:var(--font-size-2xl);font-weight:700;color:var(--color-text-primary);">${invoice.invoiceNumber}</div>
-          <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-top:2px;">Issued: ${formatDate(invoice.createdAt)}</div>
+          <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-top:2px;">${i18n.t('invoices.modals.issued')}: ${formatDate(invoice.createdAt)}</div>
           <div style="display:inline-block;margin-top:var(--space-2);padding:2px 10px;border-radius:var(--radius-full);font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:${accentColor}1a;color:${accentColor};border:1px solid ${accentColor}44;">
-            ${invoice.status}
+            ${getStatusLabel(invoice.status)}
           </div>
         </div>
       </div>
@@ -493,11 +499,11 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
       <!-- From / Bill To -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);padding:var(--space-5) var(--space-6);">
         <div>
-          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:var(--space-2);">From</div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:var(--space-2);">${i18n.t('invoices.modals.from')}</div>
           ${fromHTML}
         </div>
         <div>
-          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:var(--space-2);">Bill To</div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:var(--space-2);">${i18n.t('invoices.modals.billTo')}</div>
           <div style="font-weight:600;color:var(--color-text-primary);margin-bottom:2px;">${invoice.customerName}</div>
         </div>
       </div>
@@ -505,16 +511,16 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
       <!-- Dates strip -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);padding:var(--space-4) var(--space-6);background:var(--color-bg-secondary);border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);">
         <div>
-          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:2px;">Invoice Date</div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:2px;">${i18n.t('invoices.modals.invoiceDate')}</div>
           <div style="font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-primary);">${formatDate(invoice.createdAt)}</div>
         </div>
         <div>
-          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:2px;">Due Date</div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:2px;">${i18n.t('invoices.dueDate')}</div>
           <div style="font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-primary);">${formatDate(invoice.dueDate)}</div>
         </div>
         <div>
-          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:2px;">Payment Terms</div>
-          <div style="font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-primary);">Net ${netDays > 0 ? netDays : 30} days</div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:2px;">${i18n.t('invoices.modals.paymentTermsLabel')}</div>
+          <div style="font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-primary);">${i18n.t('common.net' as any)} ${netDays > 0 ? netDays : 30} ${i18n.t('common.date').toLowerCase()}</div>
         </div>
       </div>
 
@@ -523,11 +529,11 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
         <table style="width:100%;border-collapse:collapse;font-size:var(--font-size-sm);">
           <thead>
             <tr style="background:var(--color-primary);">
-              <th style="padding:var(--space-2) var(--space-3);text-align:left;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">Description</th>
-              <th style="padding:var(--space-2) var(--space-3);text-align:center;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">Qty</th>
-              <th style="padding:var(--space-2) var(--space-3);text-align:right;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">Unit Price</th>
-              <th style="padding:var(--space-2) var(--space-3);text-align:center;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">Discount</th>
-              <th style="padding:var(--space-2) var(--space-3);text-align:right;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">Amount</th>
+              <th style="padding:var(--space-2) var(--space-3);text-align:left;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">${i18n.t('products.modals.name')}</th>
+              <th style="padding:var(--space-2) var(--space-3);text-align:center;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">${i18n.t('common.quantity' as any)}</th>
+              <th style="padding:var(--space-2) var(--space-3);text-align:right;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">${i18n.t('products.price')}</th>
+              <th style="padding:var(--space-2) var(--space-3);text-align:center;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">${i18n.t('sales.discount')}</th>
+              <th style="padding:var(--space-2) var(--space-3);text-align:right;font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:white;">${i18n.t('common.amount')}</th>
             </tr>
           </thead>
           <tbody>${itemRows}</tbody>
@@ -538,24 +544,24 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
       <div style="display:flex;justify-content:flex-end;padding:0 var(--space-6) var(--space-5);">
         <div style="width:260px;display:flex;flex-direction:column;gap:0;">
           <div style="display:flex;justify-content:space-between;padding:var(--space-2) 0;font-size:var(--font-size-sm);color:var(--color-text-secondary);border-bottom:1px solid var(--color-border-subtle);">
-            <span>Subtotal</span><span>${formatCurrency(invoice.subtotal)}</span>
+            <span>${i18n.t('sales.subtotal')}</span><span>${formatCurrency(invoice.subtotal)}</span>
           </div>
           ${invoice.discount > 0 ? `
           <div style="display:flex;justify-content:space-between;padding:var(--space-2) 0;font-size:var(--font-size-sm);color:var(--color-text-secondary);border-bottom:1px solid var(--color-border-subtle);">
-            <span>Discount</span><span style="color:var(--color-error);">-${formatCurrency(invoice.discount)}</span>
+            <span>${i18n.t('sales.discount')}</span><span style="color:var(--color-error);">-${formatCurrency(invoice.discount)}</span>
           </div>` : ''}
           <div style="display:flex;justify-content:space-between;padding:var(--space-2) 0;font-size:var(--font-size-sm);color:var(--color-text-secondary);border-bottom:1px solid var(--color-border-subtle);">
-            <span>Tax (${invoice.taxRate}%)</span><span>${formatCurrency(invoice.taxAmount)}</span>
+            <span>${i18n.t('sales.tax')} (${invoice.taxRate}%)</span><span>${formatCurrency(invoice.taxAmount)}</span>
           </div>
           <div style="display:flex;justify-content:space-between;padding:var(--space-3) 0 var(--space-2);font-size:var(--font-size-lg);font-weight:700;color:var(--color-primary);border-top:2px solid var(--color-primary);margin-top:var(--space-1);">
-            <span>Total</span><span>${formatCurrency(invoice.total)}</span>
+            <span>${i18n.t('common.total')}</span><span>${formatCurrency(invoice.total)}</span>
           </div>
           ${invoice.amountPaid > 0 ? `
           <div style="display:flex;justify-content:space-between;padding:var(--space-1) 0;font-size:var(--font-size-sm);font-weight:500;color:var(--color-success);">
-            <span>Amount Paid</span><span>${formatCurrency(invoice.amountPaid)}</span>
+            <span>${i18n.t('invoices.paid')}</span><span>${formatCurrency(invoice.amountPaid)}</span>
           </div>
           <div style="display:flex;justify-content:space-between;padding:var(--space-1) 0;font-size:var(--font-size-sm);font-weight:700;color:${invoice.amountDue > 0 ? 'var(--color-error)' : 'var(--color-success)'};">
-            <span>Balance Due</span><span>${formatCurrency(invoice.amountDue)}</span>
+            <span>${i18n.t('invoices.modals.balanceDue')}</span><span>${formatCurrency(invoice.amountDue)}</span>
           </div>` : ''}
         </div>
       </div>
@@ -563,7 +569,7 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
       ${invoice.notes ? `
       <!-- Notes -->
       <div style="margin:0 var(--space-6) var(--space-5);padding:var(--space-3) var(--space-4);background:var(--color-bg-secondary);border-left:3px solid var(--color-primary);border-radius:0 var(--radius-sm) var(--radius-sm) 0;">
-        <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:4px;">Notes</div>
+        <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('common.notes')}</div>
         <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${invoice.notes}</div>
       </div>` : ''}
 
@@ -572,23 +578,23 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
     <!-- Record payment (only when amount is due) -->
     ${invoice.amountDue > 0 ? `
     <div style="margin-top:var(--space-5);padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);border:1px solid var(--color-border);">
-      <div style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-3);">Record Payment</div>
+      <div style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-3);">${i18n.t('invoices.modals.recordPayment')}</div>
       <div style="display:flex;gap:var(--space-2);">
-        <input type="number" id="payment-amount" class="form-control" placeholder="Amount"
+        <input type="number" id="payment-amount" class="form-control" placeholder="${i18n.t('invoices.modals.amount')}"
           min="0" max="${invoice.amountDue}" step="0.01" value="${invoice.amountDue}" />
-        <button type="button" class="btn btn-primary" id="record-payment-btn">Record</button>
+        <button type="button" class="btn btn-primary" id="record-payment-btn">${i18n.t('common.add')}</button>
       </div>
     </div>` : ''}
 
     <!-- Actions -->
     <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4);">
-      <button class="btn btn-secondary" id="detail-pdf-btn">${Icons.fileText(16)} Export PDF</button>
-      <button class="btn btn-secondary" id="detail-print-btn">${Icons.printer(16)} Print</button>
+      <button class="btn btn-secondary" id="detail-pdf-btn">${Icons.fileText(16)} ${i18n.t('common.export')} PDF</button>
+      <button class="btn btn-secondary" id="detail-print-btn">${Icons.printer(16)} ${i18n.t('common.print')}</button>
     </div>
   `;
 
   const close = openModal({
-    title: `Invoice ${invoice.invoiceNumber}`,
+    title: `${i18n.t('invoices.invoiceNumber')} ${invoice.invoiceNumber}`,
     content,
     size: 'lg',
     hideFooter: true,
@@ -597,11 +603,11 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
   content.querySelector('#record-payment-btn')?.addEventListener('click', () => {
     const amount = parseFloat((content.querySelector('#payment-amount') as HTMLInputElement).value);
     if (isNaN(amount) || amount <= 0) {
-      notifications.error('Enter a valid payment amount.');
+      notifications.error(i18n.t('errors.required'));
       return;
     }
     invoiceService.recordPayment(invoice.id, amount);
-    notifications.success(`Payment of ${formatCurrency(amount)} recorded.`);
+    notifications.success(`${i18n.t('invoices.paid')} : ${formatCurrency(amount)}`);
     close();
     onUpdate();
   });
@@ -611,9 +617,9 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
     btn.disabled = true;
     try {
       await exportInvoicePDF(invoice);
-      notifications.success('Invoice exported as PDF.');
+      notifications.success(i18n.t('common.pdfExportSuccess' as any));
     } catch {
-      notifications.error('PDF export failed.');
+      notifications.error(i18n.t('common.pdfExportError' as any));
     } finally {
       btn.disabled = false;
     }
@@ -630,37 +636,37 @@ function openCreateInvoiceModal(onSave: () => void): void {
   const form = document.createElement('div');
   form.innerHTML = `
     <div class="form-group" style="margin-bottom: var(--space-4);">
-      <label class="form-label required" for="inv-sale">Select Order</label>
+      <label class="form-label required" for="inv-sale">${i18n.t('invoices.modals.selectOrder')}</label>
       <select id="inv-sale" class="form-control" required>
-        <option value="">Choose an order...</option>
+        <option value="">${i18n.t('invoices.modals.chooseOrder')}</option>
         ${sales.map((s) => `<option value="${s.id}">${s.orderNumber} – ${s.customerName} (${formatCurrency(s.total)})</option>`).join('')}
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label" for="inv-days">Payment Terms (days)</label>
+      <label class="form-label" for="inv-days">${i18n.t('invoices.modals.paymentTerms')}</label>
       <input type="number" id="inv-days" class="form-control" value="30" min="1" />
     </div>
     <div class="form-group">
-      <label class="form-label" for="inv-notes">Notes</label>
-      <textarea id="inv-notes" class="form-control" placeholder="Optional notes..."></textarea>
+      <label class="form-label" for="inv-notes">${i18n.t('common.notes')}</label>
+      <textarea id="inv-notes" class="form-control" placeholder="..."></textarea>
     </div>
   `;
 
   openModal({
-    title: 'Create Invoice',
+    title: i18n.t('invoices.modals.createTitle'),
     content: form,
-    confirmText: 'Create Invoice',
+    confirmText: i18n.t('common.add'),
     onConfirm: () => {
       const saleId = (form.querySelector('#inv-sale') as HTMLSelectElement).value;
       if (!saleId) {
-        showModalError(form, 'Please select an order.', ['inv-sale']);
+        showModalError(form, i18n.t('errors.required'), ['inv-sale']);
         return false;
       }
       const sale = saleService.getById(saleId);
       if (!sale) return;
       const days = parseInt((form.querySelector('#inv-days') as HTMLInputElement).value) || 30;
       invoiceService.createFromSale(sale, days);
-      notifications.success('Invoice created successfully.');
+      notifications.success(i18n.t('invoices.modals.createSuccess' as any));
       onSave();
     },
   });
@@ -675,27 +681,27 @@ function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
   form.innerHTML = `
     <div class="form-row" style="margin-bottom: var(--space-4);">
       <div class="form-group">
-        <label class="form-label" for="ie-status">Status</label>
+        <label class="form-label" for="ie-status">${i18n.t('common.status')}</label>
         <select id="ie-status" class="form-control">
-          <option value="draft"     ${invoice.status === 'draft'     ? 'selected' : ''}>Draft</option>
-          <option value="sent"      ${invoice.status === 'sent'      ? 'selected' : ''}>Sent</option>
-          <option value="paid"      ${invoice.status === 'paid'      ? 'selected' : ''}>Paid</option>
-          <option value="overdue"   ${invoice.status === 'overdue'   ? 'selected' : ''}>Overdue</option>
-          <option value="cancelled" ${invoice.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+          <option value="draft"     ${invoice.status === 'draft'     ? 'selected' : ''}>${getStatusLabel('draft')}</option>
+          <option value="sent"      ${invoice.status === 'sent'      ? 'selected' : ''}>${getStatusLabel('sent')}</option>
+          <option value="paid"      ${invoice.status === 'paid'      ? 'selected' : ''}>${getStatusLabel('paid')}</option>
+          <option value="overdue"   ${invoice.status === 'overdue'   ? 'selected' : ''}>${getStatusLabel('overdue')}</option>
+          <option value="cancelled" ${invoice.status === 'cancelled' ? 'selected' : ''}>${getStatusLabel('cancelled')}</option>
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label" for="ie-due-date">Due Date</label>
+        <label class="form-label" for="ie-due-date">${i18n.t('invoices.dueDate')}</label>
         <input type="date" id="ie-due-date" class="form-control" value="${dueDateValue}" />
       </div>
     </div>
 
     <!-- Summary (read-only) -->
     <div style="background:var(--color-bg-secondary);border-radius:var(--radius-sm);padding:var(--space-4);margin-bottom:var(--space-4);">
-      <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:var(--space-3);text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Invoice Summary</div>
+      <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:var(--space-3);text-transform:uppercase;letter-spacing:.05em;font-weight:600;">${i18n.t('invoices.modals.summary')}</div>
       <div class="table-container">
         <table class="data-table">
-          <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+          <thead><tr><th>${i18n.t('products.product' as any)}</th><th>${i18n.t('common.quantity' as any)}</th><th>${i18n.t('products.price')}</th><th>${i18n.t('common.amount')}</th></tr></thead>
           <tbody>
             ${invoice.items.map((item) => `
               <tr>
@@ -709,13 +715,13 @@ function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
       </div>
       <div style="display:flex;flex-direction:column;gap:var(--space-1);align-items:flex-end;margin-top:var(--space-3);font-size:var(--font-size-sm);">
         <div style="display:flex;gap:var(--space-8);color:var(--color-text-secondary);">
-          <span>Subtotal</span><span>${formatCurrency(invoice.subtotal)}</span>
+          <span>${i18n.t('sales.subtotal')}</span><span>${formatCurrency(invoice.subtotal)}</span>
         </div>
         <div style="display:flex;gap:var(--space-8);color:var(--color-text-secondary);">
-          <span>Tax (${invoice.taxRate}%)</span><span>${formatCurrency(invoice.taxAmount)}</span>
+          <span>${i18n.t('sales.tax')} (${invoice.taxRate}%)</span><span>${formatCurrency(invoice.taxAmount)}</span>
         </div>
         <div style="display:flex;gap:var(--space-8);font-weight:700;font-size:var(--font-size-base);border-top:1px solid var(--color-border);padding-top:var(--space-2);margin-top:var(--space-1);">
-          <span>Total</span><span style="color:var(--color-primary);">${formatCurrency(invoice.total)}</span>
+          <span>${i18n.t('common.total')}</span><span style="color:var(--color-primary);">${formatCurrency(invoice.total)}</span>
         </div>
       </div>
     </div>
@@ -723,11 +729,11 @@ function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
     <!-- Payment tracking -->
     <div class="form-row" style="margin-bottom: var(--space-4);">
       <div class="form-group">
-        <label class="form-label" for="ie-amount-paid">Amount Paid (${currencySymbol})</label>
+        <label class="form-label" for="ie-amount-paid">${i18n.t('invoices.paid')} (${currencySymbol})</label>
         <input type="number" id="ie-amount-paid" class="form-control" value="${invoice.amountPaid}" min="0" step="0.01" max="${invoice.total}" />
       </div>
       <div class="form-group">
-        <label class="form-label">Amount Due</label>
+        <label class="form-label">${i18n.t('invoices.due')}</label>
         <div id="ie-amount-due" class="form-control" style="background:var(--color-bg-secondary);cursor:default;font-weight:600;color:${invoice.amountDue > 0 ? 'var(--color-error)' : 'var(--color-success)'};">
           ${formatCurrency(invoice.amountDue)}
         </div>
@@ -735,8 +741,8 @@ function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="ie-notes">Notes</label>
-      <textarea id="ie-notes" class="form-control" placeholder="Optional notes...">${invoice.notes ?? ''}</textarea>
+      <label class="form-label" for="ie-notes">${i18n.t('common.notes')}</label>
+      <textarea id="ie-notes" class="form-control" placeholder="...">${invoice.notes ?? ''}</textarea>
     </div>
   `;
 
@@ -750,10 +756,10 @@ function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
   });
 
   openModal({
-    title: `Edit Invoice ${invoice.invoiceNumber}`,
+    title: `${i18n.t('invoices.modals.editTitle')} ${invoice.invoiceNumber}`,
     content: form,
     size: 'lg',
-    confirmText: 'Save Changes',
+    confirmText: i18n.t('common.save'),
     onConfirm: () => {
       const amountPaid = parseFloat((form.querySelector('#ie-amount-paid') as HTMLInputElement).value) || 0;
       const amountDue  = Math.max(0, invoice.total - amountPaid);
@@ -772,7 +778,7 @@ function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
         notes: (form.querySelector('#ie-notes') as HTMLTextAreaElement).value.trim(),
       });
 
-      notifications.success('Invoice updated successfully.');
+      notifications.success(i18n.t('common.save'));
       onSave();
     },
   });

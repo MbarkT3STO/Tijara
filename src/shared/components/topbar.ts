@@ -9,23 +9,12 @@ import { router } from '@core/router';
 import { Icons } from './icons';
 import { getInitials } from '@shared/utils/helpers';
 import { alertService } from '@services/alertService';
-import type { Route, User } from '@core/types';
+import { createLanguageSwitcher } from './languageSwitcher';
+import { i18n } from '@core/i18n';
+import type { User } from '@core/types';
 import type { SystemAlert } from '@services/alertService';
 
-const ROUTE_TITLES: Record<Route, string> = {
-  dashboard: 'Dashboard',
-  customers: 'Customers',
-  products:  'Products',
-  sales:     'Sales',
-  invoices:  'Invoices',
-  inventory: 'Inventory',
-  suppliers: 'Suppliers',
-  purchases: 'Purchases',
-  returns:   'Returns & Refunds',
-  reports:   'Reports & Analytics',
-  users:     'Users',
-  settings:  'Settings',
-};
+
 
 const SEVERITY_COLORS: Record<SystemAlert['severity'], { icon: string; color: string; bg: string; border: string }> = {
   error:   { icon: Icons.alertCircle(16), color: 'var(--color-error)',   bg: 'var(--color-error-subtle)',   border: 'rgba(239,68,68,.2)' },
@@ -56,14 +45,14 @@ export function createTopbar(
 
   const menuBtn = document.createElement('button');
   menuBtn.className = 'mobile-menu-btn';
-  menuBtn.setAttribute('aria-label', 'Toggle navigation menu');
+  menuBtn.setAttribute('aria-label', i18n.t('topbar.toggleMenu' as any));
   menuBtn.innerHTML = Icons.menu();
   menuBtn.addEventListener('click', onMenuToggle);
 
   const title = document.createElement('h1');
   title.className = 'topbar-title';
   title.id = 'page-title';
-  title.textContent = ROUTE_TITLES[router.getRoute()] ?? 'Dashboard';
+  title.textContent = i18n.t(`nav.${router.getRoute()}` as any) || router.getRoute();
 
   left.appendChild(menuBtn);
   left.appendChild(title);
@@ -75,8 +64,8 @@ export function createTopbar(
   // Theme toggle
   const themeBtn = document.createElement('button');
   themeBtn.className = 'btn btn-ghost btn-icon';
-  themeBtn.setAttribute('aria-label', 'Toggle dark/light mode');
-  themeBtn.setAttribute('data-tooltip', 'Toggle theme');
+  themeBtn.setAttribute('aria-label', i18n.t('topbar.toggleTheme' as any));
+  themeBtn.setAttribute('data-tooltip', i18n.t('topbar.toggleTheme' as any));
   const updateThemeIcon = () => {
     themeBtn.innerHTML = themeManager.getTheme() === 'dark' ? Icons.sun() : Icons.moon();
   };
@@ -84,12 +73,16 @@ export function createTopbar(
   themeBtn.addEventListener('click', () => { themeManager.toggle(); updateThemeIcon(); });
   themeManager.subscribe(updateThemeIcon);
 
+  // Language switcher
+  const langSwitcher = createLanguageSwitcher();
+
   // Notifications bell
   const bellWrapper = buildBellButton();
 
   // User menu trigger
   const userTrigger = buildUserTrigger(currentUser);
 
+  right.appendChild(langSwitcher);
   right.appendChild(themeBtn);
   right.appendChild(bellWrapper);
   right.appendChild(userTrigger);
@@ -98,11 +91,15 @@ export function createTopbar(
   topbar.appendChild(right);
 
   // Update title on route change
-  router.subscribe((route) => {
-    title.textContent = ROUTE_TITLES[route] ?? 'Dashboard';
+  const updateTitle = () => {
+    title.textContent = i18n.t(`nav.${router.getRoute()}` as any);
+  };
+  router.subscribe(() => {
+    updateTitle();
     // Refresh badge on every navigation (data may have changed)
     refreshBadge(bellWrapper);
   });
+  i18n.onLanguageChange(updateTitle);
 
   // ── Shared portal close state ─────────────────────────────────────────────
   let activePortal: HTMLElement | null = null;
@@ -132,7 +129,7 @@ export function createTopbar(
 
     const portal = document.createElement('div');
     portal.setAttribute('role', 'menu');
-    portal.setAttribute('aria-label', 'Notifications');
+    portal.setAttribute('aria-label', i18n.t('topbar.notifications' as any));
     portal.style.cssText = `
       position: fixed;
       top: ${top}px;
@@ -178,7 +175,7 @@ export function createTopbar(
 
     const portal = document.createElement('div');
     portal.setAttribute('role', 'menu');
-    portal.setAttribute('aria-label', 'User menu');
+    portal.setAttribute('aria-label', i18n.t('topbar.userMenu' as any));
     portal.style.cssText = `
       position: fixed;
       top: ${top}px;
@@ -198,15 +195,15 @@ export function createTopbar(
         <div style="font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-primary);">${currentUser.name}</div>
         <div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-top: 2px; word-break: break-all;">${currentUser.email}</div>
         <div style="margin-top: var(--space-2);">
-          <span class="badge badge-primary" style="font-size: 10px; text-transform: capitalize;">${currentUser.role}</span>
+          <span class="badge badge-primary" style="font-size: 10px;">${i18n.t(`users.roles.${currentUser.role}` as any)}</span>
         </div>
       </div>
       <button class="dropdown-item" id="portal-settings" role="menuitem">
-        ${Icons.settings(16)} Settings
+        ${Icons.settings(16)} <span data-i18n="nav.settings">${i18n.t('nav.settings')}</span>
       </button>
       <div class="dropdown-divider"></div>
       <button class="dropdown-item danger" id="portal-logout" role="menuitem">
-        ${Icons.logOut(16)} Sign out
+        ${Icons.logOut(16)} <span data-i18n="topbar.signOut">${i18n.t('topbar.signOut')}</span>
       </button>
     `;
 
@@ -235,10 +232,10 @@ function buildBellButton(): HTMLElement {
     <button
       id="bell-btn"
       class="btn btn-ghost btn-icon"
-      aria-label="Notifications${count > 0 ? ` (${count} alerts)` : ''}"
+      aria-label="${i18n.t('topbar.notifications')}${count > 0 ? ` (${count})` : ''}"
       aria-haspopup="true"
       aria-expanded="false"
-      data-tooltip="Notifications"
+      data-tooltip="${i18n.t('topbar.notifications')}"
       style="position:relative;"
     >
       ${Icons.bell()}
@@ -269,7 +266,7 @@ function refreshBadge(wrapper: HTMLElement): void {
   const btn = wrapper.querySelector<HTMLButtonElement>('#bell-btn');
   if (!btn) return;
 
-  btn.setAttribute('aria-label', `Notifications${count > 0 ? ` (${count} alerts)` : ''}`);
+  btn.setAttribute('aria-label', `${i18n.t('topbar.notifications')}${count > 0 ? ` (${count})` : ''}`);
 
   let badge = wrapper.querySelector<HTMLElement>('#bell-badge');
   if (count > 0) {
@@ -311,10 +308,10 @@ function buildNotificationsHTML(alerts: SystemAlert[]): string {
       z-index: 1;
     ">
       <div style="display:flex;align-items:center;gap:var(--space-2);">
-        <span style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-primary);">Notifications</span>
+        <span style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-primary);">${i18n.t('topbar.notifications')}</span>
         ${alerts.length > 0 ? `<span class="badge badge-error" style="font-size:10px;">${alerts.length}</span>` : ''}
       </div>
-      ${alerts.length > 0 ? `<span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${alerts.filter(a => a.severity === 'error').length} critical</span>` : ''}
+      ${alerts.length > 0 ? `<span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${alerts.filter(a => a.severity === 'error').length} ${i18n.t('topbar.critical')}</span>` : ''}
     </div>
   `;
 
@@ -331,8 +328,8 @@ function buildNotificationsHTML(alerts: SystemAlert[]): string {
           background: var(--color-success-subtle); color: var(--color-success);
           display: flex; align-items: center; justify-content: center;
         ">${Icons.check(24)}</div>
-        <div style="font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-primary);">All clear</div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">No alerts at this time</div>
+        <div style="font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-primary);">${i18n.t('topbar.allClear')}</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('topbar.noAlerts')}</div>
       </div>
     `;
   }
@@ -392,14 +389,14 @@ function buildNotificationsHTML(alerts: SystemAlert[]): string {
 function buildUserTrigger(user: User): HTMLButtonElement {
   const trigger = document.createElement('button');
   trigger.className = 'user-menu-trigger';
-  trigger.setAttribute('aria-label', `User menu for ${user.name}`);
+  trigger.setAttribute('aria-label', i18n.t('topbar.userMenu' as any));
   trigger.setAttribute('aria-haspopup', 'true');
   trigger.setAttribute('aria-expanded', 'false');
   trigger.innerHTML = `
     <div class="avatar avatar-sm">${getInitials(user.name)}</div>
     <div class="user-menu-info">
       <span class="user-menu-name">${user.name}</span>
-      <span class="user-menu-role">${user.role}</span>
+      <span class="user-menu-role">${i18n.t(`users.roles.${user.role}` as any)}</span>
     </div>
     ${Icons.chevronDown(14)}
   `;
@@ -417,11 +414,11 @@ function showSignOutConfirmation(onConfirm: () => void): void {
           display:flex;align-items:center;justify-content:center;
         ">${Icons.logOut(24)}</div>
         <div>
-          <p style="font-size:var(--font-size-base);color:var(--color-text-primary);font-weight:500;margin-bottom:var(--space-2);">Sign out of Tijara?</p>
-          <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">Your data is saved automatically. You can sign back in at any time.</p>
+          <p style="font-size:var(--font-size-base);color:var(--color-text-primary);font-weight:500;margin-bottom:var(--space-2);">${i18n.t('topbar.signOutConfirm')}</p>
+          <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${i18n.t('topbar.signOutHint')}</p>
         </div>
       </div>
     `;
-    openModal({ title: 'Sign Out', content, confirmText: 'Sign Out', cancelText: 'Stay', confirmClass: 'btn-danger', size: 'sm', onConfirm });
+    openModal({ title: i18n.t('topbar.signOut'), content, confirmText: i18n.t('topbar.signOut'), cancelText: i18n.t('topbar.stay'), confirmClass: 'btn-danger', size: 'sm', onConfirm });
   });
 }

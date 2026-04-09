@@ -7,6 +7,7 @@ import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatDate, debounce, getInitials } from '@shared/utils/helpers';
+import { i18n } from '@core/i18n';
 import type { Supplier } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -83,9 +84,9 @@ export function renderSuppliers(): HTMLElement {
       btn.addEventListener('click', () => {
         const supplier = supplierService.getById(btn.getAttribute('data-delete')!);
         if (!supplier) return;
-        confirmDialog('Delete Supplier', `Delete "${supplier.name}"? This cannot be undone.`, () => {
+        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${supplier.name}"? ${i18n.t('common.noData')}`, () => {
           supplierService.delete(supplier.id);
-          notifications.success('Supplier deleted.');
+          notifications.success(i18n.t('common.save'));
           state.suppliers = supplierService.getAll();
           state.filtered = state.search ? supplierService.search(state.search) : [...state.suppliers];
           if (state.page > Math.ceil(state.filtered.length / PAGE_SIZE)) {
@@ -117,10 +118,10 @@ function buildHTML(state: State): string {
   return `
     <div class="page-header">
       <div>
-        <h2 class="page-title">Suppliers</h2>
-        <p class="page-subtitle">${total} supplier${total !== 1 ? 's' : ''} total</p>
+        <h2 class="page-title">${i18n.t('suppliers.title')}</h2>
+        <p class="page-subtitle">${total === 1 ? i18n.t('suppliers.countTotal', { count: total }) : i18n.t('suppliers.countPlural', { count: total })}</p>
       </div>
-      <button class="btn btn-primary" id="add-supplier-btn">${Icons.plus()} Add Supplier</button>
+      <button class="btn btn-primary" id="add-supplier-btn">${Icons.plus()} ${i18n.t('suppliers.addNew')}</button>
     </div>
 
     <div class="card">
@@ -128,7 +129,7 @@ function buildHTML(state: State): string {
         <div class="search-bar" style="flex:1;max-width:360px;">
           <span class="search-icon">${Icons.search(16)}</span>
           <input type="search" id="supplier-search" class="form-control"
-            placeholder="Search suppliers..." value="${state.search}" aria-label="Search suppliers" />
+            placeholder="${i18n.t('common.search')}..." value="${state.search}" aria-label="${i18n.t('common.search')}" />
         </div>
       </div>
 
@@ -136,14 +137,14 @@ function buildHTML(state: State): string {
         <table class="data-table" aria-label="Suppliers list">
           <thead>
             <tr>
-              <th>Supplier</th>
-              <th>Contact Person</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>City</th>
-              <th>Country</th>
-              <th>Since</th>
-              <th>Actions</th>
+              <th>${i18n.t('suppliers.name')}</th>
+              <th>${i18n.t('suppliers.contactPerson')}</th>
+              <th>${i18n.t('suppliers.email')}</th>
+              <th>${i18n.t('suppliers.phone')}</th>
+              <th>${i18n.t('suppliers.city')}</th>
+              <th>${i18n.t('suppliers.country')}</th>
+              <th>${i18n.t('suppliers.since')}</th>
+              <th>${i18n.t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -151,8 +152,8 @@ function buildHTML(state: State): string {
               ? `<tr><td colspan="8">
                   <div class="empty-state">
                     <div class="empty-state-icon">${Icons.truck(32)}</div>
-                    <p class="empty-state-title">No suppliers found</p>
-                    <p class="empty-state-desc">${state.search ? 'Try a different search term.' : 'Add your first supplier to get started.'}</p>
+                    <p class="empty-state-title">${i18n.t('common.noData')}</p>
+                    <p class="empty-state-desc">${state.search ? i18n.t('common.noData') : i18n.t('suppliers.addNew')}</p>
                   </div>
                 </td></tr>`
               : pageData.map((s) => `
@@ -162,7 +163,7 @@ function buildHTML(state: State): string {
                       <div class="avatar avatar-sm">${getInitials(s.name)}</div>
                       <div>
                         <div style="font-weight:500;">${s.name}</div>
-                        ${s.taxId ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">Tax: ${s.taxId}</div>` : ''}
+                        ${s.taxId ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('suppliers.modals.taxId')}: ${s.taxId}</div>` : ''}
                       </div>
                     </div>
                   </td>
@@ -174,9 +175,9 @@ function buildHTML(state: State): string {
                   <td style="color:var(--color-text-secondary);">${formatDate(s.createdAt)}</td>
                   <td>
                     <div class="table-actions">
-                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${s.id}" aria-label="View" data-tooltip="View">${Icons.eye(16)}</button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-edit="${s.id}" aria-label="Edit" data-tooltip="Edit">${Icons.edit(16)}</button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${s.id}" aria-label="Delete" data-tooltip="Delete" style="color:var(--color-error);">${Icons.trash(16)}</button>
+                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${s.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">${Icons.eye(16)}</button>
+                      <button class="btn btn-ghost btn-icon btn-sm" data-edit="${s.id}" aria-label="${i18n.t('common.edit')}" data-tooltip="${i18n.t('common.edit')}">${Icons.edit(16)}</button>
+                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${s.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>
                     </div>
                   </td>
                 </tr>`).join('')
@@ -194,7 +195,7 @@ function buildPagination(page: number, totalPages: number, total: number, start:
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   return `
     <div class="pagination">
-      <span class="pagination-info">Showing ${start + 1}–${start + count} of ${total}</span>
+      <span class="pagination-info">${i18n.t('common.showing')} ${start + 1}–${start + count} ${i18n.t('common.of')} ${total}</span>
       <div class="pagination-controls">
         <button class="pagination-btn" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>${Icons.chevronLeft(16)}</button>
         ${pages.map((p) => `<button class="pagination-btn ${p === page ? 'active' : ''}" data-page="${p}">${p}</button>`).join('')}
@@ -208,37 +209,37 @@ function openSupplierDetailModal(supplier: Supplier, onEdit: () => void): void {
   content.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Contact Person</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.contactPerson')}</div>
         <div style="font-weight:500;">${supplier.contactPerson || '—'}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Email</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.email')}</div>
         <div>${supplier.email || '—'}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Phone</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.phone')}</div>
         <div>${supplier.phone || '—'}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Website</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.modals.website')}</div>
         <div>${supplier.website ? `<a href="${supplier.website}" target="_blank" style="color:var(--color-primary);">${supplier.website}</a>` : '—'}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Address</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.modals.address')}</div>
         <div>${[supplier.address, supplier.city, supplier.country].filter(Boolean).join(', ') || '—'}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Tax ID</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.modals.taxId')}</div>
         <div>${supplier.taxId || '—'}</div>
       </div>
     </div>
     ${supplier.notes ? `
     <div style="padding:var(--space-3) var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">
-      <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:4px;">Notes</div>
+      <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('common.notes')}</div>
       ${supplier.notes}
     </div>` : ''}
     <div style="margin-top:var(--space-5);">
-      <button class="btn btn-secondary" id="detail-edit-btn">${Icons.edit(16)} Edit Supplier</button>
+      <button class="btn btn-secondary" id="detail-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>
     </div>
   `;
 
@@ -256,62 +257,62 @@ function openSupplierModal(supplier: Supplier | null, onSave: () => void): void 
   form.innerHTML = `
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label required" for="sp-name">Company Name</label>
+        <label class="form-label required" for="sp-name">${i18n.t('suppliers.name')}</label>
         <input type="text" id="sp-name" class="form-control" placeholder="Acme Supplies Ltd" value="${supplier?.name ?? ''}" required />
       </div>
       <div class="form-group">
-        <label class="form-label" for="sp-contact">Contact Person</label>
+        <label class="form-label" for="sp-contact">${i18n.t('suppliers.contactPerson')}</label>
         <input type="text" id="sp-contact" class="form-control" placeholder="John Smith" value="${supplier?.contactPerson ?? ''}" />
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" for="sp-email">Email</label>
+        <label class="form-label" for="sp-email">${i18n.t('suppliers.email')}</label>
         <input type="email" id="sp-email" class="form-control" placeholder="contact@supplier.com" value="${supplier?.email ?? ''}" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="sp-phone">Phone</label>
+        <label class="form-label" for="sp-phone">${i18n.t('suppliers.phone')}</label>
         <input type="tel" id="sp-phone" class="form-control" placeholder="+1-555-0100" value="${supplier?.phone ?? ''}" />
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label" for="sp-address">Address</label>
+      <label class="form-label" for="sp-address">${i18n.t('suppliers.modals.address')}</label>
       <input type="text" id="sp-address" class="form-control" placeholder="123 Industrial Ave" value="${supplier?.address ?? ''}" />
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" for="sp-city">City</label>
+        <label class="form-label" for="sp-city">${i18n.t('suppliers.city')}</label>
         <input type="text" id="sp-city" class="form-control" placeholder="Chicago" value="${supplier?.city ?? ''}" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="sp-country">Country</label>
+        <label class="form-label" for="sp-country">${i18n.t('suppliers.country')}</label>
         <input type="text" id="sp-country" class="form-control" placeholder="USA" value="${supplier?.country ?? ''}" />
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" for="sp-taxid">Tax ID / VAT</label>
+        <label class="form-label" for="sp-taxid">${i18n.t('suppliers.modals.taxId')}</label>
         <input type="text" id="sp-taxid" class="form-control" placeholder="US-123456789" value="${supplier?.taxId ?? ''}" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="sp-website">Website</label>
+        <label class="form-label" for="sp-website">${i18n.t('suppliers.modals.website')}</label>
         <input type="url" id="sp-website" class="form-control" placeholder="https://supplier.com" value="${supplier?.website ?? ''}" />
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label" for="sp-notes">Notes</label>
-      <textarea id="sp-notes" class="form-control" placeholder="Optional notes...">${supplier?.notes ?? ''}</textarea>
+      <label class="form-label" for="sp-notes">${i18n.t('common.notes')}</label>
+      <textarea id="sp-notes" class="form-control" placeholder="${i18n.t('common.notes')}">${supplier?.notes ?? ''}</textarea>
     </div>
   `;
 
   openModal({
-    title: isEdit ? 'Edit Supplier' : 'Add Supplier',
+    title: isEdit ? i18n.t('suppliers.modals.editTitle') : i18n.t('suppliers.modals.addTitle'),
     content: form,
-    confirmText: isEdit ? 'Save Changes' : 'Add Supplier',
+    confirmText: isEdit ? i18n.t('common.save') : i18n.t('common.add'),
     onConfirm: () => {
       const name = (form.querySelector('#sp-name') as HTMLInputElement).value.trim();
       if (!name) {
-        showModalError(form, 'Company name is required.', ['sp-name']);
+        showModalError(form, i18n.t('errors.required'), ['sp-name']);
         return false;
       }
 
@@ -330,10 +331,10 @@ function openSupplierModal(supplier: Supplier | null, onSave: () => void): void 
 
       if (isEdit) {
         supplierService.update(supplier!.id, data);
-        notifications.success('Supplier updated successfully.');
+        notifications.success(i18n.t('common.save'));
       } else {
         supplierService.create(data);
-        notifications.success('Supplier added successfully.');
+        notifications.success(i18n.t('common.save'));
       }
       onSave();
     },

@@ -6,9 +6,10 @@
 import { inventoryService } from '@services/inventoryService';
 import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
-import { openModal, confirmDialog, showModalError } from '@shared/components/modal';
+import { openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, formatDateTime, debounce } from '@shared/utils/helpers';
+import { formatCurrency, formatDateTime, debounce } from '@shared/utils/helpers';
+import { i18n } from '@core/i18n';
 import type { StockMovement, StockMovementType, Product } from '@core/types';
 
 const PAGE_SIZE = 15;
@@ -21,13 +22,13 @@ const MOVEMENT_BADGE: Record<StockMovementType, string> = {
   return:     'badge-neutral',
 };
 
-const MOVEMENT_LABEL: Record<StockMovementType, string> = {
-  purchase:   'Purchase',
-  initial:    'Initial',
-  sale:       'Sale',
-  adjustment: 'Adjustment',
-  return:     'Return',
-};
+const MOVEMENT_LABEL = (): Record<StockMovementType, string> => ({
+  purchase:   i18n.t('inventory.type.purchase'),
+  initial:    i18n.t('inventory.type.initial'),
+  sale:       i18n.t('inventory.type.sale'),
+  adjustment: i18n.t('inventory.type.adjustment'),
+  return:     i18n.t('inventory.type.return'),
+});
 
 interface State {
   movements: StockMovement[];
@@ -151,18 +152,18 @@ function buildHTML(state: State): string {
   return `
     <div class="page-header">
       <div>
-        <h2 class="page-title">Inventory</h2>
-        <p class="page-subtitle">Stock levels, movements, and reorder management</p>
+        <h2 class="page-title">${i18n.t('inventory.title')}</h2>
+        <p class="page-subtitle">${i18n.t('inventory.subtitle')}</p>
       </div>
       <div class="toolbar">
         <button class="btn btn-secondary" id="reorder-settings-btn">
-          ${Icons.settings(16)} Reorder Settings
+          ${Icons.settings(16)} ${i18n.t('inventory.reorderSettings')}
         </button>
         <button class="btn btn-secondary" id="restock-btn">
-          ${Icons.download(16)} Restock
+          ${Icons.download(16)} ${i18n.t('inventory.restock')}
         </button>
         <button class="btn btn-primary" id="adjust-stock-btn">
-          ${Icons.refresh(16)} Adjust Stock
+          ${Icons.refresh(16)} ${i18n.t('inventory.adjustStock')}
         </button>
       </div>
     </div>
@@ -172,27 +173,27 @@ function buildHTML(state: State): string {
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-primary-subtle);color:var(--color-primary);">${Icons.package()}</div>
         <div class="stat-card-value">${products.length}</div>
-        <div class="stat-card-label">Total Products</div>
+        <div class="stat-card-label">${i18n.t('inventory.totalProducts')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success);">${Icons.dollarSign()}</div>
         <div class="stat-card-value">${formatCurrency(stockValue)}</div>
-        <div class="stat-card-label">Stock Cost Value</div>
+        <div class="stat-card-label">${i18n.t('inventory.stockCostValue')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-info-subtle);color:var(--color-info);">${Icons.dollarSign()}</div>
         <div class="stat-card-value">${formatCurrency(retailValue)}</div>
-        <div class="stat-card-label">Retail Value</div>
+        <div class="stat-card-label">${i18n.t('inventory.retailValue')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning);">${Icons.alertCircle()}</div>
         <div class="stat-card-value">${lowStock.length}</div>
-        <div class="stat-card-label">Low Stock Items</div>
+        <div class="stat-card-label">${i18n.t('inventory.lowStockItems')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-error-subtle);color:var(--color-error);">${Icons.close()}</div>
         <div class="stat-card-value">${outOfStock.length}</div>
-        <div class="stat-card-label">Out of Stock</div>
+        <div class="stat-card-label">${i18n.t('inventory.outOfStock')}</div>
       </div>
     </div>
 
@@ -200,19 +201,19 @@ function buildHTML(state: State): string {
     ${lowStock.length > 0 ? `
     <div class="card" style="margin-bottom:var(--space-5);">
       <div class="card-header">
-        <h3 class="card-title" style="color:var(--color-warning);">${Icons.alertCircle(16)} Low Stock Alerts</h3>
-        <span class="badge badge-warning">${lowStock.length} item${lowStock.length !== 1 ? 's' : ''}</span>
+        <h3 class="card-title" style="color:var(--color-warning);">${Icons.alertCircle(16)} ${i18n.t('inventory.lowStockAlerts')}</h3>
+        <span class="badge badge-warning">${lowStock.length}</span>
       </div>
       <div class="table-container" style="border:none;border-radius:0;">
         <table class="data-table">
           <thead>
             <tr>
-              <th>Product</th>
-              <th>SKU</th>
-              <th>Current Stock</th>
-              <th>Reorder Point</th>
-              <th>Suggested Restock</th>
-              <th>Action</th>
+              <th>${i18n.t('products.product' as any)}</th>
+              <th>${i18n.t('products.sku')}</th>
+              <th>${i18n.t('inventory.status.inStock')}</th>
+              <th>${i18n.t('inventory.reorderSettings')}</th>
+              <th>${i18n.t('inventory.suggestedRestock')}</th>
+              <th>${i18n.t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -229,7 +230,7 @@ function buildHTML(state: State): string {
                 <td style="color:var(--color-text-secondary);">${p.reorderQuantity} ${p.unit}</td>
                 <td>
                   <button class="btn btn-secondary btn-sm" data-quick-restock="${p.id}">
-                    ${Icons.download(14)} Restock
+                    ${Icons.download(14)} ${i18n.t('inventory.restock')}
                   </button>
                 </td>
               </tr>
@@ -242,30 +243,32 @@ function buildHTML(state: State): string {
     <!-- Stock levels overview -->
     <div class="card" style="margin-bottom:var(--space-5);">
       <div class="card-header">
-        <h3 class="card-title">Stock Levels</h3>
+        <h3 class="card-title">${i18n.t('inventory.stockLevels')}</h3>
       </div>
       <div class="table-container" style="border:none;border-radius:0;">
         <table class="data-table">
           <thead>
             <tr>
-              <th>Product</th>
-              <th>SKU</th>
-              <th>Category</th>
-              <th>In Stock</th>
-              <th>Reorder Point</th>
-              <th>Cost Value</th>
-              <th>Retail Value</th>
-              <th>Status</th>
+              <th>${i18n.t('products.modals.name')}</th>
+              <th>${i18n.t('products.sku')}</th>
+              <th>${i18n.t('products.category')}</th>
+              <th>${i18n.t('inventory.status.inStock')}</th>
+              <th>${i18n.t('inventory.reorderSettings')}</th>
+              <th>${i18n.t('inventory.stockCostValue')}</th>
+              <th>${i18n.t('inventory.retailValue')}</th>
+              <th>${i18n.t('common.status')}</th>
             </tr>
           </thead>
           <tbody>
             ${products.length === 0
-              ? `<tr><td colspan="8"><div class="empty-state"><p class="empty-state-title">No products yet</p></div></td></tr>`
+              ? `<tr><td colspan="8"><div class="empty-state"><p class="empty-state-title">${i18n.t('common.noData')}</p></div></td></tr>`
               : products.map((p) => {
                   const costVal = p.stock * p.cost;
                   const retailVal = p.stock * p.price;
-                  const statusClass = p.stock === 0 ? 'badge-error' : p.stock <= p.reorderPoint ? 'badge-warning' : 'badge-success';
-                  const statusLabel = p.stock === 0 ? 'Out of stock' : p.stock <= p.reorderPoint ? 'Low stock' : 'In stock';
+                  const isLow = p.stock > 0 && p.stock <= p.reorderPoint;
+                  const isOut = p.stock === 0;
+                  const statusClass = isOut ? 'badge-error' : isLow ? 'badge-warning' : 'badge-success';
+                  const statusLabel = isOut ? i18n.t('inventory.status.outOfStock') : isLow ? i18n.t('inventory.status.lowStock') : i18n.t('inventory.status.inStock');
                   return `
                     <tr>
                       <td><span style="font-weight:500;">${p.name}</span></td>
@@ -287,19 +290,19 @@ function buildHTML(state: State): string {
     <!-- Movement history -->
     <div class="card">
       <div class="card-header" style="gap:var(--space-3);flex-wrap:wrap;">
-        <h3 class="card-title">Movement History</h3>
+        <h3 class="card-title">${i18n.t('inventory.movementHistory')}</h3>
         <div style="display:flex;gap:var(--space-3);flex:1;justify-content:flex-end;flex-wrap:wrap;">
           <div class="search-bar" style="max-width:300px;flex:1;">
             <span class="search-icon">${Icons.search(16)}</span>
-            <input type="search" id="inv-search" class="form-control" placeholder="Search movements…" value="${state.search}" aria-label="Search movements" />
+            <input type="search" id="inv-search" class="form-control" placeholder="${i18n.t('common.search')}..." value="${state.search}" aria-label="${i18n.t('common.search')}" />
           </div>
-          <select id="inv-type-filter" class="form-control" style="width:auto;" aria-label="Filter by type">
-            <option value="">All Types</option>
-            <option value="purchase"   ${state.typeFilter === 'purchase'   ? 'selected' : ''}>Purchase</option>
-            <option value="sale"       ${state.typeFilter === 'sale'       ? 'selected' : ''}>Sale</option>
-            <option value="adjustment" ${state.typeFilter === 'adjustment' ? 'selected' : ''}>Adjustment</option>
-            <option value="return"     ${state.typeFilter === 'return'     ? 'selected' : ''}>Return</option>
-            <option value="initial"    ${state.typeFilter === 'initial'    ? 'selected' : ''}>Initial</option>
+          <select id="inv-type-filter" class="form-control" style="width:auto;" aria-label="${i18n.t('common.filter')}">
+            <option value="">${i18n.t('inventory.allTypes')}</option>
+            <option value="purchase"   ${state.typeFilter === 'purchase'   ? 'selected' : ''}>${i18n.t('inventory.type.purchase')}</option>
+            <option value="sale"       ${state.typeFilter === 'sale'       ? 'selected' : ''}>${i18n.t('inventory.type.sale')}</option>
+            <option value="adjustment" ${state.typeFilter === 'adjustment' ? 'selected' : ''}>${i18n.t('inventory.type.adjustment')}</option>
+            <option value="return"     ${state.typeFilter === 'return'     ? 'selected' : ''}>${i18n.t('inventory.type.return')}</option>
+            <option value="initial"    ${state.typeFilter === 'initial'    ? 'selected' : ''}>${i18n.t('inventory.type.initial')}</option>
           </select>
         </div>
       </div>
@@ -308,14 +311,14 @@ function buildHTML(state: State): string {
         <table class="data-table" aria-label="Stock movement history">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Product</th>
-              <th>Type</th>
-              <th>Qty Change</th>
-              <th>Before</th>
-              <th>After</th>
-              <th>Reference</th>
-              <th>Notes</th>
+              <th>${i18n.t('common.date')}</th>
+              <th>${i18n.t('products.modals.name')}</th>
+              <th>${i18n.t('common.status')}</th>
+              <th>${i18n.t('inventory.qtyChange')}</th>
+              <th>${i18n.t('inventory.before')}</th>
+              <th>${i18n.t('inventory.after')}</th>
+              <th>${i18n.t('inventory.reference')}</th>
+              <th>${i18n.t('inventory.notes')}</th>
             </tr>
           </thead>
           <tbody>
@@ -323,8 +326,8 @@ function buildHTML(state: State): string {
               ? `<tr><td colspan="8">
                   <div class="empty-state">
                     <div class="empty-state-icon">${Icons.package(32)}</div>
-                    <p class="empty-state-title">No movements found</p>
-                    <p class="empty-state-desc">${state.search || state.typeFilter ? 'Try clearing the filters.' : 'Stock movements will appear here as you create sales and adjustments.'}</p>
+                    <p class="empty-state-title">${i18n.t('common.noData')}</p>
+                    <p class="empty-state-desc">${state.search || state.typeFilter ? i18n.t('errors.loadFailed') : i18n.t('common.noData')}</p>
                   </div>
                 </td></tr>`
               : pageData.map((m) => {
@@ -333,7 +336,7 @@ function buildHTML(state: State): string {
                     <tr>
                       <td style="color:var(--color-text-secondary);white-space:nowrap;">${formatDateTime(m.createdAt)}</td>
                       <td><span style="font-weight:500;">${m.productName}</span></td>
-                      <td><span class="badge ${MOVEMENT_BADGE[m.type]}">${MOVEMENT_LABEL[m.type]}</span></td>
+                      <td><span class="badge ${MOVEMENT_BADGE[m.type]}">${MOVEMENT_LABEL()[m.type]}</span></td>
                       <td>
                         <span style="font-weight:600;color:${isIn ? 'var(--color-success)' : 'var(--color-error)}'};">
                           ${isIn ? '+' : ''}${m.quantity}
@@ -360,7 +363,7 @@ function buildPagination(page: number, totalPages: number, total: number, start:
   const pages = Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1);
   return `
     <div class="pagination">
-      <span class="pagination-info">Showing ${start + 1}–${start + count} of ${total}</span>
+      <span class="pagination-info">${i18n.t('common.showing' as any)} ${start + 1}–${start + count} / ${total}</span>
       <div class="pagination-controls">
         <button class="pagination-btn" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>${Icons.chevronLeft(16)}</button>
         ${pages.map((p) => `<button class="pagination-btn ${p === page ? 'active' : ''}" data-page="${p}">${p}</button>`).join('')}
@@ -376,27 +379,26 @@ function openAdjustModal(onSave: () => void): void {
 
   const form = document.createElement('div');
   form.innerHTML = `
-    <div class="form-group" style="margin-bottom:var(--space-4);">
-      <label class="form-label required" for="adj-product">Product</label>
+  <div class="form-group" style="margin-bottom:var(--space-4);">
+      <label class="form-label required" for="adj-product">${i18n.t('products.product' as any)}</label>
       <select id="adj-product" class="form-control">
-        <option value="">Select product…</option>
-        ${products.map((p) => `<option value="${p.id}" data-stock="${p.stock}">${p.name} (${p.sku}) — ${p.stock} ${p.unit} in stock</option>`).join('')}
+        <option value="">${i18n.t('inventory.modals.selectProduct')}</option>
+        ${products.map((p) => `<option value="${p.id}" data-stock="${p.stock}">${p.name} (${p.sku}) — ${p.stock} ${p.unit}</option>`).join('')}
       </select>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label required" for="adj-qty">Quantity Change</label>
-        <input type="number" id="adj-qty" class="form-control" placeholder="e.g. -5 or +10" step="1" />
-        <span class="form-hint">Use negative to reduce stock, positive to increase</span>
+        <label class="form-label required" for="adj-qty">${i18n.t('inventory.qtyChange')}</label>
+        <input type="number" id="adj-qty" class="form-control" placeholder="e.g. -5 o +10" step="1" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="adj-preview">New Stock Level</label>
-        <div id="adj-preview" class="form-control" style="background:var(--color-bg-secondary);cursor:default;">—</div>
+        <label class="form-label" for="adj-preview">${i18n.t('inventory.modals.newStockLevel')}</label>
+        <div id="adj-preview" class="form-control" style="background:var(--color-bg-secondary);cursor:default;">${i18n.t('common.noData')}</div>
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label" for="adj-notes">Reason / Notes</label>
-      <textarea id="adj-notes" class="form-control" placeholder="e.g. Damaged goods, stock count correction…"></textarea>
+      <label class="form-label" for="adj-notes">${i18n.t('inventory.modals.reason')}</label>
+      <textarea id="adj-notes" class="form-control" placeholder="..."></textarea>
     </div>
   `;
 
@@ -421,16 +423,16 @@ function openAdjustModal(onSave: () => void): void {
   form.querySelector('#adj-qty')?.addEventListener('input', updatePreview);
 
   openModal({
-    title: 'Adjust Stock',
+    title: i18n.t('inventory.modals.adjustTitle'),
     content: form,
-    confirmText: 'Apply Adjustment',
+    confirmText: i18n.t('inventory.modals.adjustConfirm'),
     onConfirm: () => {
       const productId = (form.querySelector('#adj-product') as HTMLSelectElement).value;
       const qty = parseInt((form.querySelector('#adj-qty') as HTMLInputElement).value);
       const notes = (form.querySelector('#adj-notes') as HTMLTextAreaElement).value.trim();
 
-      if (!productId) { showModalError(form, 'Please select a product.', ['adj-product']); return false; }
-      if (isNaN(qty) || qty === 0) { showModalError(form, 'Enter a non-zero quantity (positive to add, negative to remove).', ['adj-qty']); return false; }
+      if (!productId) { showModalError(form, i18n.t('errors.required'), ['adj-product']); return false; }
+      if (isNaN(qty) || qty === 0) { showModalError(form, i18n.t('errors.required'), ['adj-qty']); return false; }
 
       const result = inventoryService.adjust(productId, qty, notes || undefined);
       if (result) {
@@ -451,25 +453,25 @@ function openRestockModal(onSave: () => void, preselected?: Product): void {
   const form = document.createElement('div');
   form.innerHTML = `
     <div class="form-group" style="margin-bottom:var(--space-4);">
-      <label class="form-label required" for="rs-product">Product</label>
+      <label class="form-label required" for="rs-product">${i18n.t('products.product' as any)}</label>
       <select id="rs-product" class="form-control">
-        <option value="">Select product…</option>
-        ${products.map((p) => `<option value="${p.id}" data-reorder="${p.reorderQuantity}" ${preselected?.id === p.id ? 'selected' : ''}>${p.name} (${p.sku}) — ${p.stock} ${p.unit} in stock</option>`).join('')}
+        <option value="">${i18n.t('inventory.modals.selectProduct')}</option>
+        ${products.map((p) => `<option value="${p.id}" data-reorder="${p.reorderQuantity}" ${preselected?.id === p.id ? 'selected' : ''}>${p.name} (${p.sku}) — ${p.stock} ${p.unit}</option>`).join('')}
       </select>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label required" for="rs-qty">Quantity to Add</label>
+        <label class="form-label required" for="rs-qty">${i18n.t('inventory.qtyChange')}</label>
         <input type="number" id="rs-qty" class="form-control" placeholder="0" min="1" value="${preselected?.reorderQuantity ?? ''}" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="rs-ref">PO / Reference Number</label>
-        <input type="text" id="rs-ref" class="form-control" placeholder="PO-2024-001" />
+        <label class="form-label" for="rs-ref">${i18n.t('inventory.modals.poNumber')}</label>
+        <input type="text" id="rs-ref" class="form-control" placeholder="..." />
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label" for="rs-notes">Notes</label>
-      <textarea id="rs-notes" class="form-control" placeholder="Supplier, batch info…"></textarea>
+      <label class="form-label" for="rs-notes">${i18n.t('inventory.notes')}</label>
+      <textarea id="rs-notes" class="form-control" placeholder="..."></textarea>
     </div>
   `;
 
@@ -481,9 +483,9 @@ function openRestockModal(onSave: () => void, preselected?: Product): void {
   });
 
   openModal({
-    title: 'Restock Product',
+    title: i18n.t('inventory.modals.restockTitle'),
     content: form,
-    confirmText: 'Confirm Restock',
+    confirmText: i18n.t('inventory.modals.restockConfirm'),
     confirmClass: 'btn-primary',
     onConfirm: () => {
       const productId = (form.querySelector('#rs-product') as HTMLSelectElement).value;
@@ -491,8 +493,8 @@ function openRestockModal(onSave: () => void, preselected?: Product): void {
       const ref = (form.querySelector('#rs-ref') as HTMLInputElement).value.trim();
       const notes = (form.querySelector('#rs-notes') as HTMLTextAreaElement).value.trim();
 
-      if (!productId) { showModalError(form, 'Please select a product.', ['rs-product']); return false; }
-      if (isNaN(qty) || qty <= 0) { showModalError(form, 'Enter a valid quantity greater than zero.', ['rs-qty']); return false; }
+      if (!productId) { showModalError(form, i18n.t('errors.required'), ['rs-product']); return false; }
+      if (isNaN(qty) || qty <= 0) { showModalError(form, i18n.t('errors.required'), ['rs-qty']); return false; }
 
       const result = inventoryService.restock(productId, qty, ref || undefined, notes || undefined);
       if (result) {
@@ -513,21 +515,21 @@ function openReorderSettingsModal(onSave: () => void): void {
   const form = document.createElement('div');
   form.innerHTML = `
     <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-4);">
-      Set the reorder point (alert threshold) and suggested restock quantity for each product.
+      ${i18n.t('inventory.subtitle')}
     </p>
     <div style="display:flex;flex-direction:column;gap:var(--space-3);max-height:400px;overflow-y:auto;">
       ${products.map((p) => `
         <div style="display:grid;grid-template-columns:1fr 100px 100px;gap:var(--space-3);align-items:center;padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);">
           <div>
             <div style="font-weight:500;font-size:var(--font-size-sm);">${p.name}</div>
-            <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${p.sku} · ${p.stock} ${p.unit} in stock</div>
+            <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${p.sku} · ${p.stock} ${p.unit} ${i18n.t('inventory.status.inStock').toLowerCase()}</div>
           </div>
           <div>
-            <label style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);display:block;margin-bottom:2px;">Reorder at</label>
+            <label style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);display:block;margin-bottom:2px;">${i18n.t('inventory.reorderSettings').split(' ')[0]}</label>
             <input type="number" class="form-control rp-point" data-id="${p.id}" value="${p.reorderPoint}" min="0" style="padding:var(--space-1) var(--space-2);" />
           </div>
           <div>
-            <label style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);display:block;margin-bottom:2px;">Restock qty</label>
+            <label style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);display:block;margin-bottom:2px;">${i18n.t('inventory.restock')}</label>
             <input type="number" class="form-control rp-qty" data-id="${p.id}" value="${p.reorderQuantity}" min="0" style="padding:var(--space-1) var(--space-2);" />
           </div>
         </div>
@@ -536,10 +538,10 @@ function openReorderSettingsModal(onSave: () => void): void {
   `;
 
   openModal({
-    title: 'Reorder Settings',
+    title: i18n.t('inventory.reorderSettings'),
     content: form,
     size: 'lg',
-    confirmText: 'Save Settings',
+    confirmText: i18n.t('common.save'),
     onConfirm: () => {
       form.querySelectorAll<HTMLInputElement>('.rp-point').forEach((inp) => {
         const id = inp.getAttribute('data-id')!;

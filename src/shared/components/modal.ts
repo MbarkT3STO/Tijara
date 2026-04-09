@@ -5,6 +5,7 @@
  * - onConfirm returning false (or throwing) keeps the modal open.
  */
 
+import { i18n } from '@core/i18n';
 import { Icons } from './icons';
 
 export interface ModalOptions {
@@ -71,8 +72,8 @@ export function openModal(options: ModalOptions): () => void {
     const footer = document.createElement('div');
     footer.className = 'modal-footer';
     footer.innerHTML = `
-      <button class="btn btn-secondary cancel-btn">${options.cancelText ?? 'Cancel'}</button>
-      <button class="btn ${options.confirmClass ?? 'btn-primary'} confirm-btn">${options.confirmText ?? 'Confirm'}</button>
+      <button class="btn btn-secondary cancel-btn">${options.cancelText ?? i18n.t('common.cancel')}</button>
+      <button class="btn ${options.confirmClass ?? 'btn-primary'} confirm-btn">${options.confirmText ?? i18n.t('common.confirm')}</button>
     `;
     modal.appendChild(footer);
   }
@@ -157,7 +158,7 @@ export function openModal(options: ModalOptions): () => void {
   });
 
   // Expose showError on the modal element so callers can use it
-  (modal as HTMLElement & { showError: typeof showError }).showError = showError;
+  (modal as unknown as HTMLElement & { showError: typeof showError }).showError = showError;
 
   return close;
 }
@@ -183,7 +184,7 @@ export function confirmDialog(
   title: string,
   message: string,
   onConfirm: () => void,
-  confirmText = 'Delete',
+  confirmText = i18n.t('common.delete'),
   confirmClass = 'btn-danger'
 ): void {
   const content = document.createElement('p');

@@ -5,7 +5,8 @@
 
 import { reportsService } from '@services/reportsService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, formatPercent } from '@shared/utils/helpers';
+import { formatCurrency, formatDate } from '@shared/utils/helpers';
+import { i18n } from '@core/i18n';
 
 export function renderReports(): HTMLElement {
   const page = document.createElement('div');
@@ -46,8 +47,8 @@ function buildHTML(monthRange: number): string {
   return `
     <div class="page-header">
       <div>
-        <h2 class="page-title">Reports & Analytics</h2>
-        <p class="page-subtitle">Business performance overview</p>
+        <h2 class="page-title">${i18n.t('reports.title')}</h2>
+        <p class="page-subtitle">${i18n.t('reports.subtitle')}</p>
       </div>
       <div class="toolbar">
         ${[3, 6, 12].map((r) => `
@@ -59,13 +60,13 @@ function buildHTML(monthRange: number): string {
 
     <!-- Summary KPIs -->
     <div class="reports-kpi-grid">
-      ${buildKpi('Total Revenue', formatCurrency(summary.totalRevenue), Icons.dollarSign(), 'primary')}
-      ${buildKpi('Total Profit', formatCurrency(summary.totalProfit), Icons.trendUp(), summary.totalProfit >= 0 ? 'success' : 'error')}
-      ${buildKpi('Profit Margin', profitMargin.toFixed(1) + '%', Icons.pieChart(), profitMargin >= 20 ? 'success' : profitMargin >= 10 ? 'warning' : 'error')}
-      ${buildKpi('Total Orders', String(summary.totalOrders), Icons.shoppingCart(), 'info')}
-      ${buildKpi('Avg Order Value', formatCurrency(summary.avgOrderValue), Icons.barChart(), 'primary')}
-      ${buildKpi('Purchase Spend', formatCurrency(summary.totalPurchaseSpend), Icons.truck(), 'warning')}
-      ${buildKpi('New Customers (30d)', String(summary.newCustomers), Icons.customers(), 'success')}
+      ${buildKpi(i18n.t('reports.kpis.totalRevenue'), formatCurrency(summary.totalRevenue), Icons.dollarSign(), 'primary')}
+      ${buildKpi(i18n.t('reports.kpis.totalProfit'), formatCurrency(summary.totalProfit), Icons.trendUp(), summary.totalProfit >= 0 ? 'success' : 'error')}
+      ${buildKpi(i18n.t('reports.kpis.profitMargin'), profitMargin.toFixed(1) + '%', Icons.pieChart(), profitMargin >= 20 ? 'success' : profitMargin >= 10 ? 'warning' : 'error')}
+      ${buildKpi(i18n.t('reports.kpis.totalOrders'), String(summary.totalOrders), Icons.shoppingCart(), 'info')}
+      ${buildKpi(i18n.t('reports.kpis.avgOrderValue'), formatCurrency(summary.avgOrderValue), Icons.barChart(), 'primary')}
+      ${buildKpi(i18n.t('reports.kpis.purchaseSpend'), formatCurrency(summary.totalPurchaseSpend), Icons.truck(), 'warning')}
+      ${buildKpi(i18n.t('reports.kpis.newCustomers'), String(summary.newCustomers), Icons.customers(), 'success')}
     </div>
 
     <!-- Revenue Chart + Category Breakdown -->
@@ -74,8 +75,8 @@ function buildHTML(monthRange: number): string {
       <!-- Revenue trend (CSS bar chart) -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title" style="display:flex;align-items:center;gap:var(--space-2);">${Icons.barChart(16)} Revenue Trend</h3>
-          <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">Last ${monthRange} months</span>
+          <h3 class="card-title" style="display:flex;align-items:center;gap:var(--space-2);">${Icons.barChart(16)} ${i18n.t('reports.revenueTrend')}</h3>
+          <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('reports.charts.lastMonths', { count: monthRange })}</span>
         </div>
         <div class="card-body">
           ${buildBarChart(monthly)}
@@ -85,11 +86,11 @@ function buildHTML(monthRange: number): string {
       <!-- Category breakdown -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title" style="display:flex;align-items:center;gap:var(--space-2);">${Icons.pieChart(16)} Sales by Category</h3>
+          <h3 class="card-title" style="display:flex;align-items:center;gap:var(--space-2);">${Icons.pieChart(16)} ${i18n.t('reports.categorySales')}</h3>
         </div>
         <div class="card-body" style="padding-top:var(--space-3);">
           ${categories.length === 0
-            ? `<div class="empty-state" style="padding:var(--space-8);"><p style="color:var(--color-text-tertiary);font-size:var(--font-size-sm);">No sales data yet</p></div>`
+            ? `<div class="empty-state" style="padding:var(--space-8);"><p style="color:var(--color-text-tertiary);font-size:var(--font-size-sm);">${i18n.t('reports.charts.noData')}</p></div>`
             : categories.map((c) => buildCategoryRow(c)).join('')
           }
         </div>
@@ -102,9 +103,9 @@ function buildHTML(monthRange: number): string {
       <!-- Top customers -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title" style="display:flex;align-items:center;gap:var(--space-2);">${Icons.customers(16)} Top Customers</h3>
+          <h3 class="card-title" style="display:flex;align-items:center;gap:var(--space-2);">${Icons.customers(16)} ${i18n.t('reports.topCustomers')}</h3>
           <button class="btn btn-ghost btn-sm" onclick="window.location.hash='#/customers'">
-            View all ${Icons.chevronRight(16)}
+            ${i18n.t('dashboard.viewAll')} ${Icons.chevronRight(16)}
           </button>
         </div>
         <div class="table-container" style="border:none;border-radius:0;">
@@ -112,15 +113,15 @@ function buildHTML(monthRange: number): string {
             <thead>
               <tr>
                 <th>#</th>
-                <th>Customer</th>
-                <th>Orders</th>
-                <th>Total Spent</th>
-                <th>Last Order</th>
+                <th>${i18n.t('customers.name')}</th>
+                <th>${i18n.t('customers.modals.totalOrders')}</th>
+                <th>${i18n.t('customers.modals.totalSpent')}</th>
+                <th>${i18n.t('customers.lastOrder')}</th>
               </tr>
             </thead>
             <tbody>
               ${topCustomers.length === 0
-                ? `<tr><td colspan="5" style="text-align:center;padding:var(--space-8);color:var(--color-text-tertiary);">No data yet</td></tr>`
+                ? `<tr><td colspan="5" style="text-align:center;padding:var(--space-8);color:var(--color-text-tertiary);">${i18n.t('reports.charts.noData')}</td></tr>`
                 : topCustomers.map((c, i) => `
                   <tr>
                     <td>
@@ -142,9 +143,9 @@ function buildHTML(monthRange: number): string {
       <!-- Top products -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title" style="display:flex;align-items:center;gap:var(--space-2);">${Icons.products(16)} Top Products</h3>
+          <h3 class="card-title" style="display:flex;align-items:center;gap:var(--space-2);">${Icons.products(16)} ${i18n.t('reports.topProducts')}</h3>
           <button class="btn btn-ghost btn-sm" onclick="window.location.hash='#/products'">
-            View all ${Icons.chevronRight(16)}
+            ${i18n.t('dashboard.viewAll')} ${Icons.chevronRight(16)}
           </button>
         </div>
         <div class="table-container" style="border:none;border-radius:0;">
@@ -152,15 +153,15 @@ function buildHTML(monthRange: number): string {
             <thead>
               <tr>
                 <th>#</th>
-                <th>Product</th>
-                <th>Qty Sold</th>
-                <th>Revenue</th>
-                <th>Profit</th>
+                <th>${i18n.t('products.modals.name')}</th>
+                <th>${i18n.t('reports.charts.units')}</th>
+                <th>${i18n.t('common.amount')}</th>
+                <th>${i18n.t('reports.kpis.totalProfit')}</th>
               </tr>
             </thead>
             <tbody>
               ${topProducts.length === 0
-                ? `<tr><td colspan="5" style="text-align:center;padding:var(--space-8);color:var(--color-text-tertiary);">No data yet</td></tr>`
+                ? `<tr><td colspan="5" style="text-align:center;padding:var(--space-8);color:var(--color-text-tertiary);">${i18n.t('reports.charts.noData')}</td></tr>`
                 : topProducts.map((p, i) => `
                   <tr>
                     <td>
@@ -196,7 +197,7 @@ function buildKpi(label: string, value: string, iconSvg: string, color: string):
 
 function buildBarChart(monthly: ReturnType<typeof reportsService.getMonthlyRevenue>): string {
   if (monthly.every((m) => m.revenue === 0)) {
-    return `<div class="empty-state" style="padding:var(--space-8);"><p style="color:var(--color-text-tertiary);font-size:var(--font-size-sm);">No revenue data yet</p></div>`;
+    return `<div class="empty-state" style="padding:var(--space-8);"><p style="color:var(--color-text-tertiary);font-size:var(--font-size-sm);">${i18n.t('reports.charts.noData')}</p></div>`;
   }
 
   const maxRevenue = Math.max(...monthly.map((m) => m.revenue), 1);
@@ -206,7 +207,6 @@ function buildBarChart(monthly: ReturnType<typeof reportsService.getMonthlyReven
       <div style="display:flex;align-items:flex-end;gap:var(--space-2);height:160px;padding-bottom:var(--space-1);">
         ${monthly.map((m) => {
           const heightPct = (m.revenue / maxRevenue) * 100;
-          const profitPct = m.revenue > 0 ? (m.profit / m.revenue) * 100 : 0;
           return `
             <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:var(--space-1);height:100%;justify-content:flex-end;" title="${m.month}: ${formatCurrency(m.revenue)}">
               <div style="width:100%;background:var(--color-primary);border-radius:var(--radius-xs) var(--radius-xs) 0 0;height:${Math.max(heightPct, 2)}%;transition:height var(--transition-base);position:relative;cursor:pointer;"
@@ -228,7 +228,7 @@ function buildBarChart(monthly: ReturnType<typeof reportsService.getMonthlyReven
           <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">
             <span style="font-weight:600;color:var(--color-text-primary);">${m.month}</span>
             · ${formatCurrency(m.revenue)}
-            · <span style="color:${m.profit >= 0 ? 'var(--color-success)' : 'var(--color-error)'};">${formatCurrency(m.profit)} profit</span>
+            · <span style="color:${m.profit >= 0 ? 'var(--color-success)' : 'var(--color-error)'};">${formatCurrency(m.profit)} ${i18n.t('reports.kpis.totalProfit')}</span>
           </div>`).join('')}
       </div>
     </div>`;
@@ -240,7 +240,7 @@ function buildCategoryRow(c: ReturnType<typeof reportsService.getCategorySales>[
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div style="display:flex;align-items:center;gap:var(--space-2);">
           <span class="badge badge-primary">${c.category}</span>
-          <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${c.quantity} units</span>
+          <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${c.quantity} ${i18n.t('reports.charts.units')}</span>
         </div>
         <div style="text-align:right;">
           <div style="font-weight:600;font-size:var(--font-size-sm);">${formatCurrency(c.revenue)}</div>

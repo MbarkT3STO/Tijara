@@ -11,6 +11,7 @@ import { confirmDialog, openModal, showModalError } from '@shared/components/mod
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
+import { i18n } from '@core/i18n';
 import type { Sale, OrderItem, Product } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -30,6 +31,14 @@ const STATUS_BADGE: Record<string, string> = {
   delivered: 'badge-success',
   cancelled: 'badge-error',
 };
+
+function getStatusLabel(status: string): string {
+  return i18n.t(`sales.statuses.${status.toLowerCase()}` as any) || status;
+}
+
+function getPaymentLabel(status: string): string {
+  return i18n.t(`sales.payments.${status.toLowerCase()}` as any) || status;
+}
 
 const PAYMENT_BADGE: Record<string, string> = {
   unpaid:  'badge-error',
@@ -105,9 +114,9 @@ export function renderSales(): HTMLElement {
       btn.addEventListener('click', () => {
         const sale = saleService.getById(btn.getAttribute('data-delete')!);
         if (!sale) return;
-        confirmDialog('Delete Sale', `Delete order "${sale.orderNumber}"?`, () => {
+        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${sale.orderNumber}"?`, () => {
           saleService.delete(sale.id);
-          notifications.success('Sale deleted.');
+          notifications.success(i18n.t('common.delete'));
           state.sales = saleService.getAll(); applyFilters(); render();
         });
       });
@@ -134,25 +143,25 @@ function buildHTML(state: State): string {
   return `
     <div class="page-header">
       <div>
-        <h2 class="page-title">Sales</h2>
-        <p class="page-subtitle">${total} order${total !== 1 ? 's' : ''} total</p>
+        <h2 class="page-title">${i18n.t('sales.title')}</h2>
+        <p class="page-subtitle">${total === 1 ? i18n.t('sales.countTotal', { count: total }) : i18n.t('sales.countPlural', { count: total })}</p>
       </div>
-      <button class="btn btn-primary" id="add-sale-btn">${Icons.plus()} New Order</button>
+      <button class="btn btn-primary" id="add-sale-btn">${Icons.plus()} ${i18n.t('sales.addNew')}</button>
     </div>
 
     <div class="card">
       <div class="card-header" style="gap:var(--space-3);flex-wrap:wrap;">
         <div class="search-bar" style="flex:1;max-width:360px;">
           <span class="search-icon">${Icons.search(16)}</span>
-          <input type="search" id="sale-search" class="form-control" placeholder="Search orders..." value="${state.search}" aria-label="Search orders" />
+          <input type="search" id="sale-search" class="form-control" placeholder="${i18n.t('common.search')}..." value="${state.search}" aria-label="${i18n.t('common.search')}" />
         </div>
-        <select id="status-filter" class="form-control" style="width:auto;" aria-label="Filter by status">
-          <option value="">All Statuses</option>
-          <option value="pending"   ${state.statusFilter === 'pending'   ? 'selected' : ''}>Pending</option>
-          <option value="confirmed" ${state.statusFilter === 'confirmed' ? 'selected' : ''}>Confirmed</option>
-          <option value="shipped"   ${state.statusFilter === 'shipped'   ? 'selected' : ''}>Shipped</option>
-          <option value="delivered" ${state.statusFilter === 'delivered' ? 'selected' : ''}>Delivered</option>
-          <option value="cancelled" ${state.statusFilter === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+        <select id="status-filter" class="form-control" style="width:auto;" aria-label="${i18n.t('common.filter')}">
+          <option value="">${i18n.t('common.all')}</option>
+          <option value="pending"   ${state.statusFilter === 'pending'   ? 'selected' : ''}>${getStatusLabel('pending')}</option>
+          <option value="confirmed" ${state.statusFilter === 'confirmed' ? 'selected' : ''}>${getStatusLabel('confirmed')}</option>
+          <option value="shipped"   ${state.statusFilter === 'shipped'   ? 'selected' : ''}>${getStatusLabel('shipped')}</option>
+          <option value="delivered" ${state.statusFilter === 'delivered' ? 'selected' : ''}>${getStatusLabel('delivered')}</option>
+          <option value="cancelled" ${state.statusFilter === 'cancelled' ? 'selected' : ''}>${getStatusLabel('cancelled')}</option>
         </select>
       </div>
 
@@ -160,31 +169,31 @@ function buildHTML(state: State): string {
         <table class="data-table" aria-label="Sales list">
           <thead>
             <tr>
-              <th>Order #</th><th>Customer</th><th>Items</th><th>Total</th>
-              <th>Status</th><th>Payment</th><th>Date</th><th>Actions</th>
+              <th>${i18n.t('sales.orderNumber')}</th><th>${i18n.t('sales.customer')}</th><th>${i18n.t('sales.items')}</th><th>${i18n.t('sales.total')}</th>
+              <th>${i18n.t('common.status')}</th><th>${i18n.t('sales.paymentStatus')}</th><th>${i18n.t('common.date')}</th><th>${i18n.t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
             ${pageData.length === 0
               ? `<tr><td colspan="8"><div class="empty-state">
-                  <div class="empty-state-icon">${Icons.sales(32)}</div>
-                  <p class="empty-state-title">No orders found</p>
-                  <p class="empty-state-desc">${state.search ? 'Try a different search.' : 'Create your first order.'}</p>
-                </div></td></tr>`
+                   <div class="empty-state-icon">${Icons.sales(32)}</div>
+                   <p class="empty-state-title">${i18n.t('common.noData')}</p>
+                   <p class="empty-state-desc">${state.search ? i18n.t('errors.loadFailed') : i18n.t('common.noData')}</p>
+                 </div></td></tr>`
               : pageData.map((s) => `
                 <tr>
                   <td><span style="font-weight:600;color:var(--color-primary);">${s.orderNumber}</span></td>
                   <td>${s.customerName}</td>
-                  <td style="color:var(--color-text-secondary);">${s.items.length} item${s.items.length !== 1 ? 's' : ''}</td>
+                  <td style="color:var(--color-text-secondary);">${s.items.length}</td>
                   <td><strong>${formatCurrency(s.total)}</strong></td>
-                  <td><span class="badge ${STATUS_BADGE[s.status] ?? 'badge-neutral'}">${s.status}</span></td>
-                  <td><span class="badge ${PAYMENT_BADGE[s.paymentStatus] ?? 'badge-neutral'}">${s.paymentStatus}</span></td>
+                  <td><span class="badge ${STATUS_BADGE[s.status] ?? 'badge-neutral'}">${getStatusLabel(s.status)}</span></td>
+                  <td><span class="badge ${PAYMENT_BADGE[s.paymentStatus] ?? 'badge-neutral'}">${getPaymentLabel(s.paymentStatus)}</span></td>
                   <td style="color:var(--color-text-secondary);">${formatDate(s.createdAt)}</td>
                   <td>
                     <div class="table-actions">
-                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${s.id}" aria-label="View" data-tooltip="View">${Icons.eye(16)}</button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-edit="${s.id}" aria-label="Edit" data-tooltip="Edit">${Icons.edit(16)}</button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${s.id}" aria-label="Delete" data-tooltip="Delete" style="color:var(--color-error);">${Icons.trash(16)}</button>
+                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${s.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">${Icons.eye(16)}</button>
+                      <button class="btn btn-ghost btn-icon btn-sm" data-edit="${s.id}" aria-label="${i18n.t('common.edit')}" data-tooltip="${i18n.t('common.edit')}">${Icons.edit(16)}</button>
+                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${s.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>
                     </div>
                   </td>
                 </tr>`).join('')
@@ -202,7 +211,7 @@ function buildPagination(page: number, totalPages: number, total: number, start:
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   return `
     <div class="pagination">
-      <span class="pagination-info">Showing ${start + 1}–${start + count} of ${total}</span>
+      <span class="pagination-info">${i18n.t('common.showing' as any)} ${start + 1}–${start + count} / ${total}</span>
       <div class="pagination-controls">
         <button class="pagination-btn" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>${Icons.chevronLeft(16)}</button>
         ${pages.map((p) => `<button class="pagination-btn ${p === page ? 'active' : ''}" data-page="${p}">${p}</button>`).join('')}
@@ -229,8 +238,8 @@ function buildProductOptions(
     const available = p.stock + reserved; // stock already consumed by this order is "available"
     const outOfStock = available <= 0;
     const label = outOfStock
-      ? `${p.name} — OUT OF STOCK`
-      : `${p.name} (${available} ${p.unit} available)`;
+      ? `${p.name} — ${i18n.t('sales.modals.outOfStock').toUpperCase()}`
+      : `${p.name} (${available} ${p.unit} ${i18n.t('sales.modals.available')})`;
     return `<option value="${p.id}"
       data-price="${p.price}"
       data-name="${p.name}"
@@ -254,7 +263,7 @@ function validateStock(
     const reserved = reservedStock.get(item.productId) ?? 0;
     const available = product.stock + reserved;
     if (item.quantity > available) {
-      return `"${product.name}" only has ${available} ${product.unit} available, but ${item.quantity} requested.`;
+      return `"${product.name}" ${i18n.t('sales.modals.available')} ${available} ${product.unit}, ${i18n.t('common.edit')}: ${item.quantity}.`;
     }
   }
   return null;
@@ -274,7 +283,7 @@ function buildItemRow(
   const overStock = item.quantity > available;
   const stockBadge = product
     ? `<span class="badge ${available === 0 ? 'badge-error' : overStock ? 'badge-warning' : 'badge-success'}" style="font-size:10px;white-space:nowrap;">
-        ${available === 0 ? 'Out of stock' : overStock ? `Over by ${item.quantity - available}` : `${available} avail.`}
+        ${available === 0 ? i18n.t('sales.modals.outOfStock') : overStock ? `Over by ${item.quantity - available}` : `${available} ${i18n.t('sales.modals.available')}`}
       </span>`
     : '';
 
@@ -288,13 +297,13 @@ function buildItemRow(
       </div>
       <div>
         <input type="number" class="form-control ${prefix}-item-qty" data-idx="${idx}"
-          value="${item.quantity}" min="1" max="${available > 0 ? available : 9999}" placeholder="Qty"
+          value="${item.quantity}" min="1" max="${available > 0 ? available : 9999}" placeholder="${i18n.t('common.quantity' as any)}"
           style="${overStock ? 'border-color:var(--color-warning);' : ''}" />
       </div>
       <input type="number" class="form-control ${prefix}-item-price" data-idx="${idx}"
-        value="${item.unitPrice}" min="0" step="0.01" placeholder="Price" />
+        value="${item.unitPrice}" min="0" step="0.01" placeholder="${i18n.t('products.price')}" />
       <input type="number" class="form-control ${prefix}-item-discount" data-idx="${idx}"
-        value="${item.discount}" min="0" max="100" placeholder="Disc%" />
+        value="${item.discount}" min="0" max="100" placeholder="${i18n.t('sales.discount')}%" />
       <button type="button" class="btn btn-ghost btn-icon btn-sm ${prefix}-remove-item"
         data-idx="${idx}" style="color:var(--color-error);margin-top:2px;">${Icons.trash(16)}</button>
     </div>`;
@@ -304,9 +313,9 @@ function buildItemRow(
 function attachItemEvents(
   container: HTMLElement,
   items: OrderItem[],
-  products: Product[],
+  _products: Product[],
   prefix: string,
-  reservedStock: Map<string, number>,
+  _reservedStock: Map<string, number>,
   onRender: () => void,
   onTotals: () => void
 ): void {
@@ -366,25 +375,25 @@ function openSaleDetailModal(sale: Sale): void {
   content.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Customer</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('sales.customer')}</div>
         <div style="font-weight:500;">${sale.customerName}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Date</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('common.date')}</div>
         <div>${formatDate(sale.createdAt)}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Status</div>
-        <span class="badge ${STATUS_BADGE[sale.status]}">${sale.status}</span>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('common.status')}</div>
+        <span class="badge ${STATUS_BADGE[sale.status]}">${getStatusLabel(sale.status)}</span>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Payment</div>
-        <span class="badge ${PAYMENT_BADGE[sale.paymentStatus]}">${sale.paymentStatus}</span>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('sales.paymentStatus')}</div>
+        <span class="badge ${PAYMENT_BADGE[sale.paymentStatus]}">${getPaymentLabel(sale.paymentStatus)}</span>
       </div>
     </div>
     <div class="table-container" style="margin-bottom:var(--space-4);">
       <table class="data-table">
-        <thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Discount</th><th>Total</th></tr></thead>
+        <thead><tr><th>${i18n.t('products.product' as any)}</th><th>${i18n.t('common.quantity' as any)}</th><th>${i18n.t('products.price')}</th><th>${i18n.t('sales.discount')}</th><th>${i18n.t('common.total')}</th></tr></thead>
         <tbody>
           ${sale.items.map((item) => `
             <tr>
@@ -398,11 +407,11 @@ function openSaleDetailModal(sale: Sale): void {
       </table>
     </div>
     <div style="display:flex;flex-direction:column;gap:var(--space-2);align-items:flex-end;">
-      <div style="display:flex;gap:var(--space-8);"><span style="color:var(--color-text-secondary);">Subtotal</span><span>${formatCurrency(sale.subtotal)}</span></div>
-      <div style="display:flex;gap:var(--space-8);"><span style="color:var(--color-text-secondary);">Tax (${sale.taxRate}%)</span><span>${formatCurrency(sale.taxAmount)}</span></div>
-      ${sale.discount > 0 ? `<div style="display:flex;gap:var(--space-8);"><span style="color:var(--color-text-secondary);">Discount</span><span style="color:var(--color-error);">-${formatCurrency(sale.discount)}</span></div>` : ''}
+      <div style="display:flex;gap:var(--space-8);"><span style="color:var(--color-text-secondary);">${i18n.t('sales.subtotal')}</span><span>${formatCurrency(sale.subtotal)}</span></div>
+      <div style="display:flex;gap:var(--space-8);"><span style="color:var(--color-text-secondary);">${i18n.t('sales.tax')} (${sale.taxRate}%)</span><span>${formatCurrency(sale.taxAmount)}</span></div>
+      ${sale.discount > 0 ? `<div style="display:flex;gap:var(--space-8);"><span style="color:var(--color-text-secondary);">${i18n.t('sales.discount')}</span><span style="color:var(--color-error);">-${formatCurrency(sale.discount)}</span></div>` : ''}
       <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-lg);font-weight:700;border-top:1px solid var(--color-border);padding-top:var(--space-2);margin-top:var(--space-1);">
-        <span>Total</span><span style="color:var(--color-primary);">${formatCurrency(sale.total)}</span>
+        <span>${i18n.t('common.total')}</span><span style="color:var(--color-primary);">${formatCurrency(sale.total)}</span>
       </div>
     </div>
     ${sale.notes ? `<div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">${sale.notes}</div>` : ''}
@@ -415,7 +424,7 @@ function openSaleDetailModal(sale: Sale): void {
 function openSaleModal(_sale: Sale | null, onSave: () => void): void {
   const customers = customerService.getAll();
   const products  = productService.getAll();
-  let items: OrderItem[] = [];
+  const items: OrderItem[] = [];
   // No reserved stock for new orders
   const reserved = new Map<string, number>();
 
@@ -426,27 +435,27 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
   form.innerHTML = `
     <div class="form-row" style="margin-bottom:var(--space-4);">
       <div class="form-group">
-        <label class="form-label required" for="s-customer">Customer</label>
+        <label class="form-label required" for="s-customer">${i18n.t('sales.customer')}</label>
         <select id="s-customer" class="form-control" required>
-          <option value="">Select customer...</option>
+          <option value="">${i18n.t('sales.modals.selectCustomer')}</option>
           ${customers.map((c) => `<option value="${c.id}">${c.name}</option>`).join('')}
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label" for="s-payment">Payment Method</label>
+        <label class="form-label" for="s-payment">${i18n.t('sales.paymentMethod')}</label>
         <select id="s-payment" class="form-control">
-          <option value="cash">Cash</option>
-          <option value="card">Card</option>
-          <option value="transfer">Bank Transfer</option>
-          <option value="other">Other</option>
+          <option value="cash">${getPaymentLabel('cash')}</option>
+          <option value="card">${getPaymentLabel('card')}</option>
+          <option value="transfer">${getPaymentLabel('transfer')}</option>
+          <option value="other">${getPaymentLabel('other')}</option>
         </select>
       </div>
     </div>
 
     <div style="margin-bottom:var(--space-4);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);">
-        <label class="form-label" style="margin:0;">Order Items</label>
-        <button type="button" class="btn btn-secondary btn-sm" id="add-item-btn">${Icons.plus(16)} Add Item</button>
+        <label class="form-label" style="margin:0;">${i18n.t('sales.orderItems')}</label>
+        <button type="button" class="btn btn-secondary btn-sm" id="add-item-btn">${Icons.plus(16)} ${i18n.t('sales.modals.addItem')}</button>
       </div>
       <div id="items-container"></div>
       <div id="order-totals" style="margin-top:var(--space-3);text-align:right;font-size:var(--font-size-sm);color:var(--color-text-secondary);"></div>
@@ -454,17 +463,17 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
 
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" for="s-tax">Tax Rate (%)</label>
+        <label class="form-label" for="s-tax">${i18n.t('sales.tax')} (%)</label>
         <input type="number" id="s-tax" class="form-control" value="${defaultTaxRate}" min="0" max="100" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="s-discount">Discount (${currencySymbol})</label>
+        <label class="form-label" for="s-discount">${i18n.t('sales.discount')} (${currencySymbol})</label>
         <input type="number" id="s-discount" class="form-control" value="0" min="0" />
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label" for="s-notes">Notes</label>
-      <textarea id="s-notes" class="form-control" placeholder="Optional notes..."></textarea>
+      <label class="form-label" for="s-notes">${i18n.t('sales.notes')}</label>
+      <textarea id="s-notes" class="form-control" placeholder="..."></textarea>
     </div>
   `;
 
@@ -473,15 +482,15 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
     const discount = parseFloat((form.querySelector('#s-discount') as HTMLInputElement).value) || 0;
     const { subtotal, taxAmount, total } = saleService.calculateTotals(items, taxRate, discount);
     form.querySelector('#order-totals')!.innerHTML = `
-      <div>Subtotal: <strong>${formatCurrency(subtotal)}</strong></div>
-      <div>Tax: <strong>${formatCurrency(taxAmount)}</strong></div>
-      <div style="font-size:var(--font-size-base);font-weight:700;color:var(--color-primary);margin-top:4px;">Total: ${formatCurrency(total)}</div>`;
+      <div>${i18n.t('sales.subtotal')}: <strong>${formatCurrency(subtotal)}</strong></div>
+      <div>${i18n.t('sales.tax')}: <strong>${formatCurrency(taxAmount)}</strong></div>
+      <div style="font-size:var(--font-size-base);font-weight:700;color:var(--color-primary);margin-top:4px;">${i18n.t('common.total')}: ${formatCurrency(total)}</div>`;
   };
 
   const renderItems = () => {
     const container = form.querySelector('#items-container')!;
     container.innerHTML = items.length === 0
-      ? `<div style="text-align:center;padding:var(--space-4);color:var(--color-text-tertiary);font-size:var(--font-size-sm);border:1px dashed var(--color-border);border-radius:var(--radius-sm);">No items added yet</div>`
+      ? `<div style="text-align:center;padding:var(--space-4);color:var(--color-text-tertiary);font-size:var(--font-size-sm);border:1px dashed var(--color-border);border-radius:var(--radius-sm);">${i18n.t('sales.modals.noItems')}</div>`
       : items.map((item, idx) => buildItemRow(item, idx, products, 's', reserved)).join('');
     attachItemEvents(container as HTMLElement, items, products, 's', reserved, renderItems, updateTotals);
   };
@@ -489,7 +498,7 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
   form.querySelector('#add-item-btn')?.addEventListener('click', () => {
     const available = products.filter((p) => p.stock > 0);
     if (available.length === 0) {
-      notifications.warning('All products are out of stock.');
+      notifications.warning(i18n.t('alerts.outOfStock.title' as any));
       return;
     }
     const first = available[0];
@@ -502,17 +511,17 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
   renderItems(); updateTotals();
 
   openModal({
-    title: 'New Order',
+    title: i18n.t('sales.modals.addTitle'),
     content: form,
     size: 'lg',
-    confirmText: 'Create Order',
+    confirmText: i18n.t('sales.addNew'),
     onConfirm: () => {
       const customerSelect = form.querySelector<HTMLSelectElement>('#s-customer')!;
       const customerId = customerSelect.value;
       const customerName = customerSelect.selectedOptions[0]?.text ?? '';
 
-      if (!customerId) { showModalError(form, 'Please select a customer.', ['s-customer']); return false; }
-      if (items.length === 0) { showModalError(form, 'Please add at least one item.'); return false; }
+      if (!customerId) { showModalError(form, i18n.t('errors.required'), ['s-customer']); return false; }
+      if (items.length === 0) { showModalError(form, i18n.t('errors.required')); return false; }
 
       // Stock validation
       const stockError = validateStock(items, products, reserved);
@@ -524,7 +533,7 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
       const notes        = (form.querySelector('#s-notes') as HTMLTextAreaElement).value.trim();
 
       saleService.create({ customerId, customerName, items, taxRate, discount, status: 'pending', paymentStatus: 'unpaid', paymentMethod, notes });
-      notifications.success('Order created successfully.');
+      notifications.success(i18n.t('common.save'));
       onSave();
     },
   });
@@ -534,7 +543,7 @@ function openSaleModal(_sale: Sale | null, onSave: () => void): void {
 
 function openSaleEditModal(sale: Sale, onSave: () => void): void {
   const products = productService.getAll();
-  let items: OrderItem[] = sale.items.map((i) => ({ ...i }));
+  const items: OrderItem[] = sale.items.map((i) => ({ ...i }));
   const currencySymbol = profileService.getCurrencySymbol();
 
   /**
@@ -553,40 +562,40 @@ function openSaleEditModal(sale: Sale, onSave: () => void): void {
   form.innerHTML = `
     <div class="form-row" style="margin-bottom:var(--space-4);">
       <div class="form-group">
-        <label class="form-label" for="se-status">Order Status</label>
+        <label class="form-label" for="se-status">${i18n.t('common.status')}</label>
         <select id="se-status" class="form-control">
-          <option value="pending"   ${sale.status === 'pending'   ? 'selected' : ''}>Pending</option>
-          <option value="confirmed" ${sale.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
-          <option value="shipped"   ${sale.status === 'shipped'   ? 'selected' : ''}>Shipped</option>
-          <option value="delivered" ${sale.status === 'delivered' ? 'selected' : ''}>Delivered</option>
-          <option value="cancelled" ${sale.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+          <option value="pending"   ${sale.status === 'pending'   ? 'selected' : ''}>${getStatusLabel('pending')}</option>
+          <option value="confirmed" ${sale.status === 'confirmed' ? 'selected' : ''}>${getStatusLabel('confirmed')}</option>
+          <option value="shipped"   ${sale.status === 'shipped'   ? 'selected' : ''}>${getStatusLabel('shipped')}</option>
+          <option value="delivered" ${sale.status === 'delivered' ? 'selected' : ''}>${getStatusLabel('delivered')}</option>
+          <option value="cancelled" ${sale.status === 'cancelled' ? 'selected' : ''}>${getStatusLabel('cancelled')}</option>
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label" for="se-payment-status">Payment Status</label>
+        <label class="form-label" for="se-payment-status">${i18n.t('sales.paymentStatus')}</label>
         <select id="se-payment-status" class="form-control">
-          <option value="unpaid"  ${sale.paymentStatus === 'unpaid'  ? 'selected' : ''}>Unpaid</option>
-          <option value="partial" ${sale.paymentStatus === 'partial' ? 'selected' : ''}>Partial</option>
-          <option value="paid"    ${sale.paymentStatus === 'paid'    ? 'selected' : ''}>Paid</option>
+          <option value="unpaid"  ${sale.paymentStatus === 'unpaid'  ? 'selected' : ''}>${getPaymentLabel('unpaid')}</option>
+          <option value="partial" ${sale.paymentStatus === 'partial' ? 'selected' : ''}>${getPaymentLabel('partial')}</option>
+          <option value="paid"    ${sale.paymentStatus === 'paid'    ? 'selected' : ''}>${getPaymentLabel('paid')}</option>
         </select>
       </div>
     </div>
     <div class="form-row" style="margin-bottom:var(--space-4);">
       <div class="form-group">
-        <label class="form-label" for="se-payment-method">Payment Method</label>
+        <label class="form-label" for="se-payment-method">${i18n.t('sales.paymentMethod')}</label>
         <select id="se-payment-method" class="form-control">
-          <option value="cash"     ${sale.paymentMethod === 'cash'     ? 'selected' : ''}>Cash</option>
-          <option value="card"     ${sale.paymentMethod === 'card'     ? 'selected' : ''}>Card</option>
-          <option value="transfer" ${sale.paymentMethod === 'transfer' ? 'selected' : ''}>Bank Transfer</option>
-          <option value="other"    ${sale.paymentMethod === 'other'    ? 'selected' : ''}>Other</option>
+          <option value="cash"     ${sale.paymentMethod === 'cash'     ? 'selected' : ''}>${getPaymentLabel('cash')}</option>
+          <option value="card"     ${sale.paymentMethod === 'card'     ? 'selected' : ''}>${getPaymentLabel('card')}</option>
+          <option value="transfer" ${sale.paymentMethod === 'transfer' ? 'selected' : ''}>${getPaymentLabel('transfer')}</option>
+          <option value="other"    ${sale.paymentMethod === 'other'    ? 'selected' : ''}>${getPaymentLabel('other')}</option>
         </select>
       </div>
     </div>
 
     <div style="margin-bottom:var(--space-4);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);">
-        <label class="form-label" style="margin:0;">Order Items</label>
-        <button type="button" class="btn btn-secondary btn-sm" id="se-add-item-btn">${Icons.plus(16)} Add Item</button>
+        <label class="form-label" style="margin:0;">${i18n.t('sales.orderItems')}</label>
+        <button type="button" class="btn btn-secondary btn-sm" id="se-add-item-btn">${Icons.plus(16)} ${i18n.t('sales.modals.addItem')}</button>
       </div>
       <div id="se-items-container"></div>
       <div id="se-order-totals" style="margin-top:var(--space-3);text-align:right;font-size:var(--font-size-sm);color:var(--color-text-secondary);"></div>
@@ -594,17 +603,17 @@ function openSaleEditModal(sale: Sale, onSave: () => void): void {
 
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" for="se-tax">Tax Rate (%)</label>
+        <label class="form-label" for="se-tax">${i18n.t('sales.tax')} (%)</label>
         <input type="number" id="se-tax" class="form-control" value="${sale.taxRate}" min="0" max="100" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="se-discount">Discount (${currencySymbol})</label>
+        <label class="form-label" for="se-discount">${i18n.t('sales.discount')} (${currencySymbol})</label>
         <input type="number" id="se-discount" class="form-control" value="${sale.discount}" min="0" />
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label" for="se-notes">Notes</label>
-      <textarea id="se-notes" class="form-control" placeholder="Optional notes...">${sale.notes ?? ''}</textarea>
+      <label class="form-label" for="se-notes">${i18n.t('sales.notes')}</label>
+      <textarea id="se-notes" class="form-control" placeholder="...">${sale.notes ?? ''}</textarea>
     </div>
   `;
 
@@ -613,15 +622,15 @@ function openSaleEditModal(sale: Sale, onSave: () => void): void {
     const discount = parseFloat((form.querySelector('#se-discount') as HTMLInputElement).value) || 0;
     const { subtotal, taxAmount, total } = saleService.calculateTotals(items, taxRate, discount);
     form.querySelector('#se-order-totals')!.innerHTML = `
-      <div>Subtotal: <strong>${formatCurrency(subtotal)}</strong></div>
-      <div>Tax: <strong>${formatCurrency(taxAmount)}</strong></div>
-      <div style="font-size:var(--font-size-base);font-weight:700;color:var(--color-primary);margin-top:4px;">Total: ${formatCurrency(total)}</div>`;
+      <div>${i18n.t('sales.subtotal')}: <strong>${formatCurrency(subtotal)}</strong></div>
+      <div>${i18n.t('sales.tax')}: <strong>${formatCurrency(taxAmount)}</strong></div>
+      <div style="font-size:var(--font-size-base);font-weight:700;color:var(--color-primary);margin-top:4px;">${i18n.t('common.total')}: ${formatCurrency(total)}</div>`;
   };
 
   const renderItems = () => {
     const container = form.querySelector('#se-items-container')!;
     container.innerHTML = items.length === 0
-      ? `<div style="text-align:center;padding:var(--space-4);color:var(--color-text-tertiary);font-size:var(--font-size-sm);border:1px dashed var(--color-border);border-radius:var(--radius-sm);">No items</div>`
+      ? `<div style="text-align:center;padding:var(--space-4);color:var(--color-text-tertiary);font-size:var(--font-size-sm);border:1px dashed var(--color-border);border-radius:var(--radius-sm);">${i18n.t('common.noData')}</div>`
       : items.map((item, idx) => buildItemRow(item, idx, products, 'se', reserved)).join('');
     attachItemEvents(container as HTMLElement, items, products, 'se', reserved, renderItems, updateTotals);
   };
@@ -641,12 +650,12 @@ function openSaleEditModal(sale: Sale, onSave: () => void): void {
   renderItems(); updateTotals();
 
   openModal({
-    title: `Edit Order ${sale.orderNumber}`,
+    title: `${i18n.t('sales.modals.editTitle')} ${sale.orderNumber}`,
     content: form,
     size: 'lg',
-    confirmText: 'Save Changes',
+    confirmText: i18n.t('common.save'),
     onConfirm: () => {
-      if (items.length === 0) { showModalError(form, 'Add at least one item.'); return false; }
+      if (items.length === 0) { showModalError(form, i18n.t('errors.required')); return false; }
 
       const newStatus = (form.querySelector('#se-status') as HTMLSelectElement).value as Sale['status'];
 
@@ -684,7 +693,7 @@ function openSaleEditModal(sale: Sale, onSave: () => void): void {
         notes:         (form.querySelector('#se-notes') as HTMLTextAreaElement).value.trim(),
       });
 
-      notifications.success('Order updated successfully.');
+      notifications.success(i18n.t('common.save'));
       onSave();
     },
   });

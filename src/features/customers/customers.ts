@@ -9,6 +9,7 @@ import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatDate, formatCurrency, debounce, getInitials } from '@shared/utils/helpers';
+import { i18n } from '@core/i18n';
 import type { Customer } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -102,11 +103,11 @@ export function renderCustomers(): HTMLElement {
         const customer = customerService.getById(id);
         if (!customer) return;
         confirmDialog(
-          'Delete Customer',
-          `Are you sure you want to delete "${customer.name}"? This action cannot be undone.`,
+          i18n.t('common.delete'),
+          `${i18n.t('common.confirm')} "${customer.name}"?`,
           () => {
             customerService.delete(id);
-            notifications.success(`Customer "${customer.name}" deleted.`);
+            notifications.success(`${i18n.t('customers.title').slice(0,-1)} "${customer.name}" ${i18n.t('common.delete').toLowerCase()}.`);
             state.customers = customerService.getAll();
             state.filtered = state.search
               ? customerService.search(state.search)
@@ -145,11 +146,11 @@ function buildHTML(state: State): string {
   return `
     <div class="page-header">
       <div>
-        <h2 class="page-title">Customers</h2>
-        <p class="page-subtitle">${total} customer${total !== 1 ? 's' : ''} total</p>
+        <h2 class="page-title">${i18n.t('customers.title')}</h2>
+        <p class="page-subtitle">${total === 1 ? i18n.t('customers.countTotal', { count: total }) : i18n.t('customers.countPlural', { count: total })}</p>
       </div>
       <button class="btn btn-primary" id="add-customer-btn">
-        ${Icons.plus()} Add Customer
+        ${Icons.plus()} ${i18n.t('customers.addNew')}
       </button>
     </div>
 
@@ -161,9 +162,9 @@ function buildHTML(state: State): string {
             type="search"
             id="customer-search"
             class="form-control"
-            placeholder="Search customers..."
+            placeholder="${i18n.t('common.search')}..."
             value="${state.search}"
-            aria-label="Search customers"
+            aria-label="${i18n.t('common.search')}"
           />
         </div>
       </div>
@@ -172,13 +173,13 @@ function buildHTML(state: State): string {
         <table class="data-table" aria-label="Customers list">
           <thead>
             <tr>
-              <th>Customer</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>City</th>
-              <th>Country</th>
-              <th>Since</th>
-              <th>Actions</th>
+              <th>${i18n.t('customers.name')}</th>
+              <th>${i18n.t('customers.email')}</th>
+              <th>${i18n.t('customers.phone')}</th>
+              <th>${i18n.t('settings.city')}</th>
+              <th>${i18n.t('settings.country')}</th>
+              <th>${i18n.t('common.date')}</th>
+              <th>${i18n.t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -187,8 +188,8 @@ function buildHTML(state: State): string {
                 ? `<tr><td colspan="7">
                     <div class="empty-state">
                       <div class="empty-state-icon">${Icons.customers(32)}</div>
-                      <p class="empty-state-title">No customers found</p>
-                      <p class="empty-state-desc">${state.search ? 'Try a different search term.' : 'Add your first customer to get started.'}</p>
+                      <p class="empty-state-title">${i18n.t('common.noData')}</p>
+                      <p class="empty-state-desc">${state.search ? i18n.t('errors.loadFailed') : i18n.t('common.noData')}</p>
                     </div>
                   </td></tr>`
                 : pageData
@@ -211,13 +212,13 @@ function buildHTML(state: State): string {
                 <td style="color: var(--color-text-secondary);">${formatDate(c.createdAt)}</td>
                 <td>
                   <div class="table-actions">
-                    <button class="btn btn-ghost btn-icon btn-sm" data-view="${c.id}" aria-label="View ${c.name}" data-tooltip="View Profile">
+                    <button class="btn btn-ghost btn-icon btn-sm" data-view="${c.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">
                       ${Icons.eye(16)}
                     </button>
-                    <button class="btn btn-ghost btn-icon btn-sm" data-edit="${c.id}" aria-label="Edit ${c.name}" data-tooltip="Edit">
+                    <button class="btn btn-ghost btn-icon btn-sm" data-edit="${c.id}" aria-label="${i18n.t('common.edit')}" data-tooltip="${i18n.t('common.edit')}">
                       ${Icons.edit(16)}
                     </button>
-                    <button class="btn btn-ghost btn-icon btn-sm" data-delete="${c.id}" aria-label="Delete ${c.name}" data-tooltip="Delete" style="color: var(--color-error);">
+                    <button class="btn btn-ghost btn-icon btn-sm" data-delete="${c.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color: var(--color-error);">
                       ${Icons.trash(16)}
                     </button>
                   </div>
@@ -247,7 +248,7 @@ function buildPagination(
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   return `
     <div class="pagination">
-      <span class="pagination-info">Showing ${start + 1}–${start + count} of ${total}</span>
+      <span class="pagination-info">${i18n.t('common.showing' as any)} ${start + 1}–${start + count} / ${total}</span>
       <div class="pagination-controls">
         <button class="pagination-btn" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''} aria-label="Previous page">
           ${Icons.chevronLeft(16)}
@@ -276,49 +277,49 @@ function openCustomerModal(customer: Customer | null, onSave: () => void): void 
   form.innerHTML = `
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label required" for="c-name">Full Name</label>
-        <input type="text" id="c-name" class="form-control" placeholder="Acme Corp" value="${customer?.name ?? ''}" required />
+        <label class="form-label required" for="c-name">${i18n.t('customers.modals.fullName')}</label>
+        <input type="text" id="c-name" class="form-control" placeholder="..." value="${customer?.name ?? ''}" required />
       </div>
       <div class="form-group">
-        <label class="form-label required" for="c-email">Email</label>
-        <input type="email" id="c-email" class="form-control" placeholder="contact@example.com" value="${customer?.email ?? ''}" required />
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label" for="c-phone">Phone</label>
-        <input type="tel" id="c-phone" class="form-control" placeholder="+1-555-0100" value="${customer?.phone ?? ''}" />
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="c-address">Address</label>
-        <input type="text" id="c-address" class="form-control" placeholder="123 Main St" value="${customer?.address ?? ''}" />
+        <label class="form-label required" for="c-email">${i18n.t('customers.modals.email')}</label>
+        <input type="email" id="c-email" class="form-control" placeholder="..." value="${customer?.email ?? ''}" required />
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" for="c-city">City</label>
-        <input type="text" id="c-city" class="form-control" placeholder="New York" value="${customer?.city ?? ''}" />
+        <label class="form-label" for="c-phone">${i18n.t('customers.modals.phone')}</label>
+        <input type="tel" id="c-phone" class="form-control" placeholder="..." value="${customer?.phone ?? ''}" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="c-country">Country</label>
-        <input type="text" id="c-country" class="form-control" placeholder="USA" value="${customer?.country ?? ''}" />
+        <label class="form-label" for="c-address">${i18n.t('customers.modals.address')}</label>
+        <input type="text" id="c-address" class="form-control" placeholder="..." value="${customer?.address ?? ''}" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="c-city">${i18n.t('customers.modals.city')}</label>
+        <input type="text" id="c-city" class="form-control" placeholder="..." value="${customer?.city ?? ''}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="c-country">${i18n.t('customers.modals.country')}</label>
+        <input type="text" id="c-country" class="form-control" placeholder="..." value="${customer?.country ?? ''}" />
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label" for="c-notes">Notes</label>
-      <textarea id="c-notes" class="form-control" placeholder="Optional notes...">${customer?.notes ?? ''}</textarea>
+      <label class="form-label" for="c-notes">${i18n.t('customers.modals.notes')}</label>
+      <textarea id="c-notes" class="form-control" placeholder="...">${customer?.notes ?? ''}</textarea>
     </div>
   `;
 
   openModal({
-    title: isEdit ? 'Edit Customer' : 'Add Customer',
+    title: isEdit ? i18n.t('customers.modals.editTitle') : i18n.t('customers.modals.addTitle'),
     content: form,
-    confirmText: isEdit ? 'Save Changes' : 'Add Customer',
+    confirmText: isEdit ? i18n.t('customers.modals.saveChanges') : i18n.t('customers.addNew'),
     onConfirm: () => {
       const name = (form.querySelector('#c-name') as HTMLInputElement).value.trim();
       const email = (form.querySelector('#c-email') as HTMLInputElement).value.trim();
       if (!name || !email) {
-        showModalError(form, 'Name and email are required.', [
+        showModalError(form, i18n.t('errors.required'), [
           ...(!name ? ['c-name'] : []),
           ...(!email ? ['c-email'] : []),
         ]);
@@ -337,10 +338,10 @@ function openCustomerModal(customer: Customer | null, onSave: () => void): void 
 
       if (isEdit) {
         customerService.update(customer!.id, data);
-        notifications.success('Customer updated successfully.');
+        notifications.success(i18n.t('common.save'));
       } else {
         customerService.create(data);
-        notifications.success('Customer added successfully.');
+        notifications.success(i18n.t('common.save'));
       }
       onSave();
     },
@@ -383,51 +384,51 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
         <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${customer.email}</div>
         <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${customer.phone}</div>
       </div>
-      <button class="btn btn-secondary btn-sm" id="profile-edit-btn">${Icons.edit(16)} Edit</button>
+      <button class="btn btn-secondary btn-sm" id="profile-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>
     </div>
 
     <!-- KPI strip -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-5);">
       <div style="text-align:center;padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);">
         <div style="font-size:var(--font-size-2xl);font-weight:700;color:var(--color-primary);">${totalOrders}</div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">Total Orders</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${i18n.t('customers.modals.totalOrders')}</div>
       </div>
       <div style="text-align:center;padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);">
         <div style="font-size:var(--font-size-2xl);font-weight:700;color:var(--color-success);">${formatCurrency(totalSpent)}</div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">Total Spent</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${i18n.t('customers.modals.totalSpent')}</div>
       </div>
       <div style="text-align:center;padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);">
         <div style="font-size:var(--font-size-2xl);font-weight:700;color:${totalOutstanding > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatCurrency(totalOutstanding)}</div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">Outstanding</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${i18n.t('customers.modals.outstanding')}</div>
       </div>
     </div>
 
     <!-- Contact info -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-bottom:var(--space-5);font-size:var(--font-size-sm);">
       <div>
-        <span style="color:var(--color-text-tertiary);">Address: </span>
+        <span style="color:var(--color-text-tertiary);">${i18n.t('settings.address')}: </span>
         <span>${[customer.address, customer.city, customer.country].filter(Boolean).join(', ') || '—'}</span>
       </div>
       <div>
-        <span style="color:var(--color-text-tertiary);">Customer since: </span>
+        <span style="color:var(--color-text-tertiary);">${i18n.t('customers.modals.customerSince')}: </span>
         <span>${formatDate(customer.createdAt)}</span>
       </div>
-      ${customer.notes ? `<div style="grid-column:1/-1;"><span style="color:var(--color-text-tertiary);">Notes: </span><span>${customer.notes}</span></div>` : ''}
+      ${customer.notes ? `<div style="grid-column:1/-1;"><span style="color:var(--color-text-tertiary);">${i18n.t('customers.modals.notes')}: </span><span>${customer.notes}</span></div>` : ''}
     </div>
 
     <!-- Tabs -->
     <div class="tabs" id="profile-tabs" style="margin-bottom:var(--space-4);">
-      <button class="tab-btn active" data-tab="orders">Orders (${sales.length})</button>
-      <button class="tab-btn" data-tab="invoices">Invoices (${invoices.length})</button>
+      <button class="tab-btn active" data-tab="orders">${i18n.t('customers.modals.orders')} (${sales.length})</button>
+      <button class="tab-btn" data-tab="invoices">${i18n.t('customers.modals.invoices')} (${invoices.length})</button>
     </div>
 
     <!-- Orders tab -->
     <div id="tab-orders">
       ${sales.length === 0
-        ? `<div style="text-align:center;padding:var(--space-8);color:var(--color-text-tertiary);font-size:var(--font-size-sm);">No orders yet</div>`
+        ? `<div style="text-align:center;padding:var(--space-8);color:var(--color-text-tertiary);font-size:var(--font-size-sm);">${i18n.t('customers.modals.noOrders')}</div>`
         : `<div class="table-container" style="border:none;">
             <table class="data-table">
-              <thead><tr><th>Order #</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th></tr></thead>
+              <thead><tr><th>${i18n.t('customers.modals.orderNumber')}</th><th>${i18n.t('common.date')}</th><th>${i18n.t('customers.modals.items')}</th><th>${i18n.t('common.total')}</th><th>${i18n.t('common.status')}</th><th>${i18n.t('sales.paymentStatus')}</th></tr></thead>
               <tbody>
                 ${[...sales].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((s) => `
                   <tr>
@@ -435,8 +436,8 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
                     <td style="color:var(--color-text-secondary);">${formatDate(s.createdAt)}</td>
                     <td style="color:var(--color-text-secondary);">${s.items.length}</td>
                     <td><strong>${formatCurrency(s.total)}</strong></td>
-                    <td><span class="badge ${STATUS_BADGE[s.status] ?? 'badge-neutral'}">${s.status}</span></td>
-                    <td><span class="badge ${PAY_BADGE[s.paymentStatus] ?? 'badge-neutral'}">${s.paymentStatus}</span></td>
+                    <td><span class="badge ${STATUS_BADGE[s.status] ?? 'badge-neutral'}">${i18n.t(`sales.statuses.${s.status}` as any)}</span></td>
+                    <td><span class="badge ${PAY_BADGE[s.paymentStatus] ?? 'badge-neutral'}">${i18n.t(`sales.payments.${s.paymentStatus}` as any)}</span></td>
                   </tr>`).join('')}
               </tbody>
             </table>
@@ -447,10 +448,10 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
     <!-- Invoices tab (hidden by default) -->
     <div id="tab-invoices" style="display:none;">
       ${invoices.length === 0
-        ? `<div style="text-align:center;padding:var(--space-8);color:var(--color-text-tertiary);font-size:var(--font-size-sm);">No invoices yet</div>`
+        ? `<div style="text-align:center;padding:var(--space-8);color:var(--color-text-tertiary);font-size:var(--font-size-sm);">${i18n.t('customers.modals.noInvoices')}</div>`
         : `<div class="table-container" style="border:none;">
             <table class="data-table">
-              <thead><tr><th>Invoice #</th><th>Date</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th></tr></thead>
+              <thead><tr><th>${i18n.t('customers.modals.invoiceNumber')}</th><th>${i18n.t('common.date')}</th><th>${i18n.t('common.total')}</th><th>${i18n.t('customers.modals.paid')}</th><th>${i18n.t('customers.modals.due')}</th><th>${i18n.t('common.status')}</th></tr></thead>
               <tbody>
                 ${[...invoices].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((i) => `
                   <tr>
@@ -459,7 +460,7 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
                     <td><strong>${formatCurrency(i.total)}</strong></td>
                     <td style="color:var(--color-success);">${formatCurrency(i.amountPaid)}</td>
                     <td style="color:${i.amountDue > 0 ? 'var(--color-error)' : 'var(--color-text-secondary)'};">${formatCurrency(i.amountDue)}</td>
-                    <td><span class="badge ${INV_BADGE[i.status] ?? 'badge-neutral'}">${i.status}</span></td>
+                    <td><span class="badge ${INV_BADGE[i.status] ?? 'badge-neutral'}">${i18n.t(`invoices.statuses.${i.status}` as any)}</span></td>
                   </tr>`).join('')}
               </tbody>
             </table>
@@ -468,7 +469,7 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
     </div>
   `;
 
-  const close = openModal({ title: 'Customer Profile', content, size: 'lg', hideFooter: true });
+  const close = openModal({ title: i18n.t('customers.modals.profileTitle'), content, size: 'lg', hideFooter: true });
 
   // Tab switching
   content.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((btn) => {

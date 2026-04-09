@@ -9,7 +9,7 @@ import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
-import { profileService } from '@services/profileService';
+import { i18n } from '@core/i18n';
 import type { Return, ReturnItem, ReturnReason, Sale } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -102,14 +102,17 @@ export function renderReturns(): HTMLElement {
         const ret = returnService.getById(btn.getAttribute('data-approve')!);
         if (!ret) return;
         confirmDialog(
-          'Approve Return',
-          `Approve return "${ret.returnNumber}"?${ret.restockItems ? ' Items will be added back to inventory.' : ''}`,
+          i18n.t('returns.modals.approveTitle'),
+          i18n.t('returns.modals.approveMsg', { 
+            no: ret.returnNumber, 
+            restock: ret.restockItems ? ` ${i18n.t('returns.modals.restockHint')}.` : '' 
+          }),
           () => {
             returnService.updateStatus(ret.id, 'approved');
-            notifications.success(`Return ${ret.returnNumber} approved.`);
+            notifications.success(i18n.t('common.save'));
             state.returns = returnService.getAll(); applyFilters(); render();
           },
-          'Approve',
+          i18n.t('returns.modals.approveConfirm'),
           'btn-primary'
         );
       });
@@ -120,14 +123,14 @@ export function renderReturns(): HTMLElement {
         const ret = returnService.getById(btn.getAttribute('data-reject')!);
         if (!ret) return;
         confirmDialog(
-          'Reject Return',
-          `Reject return "${ret.returnNumber}"? This cannot be undone.`,
+          i18n.t('returns.modals.rejectTitle'),
+          i18n.t('returns.modals.rejectMsg', { no: ret.returnNumber }),
           () => {
             returnService.updateStatus(ret.id, 'rejected');
-            notifications.success(`Return ${ret.returnNumber} rejected.`);
+            notifications.success(i18n.t('common.save'));
             state.returns = returnService.getAll(); applyFilters(); render();
           },
-          'Reject',
+          i18n.t('returns.modals.rejectConfirm'),
           'btn-danger'
         );
       });
@@ -137,9 +140,9 @@ export function renderReturns(): HTMLElement {
       btn.addEventListener('click', () => {
         const ret = returnService.getById(btn.getAttribute('data-delete')!);
         if (!ret) return;
-        confirmDialog('Delete Return', `Delete return "${ret.returnNumber}"?`, () => {
+        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${ret.returnNumber}"?`, () => {
           returnService.delete(ret.id);
-          notifications.success('Return deleted.');
+          notifications.success(i18n.t('common.save'));
           state.returns = returnService.getAll(); applyFilters(); render();
         });
       });
@@ -173,10 +176,10 @@ function buildHTML(state: State): string {
   return `
     <div class="page-header">
       <div>
-        <h2 class="page-title">Returns & Refunds</h2>
-        <p class="page-subtitle">Customer returns, refunds, and credit notes</p>
+        <h2 class="page-title">${i18n.t('returns.title')}</h2>
+        <p class="page-subtitle">${i18n.t('returns.subtitle')}</p>
       </div>
-      <button class="btn btn-primary" id="add-return-btn">${Icons.plus()} New Return</button>
+      <button class="btn btn-primary" id="add-return-btn">${Icons.plus()} ${i18n.t('returns.addNew')}</button>
     </div>
 
     <!-- KPI strip -->
@@ -184,22 +187,22 @@ function buildHTML(state: State): string {
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-primary-subtle);color:var(--color-primary);">${Icons.refresh()}</div>
         <div class="stat-card-value">${all.length}</div>
-        <div class="stat-card-label">Total Returns</div>
+        <div class="stat-card-label">${i18n.t('returns.totalReturns')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning);">${Icons.alertCircle()}</div>
         <div class="stat-card-value">${pendingCount}</div>
-        <div class="stat-card-label">Pending Review</div>
+        <div class="stat-card-label">${i18n.t('returns.pendingReview')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success);">${Icons.check()}</div>
         <div class="stat-card-value">${approvedCount}</div>
-        <div class="stat-card-label">Approved</div>
+        <div class="stat-card-label">${i18n.t('returns.approved')}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-card-icon" style="background:var(--color-error-subtle);color:var(--color-error);">${Icons.dollarSign()}</div>
         <div class="stat-card-value">${formatCurrency(totalRefunded)}</div>
-        <div class="stat-card-label">Total Refunded</div>
+        <div class="stat-card-label">${i18n.t('returns.totalRefunded')}</div>
       </div>
     </div>
 
@@ -208,14 +211,14 @@ function buildHTML(state: State): string {
         <div class="search-bar" style="flex:1;max-width:360px;">
           <span class="search-icon">${Icons.search(16)}</span>
           <input type="search" id="ret-search" class="form-control"
-            placeholder="Search by return #, order #, or customer..." value="${state.search}" aria-label="Search returns" />
+            placeholder="${i18n.t('common.search')}..." value="${state.search}" aria-label="${i18n.t('common.search')}" />
         </div>
-        <select id="ret-status-filter" class="form-control" style="width:auto;" aria-label="Filter by status">
-          <option value="">All Statuses</option>
-          <option value="pending"  ${state.statusFilter === 'pending'  ? 'selected' : ''}>Pending</option>
-          <option value="approved" ${state.statusFilter === 'approved' ? 'selected' : ''}>Approved</option>
-          <option value="rejected" ${state.statusFilter === 'rejected' ? 'selected' : ''}>Rejected</option>
-          <option value="refunded" ${state.statusFilter === 'refunded' ? 'selected' : ''}>Refunded</option>
+        <select id="ret-status-filter" class="form-control" style="width:auto;" aria-label="${i18n.t('returns.statuses.pending')}">
+          <option value="">${i18n.t('returns.allStatuses')}</option>
+          <option value="pending"  ${state.statusFilter === 'pending'  ? 'selected' : ''}>${i18n.t('returns.statuses.pending')}</option>
+          <option value="approved" ${state.statusFilter === 'approved' ? 'selected' : ''}>${i18n.t('returns.statuses.approved')}</option>
+          <option value="rejected" ${state.statusFilter === 'rejected' ? 'selected' : ''}>${i18n.t('returns.statuses.rejected')}</option>
+          <option value="refunded" ${state.statusFilter === 'refunded' ? 'selected' : ''}>${i18n.t('returns.statuses.refunded')}</option>
         </select>
       </div>
 
@@ -223,15 +226,15 @@ function buildHTML(state: State): string {
         <table class="data-table" aria-label="Returns list">
           <thead>
             <tr>
-              <th>Return #</th>
-              <th>Order #</th>
-              <th>Customer</th>
-              <th>Items</th>
-              <th>Refund</th>
-              <th>Reason</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th>Actions</th>
+              <th>${i18n.t('returns.returnNumber')}</th>
+              <th>${i18n.t('returns.orderNumber')}</th>
+              <th>${i18n.t('returns.customer')}</th>
+              <th>${i18n.t('purchases.items')}</th>
+              <th>${i18n.t('returns.refund')}</th>
+              <th>${i18n.t('returns.reason')}</th>
+              <th>${i18n.t('purchases.status')}</th>
+              <th>${i18n.t('purchases.date')}</th>
+              <th>${i18n.t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -239,8 +242,8 @@ function buildHTML(state: State): string {
               ? `<tr><td colspan="9">
                   <div class="empty-state">
                     <div class="empty-state-icon">${Icons.refresh(32)}</div>
-                    <p class="empty-state-title">No returns found</p>
-                    <p class="empty-state-desc">${state.search ? 'Try a different search.' : 'No customer returns have been filed yet.'}</p>
+                    <p class="empty-state-title">${i18n.t('common.noData')}</p>
+                    <p class="empty-state-desc">${state.search ? i18n.t('common.noData') : i18n.t('returns.addNew')}</p>
                   </div>
                 </td></tr>`
               : pageData.map((r) => `
@@ -248,19 +251,19 @@ function buildHTML(state: State): string {
                   <td><span style="font-weight:600;color:var(--color-primary);">${r.returnNumber}</span></td>
                   <td style="color:var(--color-text-secondary);">${r.orderNumber}</td>
                   <td>${r.customerName}</td>
-                  <td style="color:var(--color-text-secondary);">${r.items.length} item${r.items.length !== 1 ? 's' : ''}</td>
+                  <td style="color:var(--color-text-secondary);">${i18n.t('common.itemsCount', { count: r.items.length })}</td>
                   <td><strong style="color:var(--color-error);">${formatCurrency(r.refundAmount)}</strong></td>
-                  <td style="color:var(--color-text-secondary);font-size:var(--font-size-xs);">${REASON_LABELS[r.reason] ?? r.reason}</td>
-                  <td><span class="badge ${STATUS_BADGE[r.status] ?? 'badge-neutral'}">${r.status}</span></td>
+                  <td style="color:var(--color-text-secondary);font-size:var(--font-size-xs);">${i18n.t(`returns.reasons.${r.reason.toLowerCase()}` as any)}</td>
+                  <td><span class="badge ${STATUS_BADGE[r.status.toLowerCase()] ?? 'badge-neutral'}">${i18n.t(`returns.statuses.${r.status.toLowerCase()}` as any)}</span></td>
                   <td style="color:var(--color-text-secondary);">${formatDate(r.createdAt)}</td>
                   <td>
                     <div class="table-actions">
-                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${r.id}" aria-label="View" data-tooltip="View">${Icons.eye(16)}</button>
+                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${r.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">${Icons.eye(16)}</button>
                       ${r.status === 'pending' ? `
-                        <button class="btn btn-ghost btn-icon btn-sm" data-approve="${r.id}" aria-label="Approve" data-tooltip="Approve" style="color:var(--color-success);">${Icons.check(16)}</button>
-                        <button class="btn btn-ghost btn-icon btn-sm" data-reject="${r.id}" aria-label="Reject" data-tooltip="Reject" style="color:var(--color-error);">${Icons.close(16)}</button>
+                        <button class="btn btn-ghost btn-icon btn-sm" data-approve="${r.id}" aria-label="${i18n.t('returns.modals.approveConfirm')}" data-tooltip="${i18n.t('returns.modals.approveConfirm')}" style="color:var(--color-success);">${Icons.check(16)}</button>
+                        <button class="btn btn-ghost btn-icon btn-sm" data-reject="${r.id}" aria-label="${i18n.t('returns.modals.rejectConfirm')}" data-tooltip="${i18n.t('returns.modals.rejectConfirm')}" style="color:var(--color-error);">${Icons.close(16)}</button>
                       ` : ''}
-                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${r.id}" aria-label="Delete" data-tooltip="Delete" style="color:var(--color-error);">${Icons.trash(16)}</button>
+                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${r.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>
                     </div>
                   </td>
                 </tr>`).join('')
@@ -278,7 +281,7 @@ function buildPagination(page: number, totalPages: number, total: number, start:
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   return `
     <div class="pagination">
-      <span class="pagination-info">Showing ${start + 1}–${start + count} of ${total}</span>
+      <span class="pagination-info">${i18n.t('common.showing' as any)} ${start + 1}–${start + count} ${i18n.t('common.of')} ${total}</span>
       <div class="pagination-controls">
         <button class="pagination-btn" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>${Icons.chevronLeft(16)}</button>
         ${pages.map((p) => `<button class="pagination-btn ${p === page ? 'active' : ''}" data-page="${p}">${p}</button>`).join('')}
@@ -294,34 +297,34 @@ function openReturnDetailModal(ret: Return, onUpdate: () => void): void {
   content.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Customer</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('returns.customer')}</div>
         <div style="font-weight:500;">${ret.customerName}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Original Order</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('returns.orderNumber')}</div>
         <div style="font-weight:500;color:var(--color-primary);">${ret.orderNumber}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Status</div>
-        <span class="badge ${STATUS_BADGE[ret.status]}">${ret.status}</span>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('purchases.status')}</div>
+        <span class="badge ${STATUS_BADGE[ret.status]}">${i18n.t(`returns.statuses.${ret.status}` as any)}</span>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Reason</div>
-        <div>${REASON_LABELS[ret.reason] ?? ret.reason}</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('returns.reason')}</div>
+        <div>${i18n.t(`returns.reasons.${ret.reason}` as any)}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Refund Method</div>
-        <div>${ret.refundMethod.replace('_', ' ')}</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('returns.modals.refundMethod')}</div>
+        <div>${i18n.t(`sales.payments.${ret.refundMethod}` as any)}</div>
       </div>
       <div>
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">Restock Items</div>
-        <span class="badge ${ret.restockItems ? 'badge-success' : 'badge-neutral'}">${ret.restockItems ? 'Yes' : 'No'}</span>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('returns.restockItems')}</div>
+        <span class="badge ${ret.restockItems ? 'badge-success' : 'badge-neutral'}">${ret.restockItems ? i18n.t('common.yes') : i18n.t('common.no')}</span>
       </div>
     </div>
 
     <div class="table-container" style="margin-bottom:var(--space-4);">
       <table class="data-table">
-        <thead><tr><th>Product</th><th>Qty Returned</th><th>Unit Price</th><th>Total</th></tr></thead>
+        <thead><tr><th>${i18n.t('products.modals.name')}</th><th>${i18n.t('returns.returnQty')}</th><th>${i18n.t('products.price')}</th><th>${i18n.t('purchases.total')}</th></tr></thead>
         <tbody>
           ${ret.items.map((item) => `
             <tr>
@@ -335,10 +338,10 @@ function openReturnDetailModal(ret: Return, onUpdate: () => void): void {
     </div>
 
     <div style="display:flex;flex-direction:column;gap:var(--space-2);align-items:flex-end;margin-bottom:var(--space-4);">
-      <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);"><span style="color:var(--color-text-secondary);">Subtotal</span><span>${formatCurrency(ret.subtotal)}</span></div>
-      <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);"><span style="color:var(--color-text-secondary);">Tax (${ret.taxRate}%)</span><span>${formatCurrency(ret.taxAmount)}</span></div>
+      <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);"><span style="color:var(--color-text-secondary);">${i18n.t('purchases.subtotal')}</span><span>${formatCurrency(ret.subtotal)}</span></div>
+      <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);"><span style="color:var(--color-text-secondary);">${i18n.t('purchases.tax')} (${ret.taxRate}%)</span><span>${formatCurrency(ret.taxAmount)}</span></div>
       <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-lg);font-weight:700;border-top:1px solid var(--color-border);padding-top:var(--space-2);margin-top:var(--space-1);">
-        <span>Refund Amount</span><span style="color:var(--color-error);">${formatCurrency(ret.refundAmount)}</span>
+        <span>${i18n.t('returns.refund')}</span><span style="color:var(--color-error);">${formatCurrency(ret.refundAmount)}</span>
       </div>
     </div>
 
@@ -346,38 +349,41 @@ function openReturnDetailModal(ret: Return, onUpdate: () => void): void {
 
     ${ret.status === 'pending' ? `
     <div style="display:flex;gap:var(--space-3);">
-      <button class="btn btn-primary" id="detail-approve-btn">${Icons.check(16)} Approve Return</button>
-      <button class="btn btn-danger" id="detail-reject-btn">${Icons.close(16)} Reject</button>
+      <button class="btn btn-primary" id="detail-approve-btn">${Icons.check(16)} ${i18n.t('returns.modals.approveTitle')}</button>
+      <button class="btn btn-danger" id="detail-reject-btn">${Icons.close(16)} ${i18n.t('returns.modals.rejectConfirm')}</button>
     </div>` : ''}
 
     ${ret.status === 'approved' ? `
     <div style="margin-top:var(--space-2);">
-      <button class="btn btn-secondary" id="detail-refunded-btn">${Icons.dollarSign(16)} Mark as Refunded</button>
+      <button class="btn btn-secondary" id="detail-refunded-btn">${Icons.dollarSign(16)} ${i18n.t('returns.modals.recordRefund')}</button>
     </div>` : ''}
   `;
 
-  const close = openModal({ title: `Return ${ret.returnNumber}`, content, size: 'lg', hideFooter: true });
+  const close = openModal({ title: `${i18n.t('returns.modals.detailTitle')} ${ret.returnNumber}`, content, size: 'lg', hideFooter: true });
 
   content.querySelector('#detail-approve-btn')?.addEventListener('click', () => {
     confirmDialog(
-      'Approve Return',
-      `Approve "${ret.returnNumber}"?${ret.restockItems ? ' Items will be added back to inventory.' : ''}`,
-      () => { returnService.updateStatus(ret.id, 'approved'); notifications.success('Return approved.'); close(); onUpdate(); },
-      'Approve', 'btn-primary'
+      i18n.t('returns.modals.approveTitle'),
+      i18n.t('returns.modals.approveMsg', { 
+        no: ret.returnNumber, 
+        restock: ret.restockItems ? ` ${i18n.t('returns.modals.restockHint')}.` : '' 
+      }),
+      () => { returnService.updateStatus(ret.id, 'approved'); notifications.success(i18n.t('common.save')); close(); onUpdate(); },
+      i18n.t('returns.modals.approveConfirm'), 'btn-primary'
     );
   });
 
   content.querySelector('#detail-reject-btn')?.addEventListener('click', () => {
-    confirmDialog('Reject Return', `Reject "${ret.returnNumber}"?`, () => {
+    confirmDialog(i18n.t('returns.modals.rejectTitle'), i18n.t('returns.modals.rejectMsg', { no: ret.returnNumber }), () => {
       returnService.updateStatus(ret.id, 'rejected');
-      notifications.success('Return rejected.');
+      notifications.success(i18n.t('common.save'));
       close(); onUpdate();
     });
   });
 
   content.querySelector('#detail-refunded-btn')?.addEventListener('click', () => {
     returnService.updateStatus(ret.id, 'refunded');
-    notifications.success('Return marked as refunded.');
+    notifications.success(i18n.t('common.save'));
     close(); onUpdate();
   });
 }
@@ -385,7 +391,6 @@ function openReturnDetailModal(ret: Return, onUpdate: () => void): void {
 // ── Create modal ──────────────────────────────────────────────────────────────
 
 function openReturnModal(_ret: Return | null, onSave: () => void): void {
-  const currency = profileService.getCurrencySymbol();
   // Only delivered/confirmed sales can be returned
   const eligibleSales = saleService.getAll().filter(
     (s) => s.status === 'delivered' || s.status === 'confirmed' || s.status === 'shipped'
@@ -398,15 +403,15 @@ function openReturnModal(_ret: Return | null, onSave: () => void): void {
 
   const renderSaleItems = () => {
     const container = form.querySelector<HTMLElement>('#ret-items-section')!;
-    if (!selectedSale) {
-      container.innerHTML = `<div style="text-align:center;padding:var(--space-4);color:var(--color-text-tertiary);font-size:var(--font-size-sm);border:1px dashed var(--color-border);border-radius:var(--radius-sm);">Select an order above to load its items</div>`;
-      return;
-    }
+      if (!selectedSale) {
+        container.innerHTML = `<div style="text-align:center;padding:var(--space-4);color:var(--color-text-tertiary);font-size:var(--font-size-sm);border:1px dashed var(--color-border);border-radius:var(--radius-sm);">${i18n.t('returns.modals.selectToLoad')}</div>`;
+        return;
+      }
 
     container.innerHTML = `
       <div style="margin-bottom:var(--space-3);">
         <div style="display:grid;grid-template-columns:1fr 100px 120px 80px;gap:var(--space-2);padding:var(--space-2) var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-xs);font-weight:600;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;">
-          <span>Product</span><span style="text-align:center;">Max Qty</span><span style="text-align:center;">Return Qty</span><span style="text-align:right;">Refund</span>
+          <span>${i18n.t('products.modals.name')}</span><span style="text-align:center;">${i18n.t('returns.maxQty')}</span><span style="text-align:center;">${i18n.t('returns.returnQty')}</span><span style="text-align:right;">${i18n.t('returns.refund')}</span>
         </div>
         ${selectedSale.items.map((saleItem, idx) => {
           const retItem = items.find((i) => i.productId === saleItem.productId);
@@ -471,74 +476,74 @@ function openReturnModal(_ret: Return | null, onSave: () => void): void {
     const { subtotal, taxAmount, refundAmount } = returnService.calculateTotals(items, taxRate);
     const el = form.querySelector('#ret-totals');
     if (el) el.innerHTML = `
-      <div>Subtotal: <strong>${formatCurrency(subtotal)}</strong></div>
-      <div>Tax (${taxRate}%): <strong>${formatCurrency(taxAmount)}</strong></div>
+      <div>${i18n.t('purchases.subtotal')}: <strong>${formatCurrency(subtotal)}</strong></div>
+      <div>${i18n.t('purchases.tax')} (${taxRate}%): <strong>${formatCurrency(taxAmount)}</strong></div>
       <div style="font-size:var(--font-size-base);font-weight:700;color:var(--color-error);margin-top:4px;">
-        Total Refund: ${formatCurrency(refundAmount)}
+        ${i18n.t('returns.refund')}: ${formatCurrency(refundAmount)}
       </div>`;
   };
 
-  form.innerHTML = `
+    form.innerHTML = `
     <div class="form-row" style="margin-bottom:var(--space-4);">
       <div class="form-group">
-        <label class="form-label required" for="ret-sale">Original Order</label>
+        <label class="form-label required" for="ret-sale">${i18n.t('returns.orderNumber')}</label>
         <select id="ret-sale" class="form-control">
-          <option value="">Select order...</option>
+          <option value="">${i18n.t('returns.modals.selectOrder')}</option>
           ${eligibleSales.map((s) => `<option value="${s.id}">${s.orderNumber} — ${s.customerName} (${formatCurrency(s.total)})</option>`).join('')}
         </select>
-        ${eligibleSales.length === 0 ? `<span class="form-hint" style="color:var(--color-warning);">No eligible orders found (must be confirmed, shipped, or delivered)</span>` : ''}
+        ${eligibleSales.length === 0 ? `<span class="form-hint" style="color:var(--color-warning);">${i18n.t('returns.modals.noEligible')}</span>` : ''}
       </div>
       <div class="form-group">
-        <label class="form-label" for="ret-status">Initial Status</label>
+        <label class="form-label" for="ret-status">${i18n.t('returns.modals.initialStatus')}</label>
         <select id="ret-status" class="form-control">
-          <option value="pending">Pending Review</option>
-          <option value="approved">Approved</option>
+          <option value="pending">${i18n.t('returns.statuses.pending')}</option>
+          <option value="approved">${i18n.t('returns.statuses.approved')}</option>
         </select>
       </div>
     </div>
 
     <div class="form-row" style="margin-bottom:var(--space-4);">
       <div class="form-group">
-        <label class="form-label required" for="ret-reason">Return Reason</label>
+        <label class="form-label required" for="ret-reason">${i18n.t('returns.reason')}</label>
         <select id="ret-reason" class="form-control">
-          ${(Object.entries(REASON_LABELS) as [ReturnReason, string][]).map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}
+          ${(Object.entries(REASON_LABELS) as [ReturnReason, string][]).map(([v, _l]) => `<option value="${v}">${i18n.t(`returns.reasons.${v}` as any)}</option>`).join('')}
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label" for="ret-refund-method">Refund Method</label>
+        <label class="form-label" for="ret-refund-method">${i18n.t('returns.modals.refundMethod')}</label>
         <select id="ret-refund-method" class="form-control">
-          <option value="store_credit">Store Credit</option>
-          <option value="transfer">Bank Transfer</option>
-          <option value="cash">Cash</option>
-          <option value="card">Card</option>
-          <option value="other">Other</option>
+          <option value="store_credit">${i18n.t('sales.payments.paid')}</option>
+          <option value="transfer">${i18n.t('sales.payments.transfer')}</option>
+          <option value="cash">${i18n.t('sales.payments.cash')}</option>
+          <option value="card">${i18n.t('sales.payments.card')}</option>
+          <option value="other">${i18n.t('sales.payments.other')}</option>
         </select>
       </div>
     </div>
 
     <!-- Items section -->
     <div style="margin-bottom:var(--space-4);">
-      <label class="form-label" style="margin-bottom:var(--space-2);">Return Items</label>
+      <label class="form-label" style="margin-bottom:var(--space-2);">${i18n.t('returns.returnItems')}</label>
       <div id="ret-items-section"></div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" for="ret-tax">Tax Rate (%)</label>
+        <label class="form-label" for="ret-tax">${i18n.t('purchases.tax')} (%)</label>
         <input type="number" id="ret-tax" class="form-control" value="0" min="0" max="100" />
-        <span class="form-hint">Applied to the refund amount</span>
+        <span class="form-hint">${i18n.t('returns.modals.restockHint')}</span>
       </div>
       <div class="form-group" style="display:flex;align-items:center;gap:var(--space-3);padding-top:var(--space-5);">
         <label class="checkbox-group">
           <input type="checkbox" id="ret-restock" checked />
-          <span style="font-size:var(--font-size-sm);">Restock returned items</span>
+          <span style="font-size:var(--font-size-sm);">${i18n.t('returns.restockItems')}</span>
         </label>
       </div>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="ret-notes">Notes</label>
-      <textarea id="ret-notes" class="form-control" placeholder="Optional notes about this return..."></textarea>
+      <label class="form-label" for="ret-notes">${i18n.t('common.notes')}</label>
+      <textarea id="ret-notes" class="form-control" placeholder="${i18n.t('common.notes')}"></textarea>
     </div>
   `;
 
@@ -559,17 +564,17 @@ function openReturnModal(_ret: Return | null, onSave: () => void): void {
   renderSaleItems();
 
   openModal({
-    title: 'New Return',
+    title: i18n.t('returns.modals.addTitle'),
     content: form,
     size: 'lg',
-    confirmText: 'Create Return',
+    confirmText: i18n.t('common.confirm'),
     onConfirm: () => {
       const saleSelect = form.querySelector<HTMLSelectElement>('#ret-sale')!;
       if (!saleSelect.value || !selectedSale) {
-        showModalError(form, 'Please select an order.', ['ret-sale']); return false;
+        showModalError(form, i18n.t('errors.required'), ['ret-sale']); return false;
       }
       if (items.length === 0) {
-        showModalError(form, 'Please enter a return quantity for at least one item.'); return false;
+        showModalError(form, i18n.t('returns.modals.noEligible')); return false;
       }
 
       const taxRate      = parseFloat((form.querySelector('#ret-tax') as HTMLInputElement).value) || 0;
@@ -593,7 +598,7 @@ function openReturnModal(_ret: Return | null, onSave: () => void): void {
         notes,
       });
 
-      notifications.success('Return created successfully.');
+      notifications.success(i18n.t('common.save'));
       onSave();
     },
   });

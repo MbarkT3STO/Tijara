@@ -4,6 +4,7 @@
  */
 
 import { repository } from '@data/excelRepository';
+import { i18n } from '@core/i18n';
 
 export type AlertSeverity = 'error' | 'warning' | 'info';
 export type AlertCategory = 'inventory' | 'invoice' | 'purchase' | 'return';
@@ -30,8 +31,8 @@ export const alertService = {
         id: 'out-of-stock',
         severity: 'error',
         category: 'inventory',
-        title: 'Out of Stock',
-        message: `${outOfStock.length} product${outOfStock.length !== 1 ? 's are' : ' is'} out of stock`,
+        title: i18n.t('alerts.outOfStock.title' as any),
+        message: i18n.t('alerts.outOfStock.msg' as any, { count: outOfStock.length }),
         route: '#/inventory',
         count: outOfStock.length,
       });
@@ -46,8 +47,8 @@ export const alertService = {
         id: 'low-stock',
         severity: 'warning',
         category: 'inventory',
-        title: 'Low Stock',
-        message: `${lowStock.length} product${lowStock.length !== 1 ? 's are' : ' is'} below reorder point`,
+        title: i18n.t('alerts.lowStock.title' as any),
+        message: i18n.t('alerts.lowStock.msg' as any, { count: lowStock.length }),
         route: '#/inventory',
         count: lowStock.length,
       });
@@ -63,8 +64,8 @@ export const alertService = {
         id: 'overdue-invoices',
         severity: 'error',
         category: 'invoice',
-        title: 'Overdue Invoices',
-        message: `${overdueInvoices.length} invoice${overdueInvoices.length !== 1 ? 's are' : ' is'} past due`,
+        title: i18n.t('alerts.overdueInvoices.title' as any),
+        message: i18n.t('alerts.overdueInvoices.msg' as any, { count: overdueInvoices.length }),
         route: '#/invoices',
         count: overdueInvoices.length,
       });
@@ -85,8 +86,8 @@ export const alertService = {
         id: 'invoices-due-soon',
         severity: 'warning',
         category: 'invoice',
-        title: 'Invoices Due Soon',
-        message: `${dueSoon.length} invoice${dueSoon.length !== 1 ? 's are' : ' is'} due within 7 days`,
+        title: i18n.t('alerts.dueSoon.title' as any),
+        message: i18n.t('alerts.dueSoon.msg' as any, { count: dueSoon.length }),
         route: '#/invoices',
         count: dueSoon.length,
       });
@@ -101,8 +102,8 @@ export const alertService = {
         id: 'pending-pos',
         severity: 'info',
         category: 'purchase',
-        title: 'Pending Purchase Orders',
-        message: `${pendingPOs.length} PO${pendingPOs.length !== 1 ? 's are' : ' is'} awaiting delivery`,
+        title: i18n.t('alerts.pendingPOs.title' as any),
+        message: i18n.t('alerts.pendingPOs.msg' as any, { count: pendingPOs.length }),
         route: '#/purchases',
         count: pendingPOs.length,
       });
@@ -122,8 +123,8 @@ export const alertService = {
         id: 'overdue-pos',
         severity: 'warning',
         category: 'purchase',
-        title: 'Overdue Deliveries',
-        message: `${overduePOs.length} PO${overduePOs.length !== 1 ? 's have' : ' has'} passed expected delivery date`,
+        title: i18n.t('alerts.overduePOs.title' as any),
+        message: i18n.t('alerts.overduePOs.msg' as any, { count: overduePOs.length }),
         route: '#/purchases',
         count: overduePOs.length,
       });
@@ -138,8 +139,8 @@ export const alertService = {
         id: 'pending-returns',
         severity: 'warning',
         category: 'return',
-        title: 'Pending Returns',
-        message: `${pendingReturns.length} return${pendingReturns.length !== 1 ? 's are' : ' is'} awaiting review`,
+        title: i18n.t('alerts.pendingReturns.title' as any),
+        message: i18n.t('alerts.pendingReturns.msg' as any, { count: pendingReturns.length }),
         route: '#/returns',
         count: pendingReturns.length,
       });
@@ -154,8 +155,8 @@ export const alertService = {
         id: 'unpaid-pos',
         severity: 'warning',
         category: 'purchase',
-        title: 'Unpaid Supplier Bills',
-        message: `${unpaidPOs.length} received PO${unpaidPOs.length !== 1 ? 's have' : ' has'} unpaid balance`,
+        title: i18n.t('alerts.unpaidPOs.title' as any),
+        message: i18n.t('alerts.unpaidPOs.msg' as any, { count: unpaidPOs.length }),
         route: '#/purchases',
         count: unpaidPOs.length,
       });

@@ -5,6 +5,7 @@
 import { dashboardService } from '@services/dashboardService';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, formatPercent } from '@shared/utils/helpers';
+import { i18n } from '@core/i18n';
 import type { DashboardStats } from '@core/types';
 
 /** Render and return the dashboard page element */
@@ -22,17 +23,17 @@ function buildDashboardHTML(stats: DashboardStats): string {
   return `
     <div class="page-header">
       <div>
-        <h2 class="page-title">Dashboard</h2>
-        <p class="page-subtitle">Welcome back! Here's what's happening today.</p>
+        <h2 class="page-title">${i18n.t('nav.dashboard')}</h2>
+        <p class="page-subtitle">${i18n.t('dashboard.welcomeBackToday')}</p>
       </div>
     </div>
 
     <!-- KPI Cards -->
     <div class="stats-grid">
-      ${buildStatCard('Total Revenue', formatCurrency(stats.totalRevenue), stats.revenueGrowth, Icons.dollarSign(), 'primary')}
-      ${buildStatCard('Total Orders', String(stats.totalOrders), stats.ordersGrowth, Icons.shoppingCart(), 'info')}
-      ${buildStatCard('Customers', String(stats.totalCustomers), 0, Icons.customers(), 'success')}
-      ${buildStatCard('Products', String(stats.totalProducts), 0, Icons.products(), 'warning')}
+      ${buildStatCard(i18n.t('dashboard.totalRevenue'), formatCurrency(stats.totalRevenue), stats.revenueGrowth, Icons.dollarSign(), 'primary')}
+      ${buildStatCard(i18n.t('dashboard.totalOrders'), String(stats.totalOrders), stats.ordersGrowth, Icons.shoppingCart(), 'info')}
+      ${buildStatCard(i18n.t('nav.customers'), String(stats.totalCustomers), 0, Icons.customers(), 'success')}
+      ${buildStatCard(i18n.t('nav.products'), String(stats.totalProducts), 0, Icons.products(), 'warning')}
       ${buildLowStockCard(stats.lowStockCount)}
     </div>
 
@@ -41,26 +42,26 @@ function buildDashboardHTML(stats: DashboardStats): string {
       <!-- Recent Sales -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Recent Sales</h3>
+          <h3 class="card-title">${i18n.t('dashboard.recentSales')}</h3>
           <button class="btn btn-ghost btn-sm" onclick="window.location.hash='#/sales'">
-            View all ${Icons.chevronRight(16)}
+            ${i18n.t('dashboard.viewAll')} ${Icons.chevronRight(16)}
           </button>
         </div>
         <div class="table-container" style="border: none; border-radius: 0;">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Order</th>
-                <th>Customer</th>
-                <th>Date</th>
-                <th>Amount</th>
-                <th>Status</th>
+                <th>${i18n.t('dashboard.order')}</th>
+                <th>${i18n.t('dashboard.customer')}</th>
+                <th>${i18n.t('dashboard.date')}</th>
+                <th>${i18n.t('dashboard.amount')}</th>
+                <th>${i18n.t('dashboard.status')}</th>
               </tr>
             </thead>
             <tbody>
               ${
                 stats.recentSales.length === 0
-                  ? `<tr><td colspan="5" style="text-align:center; color: var(--color-text-tertiary); padding: 32px;">No sales yet</td></tr>`
+                   ? `<tr><td colspan="5" style="text-align:center; color: var(--color-text-tertiary); padding: 32px;">${i18n.t('dashboard.noSalesYet')}</td></tr>`
                   : stats.recentSales
                       .map(
                         (sale) => `
@@ -83,16 +84,16 @@ function buildDashboardHTML(stats: DashboardStats): string {
       <!-- Top Products -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Top Products</h3>
+          <h3 class="card-title">${i18n.t('dashboard.topProducts')}</h3>
           <button class="btn btn-ghost btn-sm" onclick="window.location.hash='#/products'">
-            View all ${Icons.chevronRight(16)}
+            ${i18n.t('dashboard.viewAll')} ${Icons.chevronRight(16)}
           </button>
         </div>
         <div class="card-body" style="padding-top: var(--space-3);">
           ${
             stats.topProducts.length === 0
               ? `<div class="empty-state" style="padding: var(--space-8);">
-                  <p style="color: var(--color-text-tertiary); font-size: var(--font-size-sm);">No product data yet</p>
+                  <p style="color: var(--color-text-tertiary); font-size: var(--font-size-sm);">${i18n.t('dashboard.noProductDataYet')}</p>
                 </div>`
               : stats.topProducts
                   .map(
@@ -101,7 +102,7 @@ function buildDashboardHTML(stats: DashboardStats): string {
               <div class="top-product-rank">${i + 1}</div>
               <div class="top-product-info">
                 <div class="top-product-name">${p.name}</div>
-                <div class="top-product-qty">${p.quantity} units sold</div>
+                <div class="top-product-qty">${i18n.t('dashboard.unitsSold', { count: p.quantity })}</div>
               </div>
               <div class="top-product-revenue">${formatCurrency(p.revenue)}</div>
             </div>
@@ -122,9 +123,9 @@ function buildLowStockCard(count: number): string {
     <div class="card stat-card card-hover" style="cursor:pointer;" onclick="window.location.hash='#/inventory'">
       <div class="stat-card-icon stat-icon-${color}">${icon}</div>
       <div class="stat-card-value">${count}</div>
-      <div class="stat-card-label">Low Stock Items</div>
+      <div class="stat-card-label">${i18n.t('dashboard.lowStockItems')}</div>
       <div style="font-size:var(--font-size-xs);color:var(--color-primary);margin-top:var(--space-1);">
-        View inventory ${Icons.chevronRight(12)}
+        ${i18n.t('dashboard.viewInventory')} ${Icons.chevronRight(14)}
       </div>
     </div>
   `;
@@ -150,7 +151,7 @@ function buildStatCard(
         showTrend
           ? `<div class="stat-card-trend ${trendClass}">
           ${trendIcon}
-          <span>${formatPercent(growth)} vs last month</span>
+          <span>${formatPercent(growth)} ${i18n.t('dashboard.vsLastMonth')}</span>
         </div>`
           : ''
       }
@@ -159,6 +160,7 @@ function buildStatCard(
 }
 
 function buildStatusBadge(status: string): string {
+  const s = status.toLowerCase();
   const map: Record<string, string> = {
     pending: 'badge-warning',
     confirmed: 'badge-info',
@@ -166,7 +168,8 @@ function buildStatusBadge(status: string): string {
     delivered: 'badge-success',
     cancelled: 'badge-error',
   };
-  return `<span class="badge ${map[status] ?? 'badge-neutral'}">${status}</span>`;
+  const label = i18n.t(`sales.statuses.${s}` as any);
+  return `<span class="badge ${map[s] ?? 'badge-neutral'}">${label}</span>`;
 }
 
 // Dashboard-specific styles injected once
