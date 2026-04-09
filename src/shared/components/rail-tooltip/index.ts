@@ -1,17 +1,42 @@
 /**
  * Rail tooltip manager.
- * Shows floating label tooltips for nav items in Modern layout.
+ * Shows floating label tooltips for nav items when the sidebar is in a
+ * collapsed/icon-only state — Modern layout always, Classic/Floating when collapsed.
  * Appended to document.body to avoid overflow clipping.
  * Fully RTL-aware and viewport-clamped.
  */
 
 import { layoutService } from '@core/layout';
 
-const TOOLTIP_OFFSET = 8; // px gap between rail edge and tooltip
-const RAIL_WIDTH = 52;    // matches --rail-width
+const TOOLTIP_OFFSET = 8; // px gap between sidebar edge and tooltip
 
 let activeTooltip: HTMLElement | null = null;
 let initialized = false;
+let sidebarRef: HTMLElement | null = null;
+
+/** Returns true when the sidebar is currently in icon-only (collapsed) mode */
+function isSidebarCollapsed(): boolean {
+  const layout = layoutService.currentLayout;
+
+  if (layout === 'modern') return true;
+
+  if (layout === 'classic') {
+    return sidebarRef?.classList.contains('collapsed') ?? false;
+  }
+
+  if (layout === 'floating') {
+    if (!sidebarRef) return false;
+    // Explicitly collapsed by user
+    if (sidebarRef.classList.contains('float-collapsed')) return true;
+    // Auto-collapsed by CSS media query (≤1100px, no override)
+    if (!sidebarRef.classList.contains('float-expanded-override')) {
+      return window.innerWidth <= 1100;
+    }
+    return false;
+  }
+
+  return false;
+}
 
 function createTooltipEl(label: string, targetRect: DOMRect): HTMLElement {
   const isRtl = document.documentElement.dir === 'rtl';
@@ -21,12 +46,12 @@ function createTooltipEl(label: string, targetRect: DOMRect): HTMLElement {
   tip.setAttribute('role', 'tooltip');
   tip.textContent = label;
 
-  // Base styles
   tip.style.cssText = `
     position: fixed;
     background: #1e1f2e;
     color: #e0e0e0;
     font-size: 12px;
+    font-weight: 500;
     padding: 5px 10px;
     border-radius: 6px;
     border: 0.5px solid var(--color-border-tertiary);
@@ -41,7 +66,7 @@ function createTooltipEl(label: string, targetRect: DOMRect): HTMLElement {
 
   document.body.appendChild(tip);
 
-  // Measure tooltip after appending so we know its size
+  // Measure after appending so we know its size
   const tipRect = tip.getBoundingClientRect();
   const tipH = tipRect.height;
   const tipW = tipRect.width;
@@ -52,17 +77,22 @@ function createTooltipEl(label: string, targetRect: DOMRect): HTMLElement {
   const margin = 6;
   top = Math.max(margin, Math.min(top, window.innerHeight - tipH - margin));
 
-  // Horizontal: place on content side of rail
+  // Get the actual sidebar width from the DOM for accurate positioning
+  const sidebarWidth = sidebarRef
+    ? sidebarRef.getBoundingClientRect().width
+    : 52;
+
   let left: number;
   if (isRtl) {
-    // Rail is on the right; tooltip appears to the left of the rail
-    const railRight = window.innerWidth - RAIL_WIDTH;
-    left = railRight - TOOLTIP_OFFSET - tipW;
+    // Sidebar is on the right; tooltip appears to the left of it
+    const sidebarLeft = sidebarRef?.getBoundingClientRect().left ?? (window.innerWidth - sidebarWidth);
+    left = sidebarLeft - TOOLTIP_OFFSET - tipW;
     left = Math.max(margin, left);
     tip.style.transform = 'translateX(-4px)';
   } else {
-    // Rail is on the left; tooltip appears to the right
-    left = RAIL_WIDTH + TOOLTIP_OFFSET;
+    // Sidebar is on the left; tooltip appears to the right of it
+    const sidebarRight = sidebarRef?.getBoundingClientRect().right ?? sidebarWidth;
+    left = sidebarRight + TOOLTIP_OFFSET;
     left = Math.min(left, window.innerWidth - tipW - margin);
     tip.style.transform = 'translateX(4px)';
   }
@@ -70,7 +100,7 @@ function createTooltipEl(label: string, targetRect: DOMRect): HTMLElement {
   tip.style.top = `${top}px`;
   tip.style.left = `${left}px`;
 
-  // Trigger animation on next frame
+  // Trigger fade-in on next frame
   requestAnimationFrame(() => {
     tip.style.opacity = '1';
     tip.style.transform = 'translateX(0)';
@@ -87,7 +117,7 @@ function removeTooltip(): void {
 }
 
 function onNavItemEnter(e: MouseEvent): void {
-  if (layoutService.currentLayout !== 'modern') return;
+  if (!isSidebarCollapsed()) return;
   removeTooltip();
 
   const btn = e.currentTarget as HTMLElement;
@@ -105,15 +135,6 @@ function onNavItemLeave(): void {
 /** Attach tooltip listeners to all current .nav-item elements in the sidebar */
 function attachListeners(sidebar: HTMLElement): void {
   sidebar.querySelectorAll<HTMLElement>('.nav-item').forEach((btn) => {
-    btn.addEventListener('mouseenter', onNavItemEnter);
-    btn.addEventListener('mouseleave', onNavItemLeave);
-  });
-}
-
-/** Re-attach after nav re-renders (language change) */
-function reattach(sidebar: HTMLElement): void {
-  // Remove old listeners by cloning is not ideal; instead we use a flag on the element
-  sidebar.querySelectorAll<HTMLElement>('.nav-item').forEach((btn) => {
     if (btn.dataset.tooltipBound) return;
     btn.dataset.tooltipBound = '1';
     btn.addEventListener('mouseenter', onNavItemEnter);
@@ -125,22 +146,23 @@ function reattach(sidebar: HTMLElement): void {
 export function initRailTooltips(sidebar: HTMLElement): void {
   if (initialized) return;
   initialized = true;
+  sidebarRef = sidebar;
 
   attachListeners(sidebar);
 
-  // Clean up tooltips when switching back to Classic
-  layoutService.onLayoutChange((style) => {
-    if (style === 'classic') removeTooltip();
-    // Re-attach after potential DOM updates
-    requestAnimationFrame(() => reattach(sidebar));
+  // Remove tooltip when switching to an expanded layout
+  layoutService.onLayoutChange(() => {
+    removeTooltip();
+    requestAnimationFrame(() => attachListeners(sidebar));
   });
 
   // Re-attach after language changes re-render nav items
-  const observer = new MutationObserver(() => {
-    reattach(sidebar);
-  });
   const nav = sidebar.querySelector('.sidebar-nav');
   if (nav) {
-    observer.observe(nav, { childList: true, subtree: false });
+    new MutationObserver(() => attachListeners(sidebar))
+      .observe(nav, { childList: true, subtree: false });
   }
+
+  // Remove tooltip on scroll (content area may scroll while sidebar is open)
+  document.querySelector('.content-area')?.addEventListener('scroll', removeTooltip, { passive: true });
 }
