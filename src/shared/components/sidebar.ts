@@ -14,8 +14,8 @@ import type { Route } from '@core/types';
 import type { User } from '@core/types';
 
 const NAV_ITEMS: { route: Route; icon: (s?: number) => string; section?: string }[] = [
-  { route: 'dashboard', icon: (s) => Icons.dashboard(s), section: 'main' },
-  { route: 'customers', icon: (s) => Icons.customers(s), section: 'management' },
+  { route: 'dashboard', icon: (s) => Icons.dashboard(s),    section: 'main' },
+  { route: 'customers', icon: (s) => Icons.customers(s),    section: 'management' },
   { route: 'products',  icon: (s) => Icons.products(s) },
   { route: 'inventory', icon: (s) => Icons.package(s) },
   { route: 'suppliers', icon: (s) => Icons.truck(s) },
@@ -23,8 +23,8 @@ const NAV_ITEMS: { route: Route; icon: (s?: number) => string; section?: string 
   { route: 'returns',   icon: (s) => Icons.refresh(s) },
   { route: 'sales',     icon: (s) => Icons.sales(s) },
   { route: 'invoices',  icon: (s) => Icons.invoices(s) },
-  { route: 'reports',   icon: (s) => Icons.barChart(s),  section: 'analytics' },
-  { route: 'users',     icon: (s) => Icons.users(s),     section: 'admin' },
+  { route: 'reports',   icon: (s) => Icons.barChart(s),     section: 'analytics' },
+  { route: 'users',     icon: (s) => Icons.users(s),        section: 'admin' },
   { route: 'settings',  icon: (s) => Icons.settings(s) },
 ];
 
