@@ -682,6 +682,11 @@ textarea.form-control {
   cursor: not-allowed;
 }
 
+/* RTL: flip the prev/next chevron icons so they point the correct direction */
+[dir='rtl'] .pagination-btn svg {
+  transform: scaleX(-1);
+}
+
 /* ── Divider ─────────────────────────────────────────────────────────────── */
 
 .divider {
