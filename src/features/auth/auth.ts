@@ -159,11 +159,7 @@ function buildHTML(view: AuthView): string {
         <!-- Logo -->
         <div class="auth-logo">
           <div class="auth-logo-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <path d="M16 10a4 4 0 0 1-8 0"/>
-            </svg>
+            <img src="/icons/icon-512.png" alt="Tijara" width="32" height="32" style="object-fit:contain; border-radius: 6px;" />
           </div>
           <div>
             <div class="auth-logo-name">${i18n.t('app.name')}</div>
@@ -193,11 +189,7 @@ function buildHTML(view: AuthView): string {
       <div class="auth-panel" aria-hidden="true">
         <div class="auth-panel-content">
           <div class="auth-panel-icon">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" opacity="0.9">
-              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <path d="M16 10a4 4 0 0 1-8 0"/>
-            </svg>
+            <img src="/icons/icon-512.png" alt="" width="64" height="64" style="object-fit:contain; border-radius: 14px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));" />
           </div>
           <h2 class="auth-panel-title">${i18n.t('auth.manageBusinessSmarter')}</h2>
           <ul class="auth-panel-features">

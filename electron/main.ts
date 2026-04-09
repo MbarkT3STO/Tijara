@@ -39,6 +39,7 @@ function createWindow(): void {
     minWidth: 900,
     minHeight: 600,
     title: 'Tijara',
+    icon: join(__dirname, '../../public/icons/icon-512.png'),
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#0a0614' : '#f8f7ff',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {

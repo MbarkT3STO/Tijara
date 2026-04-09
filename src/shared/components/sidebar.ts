@@ -46,11 +46,7 @@ export function createSidebar(_currentUser?: User): HTMLElement {
   logo.className = 'sidebar-logo';
   logo.innerHTML = `
     <div class="sidebar-logo-icon" aria-hidden="true">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-        <line x1="3" y1="6" x2="21" y2="6"/>
-        <path d="M16 10a4 4 0 0 1-8 0"/>
-      </svg>
+      <img src="/icons/icon-512.png" alt="Tijara" width="28" height="28" style="object-fit:contain; border-radius: 4px;" />
     </div>
     <span class="sidebar-logo-text">Ti<span>jara</span></span>
   `;

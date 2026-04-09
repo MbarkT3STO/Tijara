@@ -47,6 +47,10 @@
       "category": "public.app-category.business"
     },
     "linux": {
+      "target": "AppImage",
+      "icon": "public/icons/icon-512.png"
+    },
+    "linux": {
       "target": "AppImage"
     },
     "nsis": {
