@@ -624,10 +624,6 @@ body[data-layout='floating'] .sidebar.float-collapsed .nav-item {
   gap: 0;
 }
 
-body[data-layout='floating'] .sidebar.float-collapsed .float-collapse-btn {
-  transform: scaleX(calc(var(--icon-flip) * -1)) !important;
-}
-
 body[data-layout='floating'] .topbar {
   height: 52px;
   border-radius: var(--float-radius);

@@ -157,6 +157,18 @@ export function createSidebar(_currentUser?: User): HTMLElement {
   let floatCollapsed = localStorage.getItem(FLOAT_COLLAPSED_KEY) === 'true';
   const floatExpandedOverride = localStorage.getItem(FLOAT_EXPANDED_KEY) === 'true';
 
+  /** Return the correct chevron icon for the button given the collapsed state and text direction.
+   *  LTR: expanded → chevron-left (points left = "collapse"), collapsed → chevron-right (points right = "expand")
+   *  RTL: mirrored — expanded → chevron-right, collapsed → chevron-left
+   */
+  const floatBtnIcon = (collapsed: boolean): string => {
+    const isRtl = document.documentElement.getAttribute('dir') === 'rtl';
+    if (isRtl) {
+      return collapsed ? Icons.chevronLeft() : Icons.chevronRight();
+    }
+    return collapsed ? Icons.chevronRight() : Icons.chevronLeft();
+  };
+
   const applyFloatCollapsed = (collapsed: boolean, animate = false) => {
     if (!animate) sidebar.classList.add('no-transition');
     sidebar.classList.toggle('float-collapsed', collapsed);
@@ -169,8 +181,7 @@ export function createSidebar(_currentUser?: User): HTMLElement {
     }
     if (!animate) requestAnimationFrame(() => sidebar.classList.remove('no-transition'));
     const btn = floatFooter.querySelector<HTMLButtonElement>('#float-sidebar-toggle')!;
-    btn.innerHTML = collapsed ? Icons.chevronRight() : Icons.chevronLeft();
-    btn.style.transform = `scaleX(var(--icon-flip))`;
+    btn.innerHTML = floatBtnIcon(collapsed);
   };
 
   if (layoutService.currentLayout === 'floating') {
