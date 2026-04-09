@@ -159,3 +159,10 @@
   --icon-flip: -1;
   font-family: 'Cairo', 'Inter', sans-serif;
 }
+
+/* Utilities */
+.force-ltr {
+  direction: ltr !important;
+  unicode-bidi: isolate;
+  display: inline-block;
+}

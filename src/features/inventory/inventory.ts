@@ -208,7 +208,7 @@ function buildHTML(state: State): string {
         <table class="data-table">
           <thead>
             <tr>
-              <th>${i18n.t('products.product' as any)}</th>
+              <th>${i18n.t('products.modals.name')}</th>
               <th>${i18n.t('products.sku')}</th>
               <th>${i18n.t('inventory.status.inStock')}</th>
               <th>${i18n.t('inventory.reorderSettings')}</th>
@@ -380,7 +380,7 @@ function openAdjustModal(onSave: () => void): void {
   const form = document.createElement('div');
   form.innerHTML = `
   <div class="form-group" style="margin-bottom:var(--space-4);">
-      <label class="form-label required" for="adj-product">${i18n.t('products.product' as any)}</label>
+      <label class="form-label required" for="adj-product">${i18n.t('products.modals.name')}</label>
       <select id="adj-product" class="form-control">
         <option value="">${i18n.t('inventory.modals.selectProduct')}</option>
         ${products.map((p) => `<option value="${p.id}" data-stock="${p.stock}">${p.name} (${p.sku}) — ${p.stock} ${p.unit}</option>`).join('')}
@@ -437,7 +437,7 @@ function openAdjustModal(onSave: () => void): void {
       const result = inventoryService.adjust(productId, qty, notes || undefined);
       if (result) {
         const product = productService.getById(productId)!;
-        notifications.success(`Stock adjusted: ${product.name} → ${result.stockAfter} ${product.unit}`);
+        notifications.success(`${i18n.t('inventory.type.adjustment')}: ${product.name} → ${result.stockAfter} ${product.unit}`);
         onSave();
       } else {
         showModalError(form, 'Adjustment failed. Product not found.');
@@ -453,7 +453,7 @@ function openRestockModal(onSave: () => void, preselected?: Product): void {
   const form = document.createElement('div');
   form.innerHTML = `
     <div class="form-group" style="margin-bottom:var(--space-4);">
-      <label class="form-label required" for="rs-product">${i18n.t('products.product' as any)}</label>
+      <label class="form-label required" for="rs-product">${i18n.t('products.modals.name')}</label>
       <select id="rs-product" class="form-control">
         <option value="">${i18n.t('inventory.modals.selectProduct')}</option>
         ${products.map((p) => `<option value="${p.id}" data-reorder="${p.reorderQuantity}" ${preselected?.id === p.id ? 'selected' : ''}>${p.name} (${p.sku}) — ${p.stock} ${p.unit}</option>`).join('')}
@@ -499,7 +499,7 @@ function openRestockModal(onSave: () => void, preselected?: Product): void {
       const result = inventoryService.restock(productId, qty, ref || undefined, notes || undefined);
       if (result) {
         const product = productService.getById(productId)!;
-        notifications.success(`Restocked: ${product.name} +${qty} → ${result.stockAfter} ${product.unit}`);
+        notifications.success(`${i18n.t('inventory.restock')}: ${product.name} +${qty} → ${result.stockAfter} ${product.unit}`);
         onSave();
       } else {
         showModalError(form, 'Restock failed. Product not found.');

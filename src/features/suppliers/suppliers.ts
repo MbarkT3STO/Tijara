@@ -169,7 +169,7 @@ function buildHTML(state: State): string {
                   </td>
                   <td style="color:var(--color-text-secondary);">${s.contactPerson || '—'}</td>
                   <td style="color:var(--color-text-secondary);">${s.email || '—'}</td>
-                  <td style="color:var(--color-text-secondary);">${s.phone || '—'}</td>
+                  <td style="color:var(--color-text-secondary);"><span class="force-ltr">${s.phone || '—'}</span></td>
                   <td>${s.city || '—'}</td>
                   <td>${s.country || '—'}</td>
                   <td style="color:var(--color-text-secondary);">${formatDate(s.createdAt)}</td>
@@ -218,7 +218,7 @@ function openSupplierDetailModal(supplier: Supplier, onEdit: () => void): void {
       </div>
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.phone')}</div>
-        <div>${supplier.phone || '—'}</div>
+        <div><span class="force-ltr">${supplier.phone || '—'}</span></div>
       </div>
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.modals.website')}</div>
@@ -272,7 +272,7 @@ function openSupplierModal(supplier: Supplier | null, onSave: () => void): void 
       </div>
       <div class="form-group">
         <label class="form-label" for="sp-phone">${i18n.t('suppliers.phone')}</label>
-        <input type="tel" id="sp-phone" class="form-control" placeholder="+1-555-0100" value="${supplier?.phone ?? ''}" />
+        <input type="tel" id="sp-phone" class="form-control force-ltr" placeholder="+1-555-0100" value="${supplier?.phone ?? ''}" />
       </div>
     </div>
     <div class="form-group">

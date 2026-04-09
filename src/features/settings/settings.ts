@@ -151,7 +151,7 @@ export function renderSettings(): HTMLElement {
             </div>
             <div class="form-group">
               <label class="form-label" for="ep-phone">${i18n.t('settings.phone')}</label>
-              <input type="tel" id="ep-phone" class="form-control" placeholder="+1-555-0100" value="${profile.phone}" />
+              <input type="tel" id="ep-phone" class="form-control force-ltr" placeholder="+1-555-0100" value="${profile.phone}" />
             </div>
           </div>
           <div class="form-group">

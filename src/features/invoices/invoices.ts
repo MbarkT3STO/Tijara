@@ -462,7 +462,7 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
     fromHTML += `<div style="font-weight:600;color:var(--color-text-primary);margin-bottom:2px;">${profile.name}</div>`;
     if (profile.address) fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.address}${profile.city ? ', ' + profile.city : ''}${profile.country ? ', ' + profile.country : ''}</div>`;
     if (profile.email)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.email}</div>`;
-    if (profile.phone)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.phone}</div>`;
+    if (profile.phone)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);"><span class="force-ltr">${profile.phone}</span></div>`;
     if (profile.website) fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.website}</div>`;
     if (profile.taxId)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${i18n.t('settings.taxId')}: ${profile.taxId}</div>`;
   } else {

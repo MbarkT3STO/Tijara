@@ -283,7 +283,7 @@ function buildItemRow(
   const overStock = item.quantity > available;
   const stockBadge = product
     ? `<span class="badge ${available === 0 ? 'badge-error' : overStock ? 'badge-warning' : 'badge-success'}" style="font-size:10px;white-space:nowrap;">
-        ${available === 0 ? i18n.t('sales.modals.outOfStock') : overStock ? `Over by ${item.quantity - available}` : `${available} ${i18n.t('sales.modals.available')}`}
+        ${available === 0 ? i18n.t('sales.modals.outOfStock') : overStock ? `${i18n.t('common.quantity' as any)} > ${available}` : `${available} ${i18n.t('sales.modals.available')}`}
       </span>`
     : '';
 
@@ -393,7 +393,7 @@ function openSaleDetailModal(sale: Sale): void {
     </div>
     <div class="table-container" style="margin-bottom:var(--space-4);">
       <table class="data-table">
-        <thead><tr><th>${i18n.t('products.product' as any)}</th><th>${i18n.t('common.quantity' as any)}</th><th>${i18n.t('products.price')}</th><th>${i18n.t('sales.discount')}</th><th>${i18n.t('common.total')}</th></tr></thead>
+        <thead><tr><th>${i18n.t('products.modals.name')}</th><th>${i18n.t('common.quantity' as any)}</th><th>${i18n.t('products.price')}</th><th>${i18n.t('sales.discount')}</th><th>${i18n.t('common.total')}</th></tr></thead>
         <tbody>
           ${sale.items.map((item) => `
             <tr>
@@ -416,7 +416,7 @@ function openSaleDetailModal(sale: Sale): void {
     </div>
     ${sale.notes ? `<div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">${sale.notes}</div>` : ''}
   `;
-  openModal({ title: `Order ${sale.orderNumber}`, content, size: 'lg', hideFooter: true });
+  openModal({ title: `${i18n.t('dashboard.order')} ${sale.orderNumber}`, content, size: 'lg', hideFooter: true });
 }
 
 // ── Add Sale modal ────────────────────────────────────────────────────────────

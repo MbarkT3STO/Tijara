@@ -206,7 +206,7 @@ function buildHTML(state: State): string {
                   </div>
                 </td>
                 <td style="color: var(--color-text-secondary);">${c.email}</td>
-                <td style="color: var(--color-text-secondary);">${c.phone}</td>
+                <td style="color: var(--color-text-secondary);"><span class="force-ltr">${c.phone}</span></td>
                 <td>${c.city}</td>
                 <td>${c.country}</td>
                 <td style="color: var(--color-text-secondary);">${formatDate(c.createdAt)}</td>
@@ -288,7 +288,7 @@ function openCustomerModal(customer: Customer | null, onSave: () => void): void 
     <div class="form-row">
       <div class="form-group">
         <label class="form-label" for="c-phone">${i18n.t('customers.modals.phone')}</label>
-        <input type="tel" id="c-phone" class="form-control" placeholder="..." value="${customer?.phone ?? ''}" />
+        <input type="tel" id="c-phone" class="form-control force-ltr" placeholder="..." value="${customer?.phone ?? ''}" />
       </div>
       <div class="form-group">
         <label class="form-label" for="c-address">${i18n.t('customers.modals.address')}</label>
@@ -382,7 +382,7 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
       <div style="flex:1;min-width:0;">
         <div style="font-size:var(--font-size-xl);font-weight:700;">${customer.name}</div>
         <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${customer.email}</div>
-        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${customer.phone}</div>
+        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);"><span class="force-ltr">${customer.phone}</span></div>
       </div>
       <button class="btn btn-secondary btn-sm" id="profile-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>
     </div>

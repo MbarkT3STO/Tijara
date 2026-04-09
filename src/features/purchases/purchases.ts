@@ -345,7 +345,7 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
     </div>` : ''}
   `;
 
-  const close = openModal({ title: `PO ${po.poNumber}`, content, size: 'lg', hideFooter: true });
+  const close = openModal({ title: `${i18n.t('purchases.poNumber')} ${po.poNumber}`, content, size: 'lg', hideFooter: true });
 
   content.querySelector('#po-record-payment-btn')?.addEventListener('click', () => {
     const amount = parseFloat((content.querySelector('#po-payment-amount') as HTMLInputElement).value);
@@ -505,7 +505,7 @@ function openPurchaseModal(po: Purchase | null, onSave: () => void): void {
           <label class="form-label" style="margin:0;">${i18n.t('purchases.orderItems')}</label>
           <div style="display:grid;grid-template-columns:1fr 90px 130px 32px;gap:var(--space-2);margin-top:var(--space-2);">
             <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('products.modals.name')}</span>
-            <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('sales.modals.addItem')}</span>
+            <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('common.quantity' as any)}</span>
             <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('purchases.unitCost')} (${currency})</span>
             <span></span>
           </div>

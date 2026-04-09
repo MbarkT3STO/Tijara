@@ -132,6 +132,40 @@
     "signOutHint": "Your data is saved automatically. You can sign back in at any time.",
     "stay": "Stay"
   },
+  "alerts": {
+    "outOfStock": {
+      "title": "Out of Stock",
+      "msg": "{{count}} products have reached zero stock"
+    },
+    "lowStock": {
+      "title": "Low Stock Alert",
+      "msg": "{{count}} products are below reorder point"
+    },
+    "overdueInvoices": {
+      "title": "Overdue Invoices",
+      "msg": "{{count}} invoices are past their due date"
+    },
+    "dueSoon": {
+      "title": "Payment Due Soon",
+      "msg": "{{count}} invoices are due within 7 days"
+    },
+    "pendingPOs": {
+      "title": "Pending Purchases",
+      "msg": "{{count}} purchase orders are currently open"
+    },
+    "overduePOs": {
+      "title": "Overdue Deliveries",
+      "msg": "{{count}} purchases are past expected date"
+    },
+    "pendingReturns": {
+      "title": "Pending Returns",
+      "msg": "{{count}} customer returns need review"
+    },
+    "unpaidPOs": {
+      "title": "Unpaid Purchases",
+      "msg": "{{count}} received orders need payment"
+    }
+  },
   "auth": {
     "welcomeBack": "Welcome back",
     "enterCredentials": "Sign in to your account to continue",
