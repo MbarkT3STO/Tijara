@@ -324,6 +324,32 @@ body[data-layout='modern'] .rail-section-gap::after {
   content: ''; width: 24px; height: 0.5px; background: var(--color-sidebar-border);
 }
 
+/* Pin-gap: flex-grow spacer that pushes settings to the bottom */
+.nav-pin-gap {
+  flex: 1 !important;
+  height: auto !important;
+  min-height: var(--space-4);
+}
+
+/* In Classic/Floating expanded: show a hairline separator above settings */
+.nav-pin-gap::before {
+  content: '';
+  display: block;
+  height: 1px;
+  background: var(--color-sidebar-border);
+  margin: var(--space-2) var(--space-3) 0;
+}
+
+/* In Modern rail: keep the dot-divider style, no separator line */
+body[data-layout='modern'] .nav-pin-gap::before {
+  display: none;
+}
+
+/* Settings item consistent sizing in all collapsed states */
+.nav-item-pinned {
+  flex-shrink: 0;
+}
+
 body[data-layout='modern'] .rail-footer {
   display: flex;
   flex-direction: column;

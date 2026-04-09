@@ -13,7 +13,7 @@ import { getInitials } from '@shared/utils/helpers';
 import type { Route } from '@core/types';
 import type { User } from '@core/types';
 
-const NAV_ITEMS: { route: Route; icon: (s?: number) => string; section?: string }[] = [
+const NAV_ITEMS: { route: Route; icon: (s?: number) => string; section?: string; pinBottom?: boolean }[] = [
   { route: 'dashboard', icon: (s) => Icons.dashboard(s),    section: 'main' },
   { route: 'customers', icon: (s) => Icons.customers(s),    section: 'management' },
   { route: 'products',  icon: (s) => Icons.products(s) },
@@ -25,7 +25,7 @@ const NAV_ITEMS: { route: Route; icon: (s?: number) => string; section?: string 
   { route: 'invoices',  icon: (s) => Icons.invoices(s) },
   { route: 'reports',   icon: (s) => Icons.barChart(s),     section: 'analytics' },
   { route: 'users',     icon: (s) => Icons.users(s),        section: 'admin' },
-  { route: 'settings',  icon: (s) => Icons.settings(s) },
+  { route: 'settings',  icon: (s) => Icons.settings(s),     pinBottom: true },
 ];
 
 const FLOAT_COLLAPSED_KEY = 'tijara_float_sidebar_collapsed';
@@ -61,6 +61,7 @@ export function createSidebar(currentUser?: User): HTMLElement {
     nav.innerHTML = '';
     let currentSection = '';
     NAV_ITEMS.forEach((item) => {
+      // Section label + gap divider
       if (item.section && item.section !== currentSection) {
         if (currentSection !== '') {
           const gap = document.createElement('div');
@@ -74,8 +75,15 @@ export function createSidebar(currentUser?: User): HTMLElement {
         nav.appendChild(label);
       }
 
+      // Pin-bottom items (e.g. Settings) get a gap + spacer before them
+      if (item.pinBottom) {
+        const gap = document.createElement('div');
+        gap.className = 'rail-section-gap nav-pin-gap';
+        nav.appendChild(gap);
+      }
+
       const btn = document.createElement('button');
-      btn.className = 'nav-item';
+      btn.className = 'nav-item' + (item.pinBottom ? ' nav-item-pinned' : '');
       btn.setAttribute('data-route', item.route);
       const labelText = i18n.t(`nav.${item.route}` as any);
       btn.setAttribute('aria-label', labelText);

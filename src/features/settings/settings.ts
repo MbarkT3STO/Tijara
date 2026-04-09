@@ -40,6 +40,8 @@ export function renderSettings(): HTMLElement {
     const profile = profileService.get();
 
     page.innerHTML = `
+      <div style="max-width: 1000px; margin: 0 auto; width: 100%; display: grid; gap: var(--space-6);">
+
       <div class="page-header">
         <div>
           <h2 class="page-title">${i18n.t('settings.title' as any)}</h2>
@@ -51,8 +53,6 @@ export function renderSettings(): HTMLElement {
            </button>
         </div>
       </div>
-
-      <div style="display: grid; gap: var(--space-6); max-width: 1000px;">
 
         <!-- 1. BUSINESS IDENTITY -->
         <div class="card overflow-hidden">
@@ -254,8 +254,8 @@ export function renderSettings(): HTMLElement {
 
               <div>
                 <div style="font-weight: 600; font-size:var(--font-size-sm); margin-bottom: var(--space-3);">${i18n.t('settings.layoutStyle' as any)}</div>
-                <div style="display: flex; gap: var(--space-4);">
-                  <div id="layout-classic" style="flex:1; cursor:pointer; border: 1.5px solid ${layoutService.currentLayout === 'classic' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-3); background: ${layoutService.currentLayout === 'classic' ? 'var(--color-primary-subtle)' : 'transparent'}; transition: border-color 0.2s, background 0.2s;">
+                <div style="display: flex; flex-wrap: wrap; gap: var(--space-3);">
+                  <div id="layout-classic" style="flex:1; min-width: 100px; cursor:pointer; border: 1.5px solid ${layoutService.currentLayout === 'classic' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-3); background: ${layoutService.currentLayout === 'classic' ? 'var(--color-primary-subtle)' : 'transparent'}; transition: border-color 0.2s, background 0.2s;">
                     <div style="background: var(--color-bg-secondary); border-radius: var(--radius-sm); height: 60px; display: flex; overflow: hidden; margin-bottom: var(--space-2);">
                       <div style="width: 28px; background: #0f0a1e; display: flex; flex-direction: column; gap: 3px; padding: 6px 4px;">
                         <div style="height: 4px; background: #9929ea; border-radius: 2px;"></div>
@@ -271,7 +271,7 @@ export function renderSettings(): HTMLElement {
                     <div style="text-align:center; font-size:11px; font-weight:500; color:var(--color-text-secondary);">${i18n.t('settings.layoutClassic' as any)}</div>
                     <div style="text-align:center; font-size:10px; color:var(--color-text-tertiary); margin-top:2px;">${i18n.t('settings.layoutClassicDesc' as any)}</div>
                   </div>
-                  <div id="layout-modern" style="flex:1; cursor:pointer; border: 1.5px solid ${layoutService.currentLayout === 'modern' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-3); background: ${layoutService.currentLayout === 'modern' ? 'var(--color-primary-subtle)' : 'transparent'}; transition: border-color 0.2s, background 0.2s;">
+                  <div id="layout-modern" style="flex:1; min-width: 100px; cursor:pointer; border: 1.5px solid ${layoutService.currentLayout === 'modern' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-3); background: ${layoutService.currentLayout === 'modern' ? 'var(--color-primary-subtle)' : 'transparent'}; transition: border-color 0.2s, background 0.2s;">
                     <div style="background: var(--color-bg-secondary); border-radius: var(--radius-sm); height: 60px; display: flex; overflow: hidden; margin-bottom: var(--space-2);">
                       <div style="width: 14px; background: #0f0a1e; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px;">
                         <div style="width: 8px; height: 8px; background: #9929ea; border-radius: 2px;"></div>
@@ -286,7 +286,7 @@ export function renderSettings(): HTMLElement {
                     <div style="text-align:center; font-size:11px; font-weight:500; color:var(--color-text-secondary);">${i18n.t('settings.layoutModern' as any)}</div>
                     <div style="text-align:center; font-size:10px; color:var(--color-text-tertiary); margin-top:2px;">${i18n.t('settings.layoutModernDesc' as any)}</div>
                   </div>
-                  <div id="layout-floating" style="flex:1; cursor:pointer; border: 1.5px solid ${layoutService.currentLayout === 'floating' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-3); background: ${layoutService.currentLayout === 'floating' ? 'var(--color-primary-subtle)' : 'transparent'}; transition: border-color 0.2s, background 0.2s;">
+                  <div id="layout-floating" style="flex:1; min-width: 100px; cursor:pointer; border: 1.5px solid ${layoutService.currentLayout === 'floating' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-3); background: ${layoutService.currentLayout === 'floating' ? 'var(--color-primary-subtle)' : 'transparent'}; transition: border-color 0.2s, background 0.2s;">
                     <div style="background: var(--color-bg-secondary); border-radius: var(--radius-sm); height: 60px; display: flex; gap: 3px; padding: 5px; margin-bottom: var(--space-2); overflow: hidden;">
                       <div style="width: 22px; background: var(--color-sidebar-bg); border-radius: 4px; display: flex; flex-direction: column; gap: 2px; padding: 4px 3px; flex-shrink:0;">
                         <div style="height: 3px; background: var(--color-primary); border-radius: 2px;"></div>
