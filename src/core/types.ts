@@ -16,7 +16,19 @@ export type Route =
   | 'returns'
   | 'reports'
   | 'users'
-  | 'settings';
+  | 'settings'
+  // Accounting routes:
+  | 'accounting'
+  | 'chart-of-accounts'
+  | 'journal'
+  | 'ledger'
+  | 'trial-balance'
+  | 'income-statement'
+  | 'balance-sheet'
+  | 'cash-flow'
+  | 'tax-report'
+  | 'cost-centers'
+  | 'fiscal-periods';
 
 /** Application theme */
 export type Theme = 'light' | 'dark';
@@ -273,4 +285,251 @@ export interface DashboardStats {
   lowStockCount: number;
   recentSales: Sale[];
   topProducts: { name: string; revenue: number; quantity: number }[];
+}
+
+// ── Accounting Types ──────────────────────────────────────────────────────────
+
+/** The five fundamental account types per accounting equation */
+export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
+
+/** Normal balance side for each account type */
+export type NormalBalance = 'debit' | 'credit';
+
+/** Account category for grouping within statements */
+export type AccountCategory =
+  | 'current_asset' | 'fixed_asset' | 'other_asset'
+  | 'current_liability' | 'long_term_liability'
+  | 'owners_equity' | 'retained_earnings'
+  | 'operating_revenue' | 'other_revenue'
+  | 'cost_of_goods_sold' | 'operating_expense' | 'other_expense' | 'tax_expense';
+
+/** Chart of Accounts — individual account */
+export interface Account {
+  id: string;
+  code: string;
+  name: string;
+  nameAr?: string;
+  nameFr?: string;
+  type: AccountType;
+  category: AccountCategory;
+  normalBalance: NormalBalance;
+  parentId?: string;
+  description?: string;
+  isSystem: boolean;
+  isActive: boolean;
+  costCenterId?: string;
+  createdAt: string;
+}
+
+/** A single debit or credit line within a journal entry */
+export interface JournalLine {
+  id: string;
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  debit: number;
+  credit: number;
+  description?: string;
+  costCenterId?: string;
+}
+
+/** Journal entry status */
+export type JournalEntryStatus = 'draft' | 'posted' | 'reversed';
+
+/** Source that auto-generated this entry */
+export type JournalEntrySource =
+  | 'manual'
+  | 'sale'
+  | 'invoice_payment'
+  | 'purchase'
+  | 'purchase_payment'
+  | 'return_refund'
+  | 'inventory_adjustment'
+  | 'period_closing';
+
+/** A complete, balanced journal entry */
+export interface JournalEntry {
+  id: string;
+  entryNumber: string;
+  date: string;
+  description: string;
+  reference?: string;
+  sourceType: JournalEntrySource;
+  sourceId?: string;
+  lines: JournalLine[];
+  totalDebit: number;
+  totalCredit: number;
+  status: JournalEntryStatus;
+  reversalEntryId?: string;
+  postedAt?: string;
+  postedBy?: string;
+  fiscalPeriodId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A computed ledger entry (derived from journal lines) */
+export interface LedgerEntry {
+  date: string;
+  entryNumber: string;
+  description: string;
+  reference?: string;
+  debit: number;
+  credit: number;
+  balance: number;
+  journalEntryId: string;
+}
+
+/** Fiscal period status */
+export type FiscalPeriodStatus = 'open' | 'closed' | 'locked';
+
+export interface FiscalPeriod {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: FiscalPeriodStatus;
+  isCurrent: boolean;
+  closedAt?: string;
+  closedBy?: string;
+  createdAt: string;
+}
+
+export interface CostCenter {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  parentId?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface TaxRate {
+  id: string;
+  name: string;
+  code: string;
+  rate: number;
+  accountId: string;
+  isDefault: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
+
+// ── Financial Statement Types (computed, not stored) ──────────────────────────
+
+export interface TrialBalanceRow {
+  accountCode: string;
+  accountName: string;
+  accountType: AccountType;
+  debitBalance: number;
+  creditBalance: number;
+}
+
+export interface TrialBalance {
+  periodId: string;
+  asOf: string;
+  rows: TrialBalanceRow[];
+  totalDebits: number;
+  totalCredits: number;
+  isBalanced: boolean;
+}
+
+export interface IncomeStatementRow {
+  accountCode: string;
+  accountName: string;
+  amount: number;
+  percentage?: number;
+}
+
+export interface IncomeStatement {
+  periodId: string;
+  startDate: string;
+  endDate: string;
+  revenue: IncomeStatementRow[];
+  costOfGoodsSold: IncomeStatementRow[];
+  grossProfit: number;
+  grossProfitMargin: number;
+  operatingExpenses: IncomeStatementRow[];
+  operatingIncome: number;
+  otherIncome: IncomeStatementRow[];
+  otherExpenses: IncomeStatementRow[];
+  incomeBeforeTax: number;
+  taxExpense: number;
+  netIncome: number;
+  netProfitMargin: number;
+}
+
+export interface BalanceSheetSection {
+  accountCode: string;
+  accountName: string;
+  amount: number;
+}
+
+export interface BalanceSheet {
+  asOf: string;
+  currentAssets: BalanceSheetSection[];
+  totalCurrentAssets: number;
+  fixedAssets: BalanceSheetSection[];
+  totalFixedAssets: number;
+  otherAssets: BalanceSheetSection[];
+  totalAssets: number;
+  currentLiabilities: BalanceSheetSection[];
+  totalCurrentLiabilities: number;
+  longTermLiabilities: BalanceSheetSection[];
+  totalLiabilities: number;
+  equity: BalanceSheetSection[];
+  totalEquity: number;
+  totalLiabilitiesAndEquity: number;
+  isBalanced: boolean;
+}
+
+export interface CashFlowItem {
+  description: string;
+  amount: number;
+}
+
+export interface CashFlowStatement {
+  startDate: string;
+  endDate: string;
+  operatingActivities: CashFlowItem[];
+  netOperatingCashFlow: number;
+  investingActivities: CashFlowItem[];
+  netInvestingCashFlow: number;
+  financingActivities: CashFlowItem[];
+  netFinancingCashFlow: number;
+  netChangeInCash: number;
+  openingCash: number;
+  closingCash: number;
+}
+
+export interface TaxReportLine {
+  taxCode: string;
+  taxName: string;
+  taxRate: number;
+  taxableAmount: number;
+  taxAmount: number;
+  accountId: string;
+}
+
+export interface TaxReport {
+  startDate: string;
+  endDate: string;
+  lines: TaxReportLine[];
+  totalTaxableAmount: number;
+  totalTaxAmount: number;
+}
+
+export interface AccountingStats {
+  totalAssets: number;
+  totalLiabilities: number;
+  totalEquity: number;
+  currentMonthRevenue: number;
+  currentMonthExpenses: number;
+  currentMonthNetIncome: number;
+  accountsReceivable: number;
+  accountsPayable: number;
+  cashBalance: number;
+  revenueGrowth: number;
+  expenseGrowth: number;
 }

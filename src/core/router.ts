@@ -20,6 +20,17 @@ const ROUTE_MAP: Record<string, Route> = {
   '#/reports': 'reports',
   '#/users': 'users',
   '#/settings': 'settings',
+  '#/accounting': 'accounting',
+  '#/chart-of-accounts': 'chart-of-accounts',
+  '#/journal': 'journal',
+  '#/ledger': 'ledger',
+  '#/trial-balance': 'trial-balance',
+  '#/income-statement': 'income-statement',
+  '#/balance-sheet': 'balance-sheet',
+  '#/cash-flow': 'cash-flow',
+  '#/tax-report': 'tax-report',
+  '#/cost-centers': 'cost-centers',
+  '#/fiscal-periods': 'fiscal-periods',
 };
 
 class Router {

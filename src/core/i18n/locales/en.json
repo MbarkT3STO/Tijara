@@ -19,7 +19,18 @@
     "main": "Main",
     "management": "Management",
     "analytics": "Analytics",
-    "admin": "Admin"
+    "admin": "Admin",
+    "accounting": "Accounting",
+    "chart-of-accounts": "Chart of Accounts",
+    "journal": "General Journal",
+    "ledger": "General Ledger",
+    "trial-balance": "Trial Balance",
+    "income-statement": "Income Statement",
+    "balance-sheet": "Balance Sheet",
+    "cash-flow": "Cash Flow",
+    "tax-report": "Tax Report",
+    "cost-centers": "Cost Centers",
+    "fiscal-periods": "Fiscal Periods"
   },
   "common": {
     "save": "Save",
@@ -134,7 +145,32 @@
     "layoutClassicDesc": "Traditional sidebar with navigation labels",
     "layoutModernDesc": "Compact icon rail with hover tooltips",
     "layoutFloating": "Floating",
-    "layoutFloatingDesc": "All panels float as detached rounded cards"
+    "layoutFloatingDesc": "All panels float as detached rounded cards",
+    "accountingSetup": {
+      "title": "Accounting Setup",
+      "subtitle": "Import the Moroccan Chart of Accounts (CGNC 2005)",
+      "description": "Pre-configured accounts based on the Plan Comptable Général Marocain (Code Général de Normalisation Comptable — CGNC 2005), the legally required accounting standard for Moroccan businesses.",
+      "existingWarning": "Your chart of accounts already has {{count}} accounts. Importing will add new accounts without duplicating existing codes.",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "accountsSelected": "accounts selected",
+      "classLabels": {
+        "1": "Comptes de Financement Permanent",
+        "2": "Comptes d'Actif Immobilisé",
+        "3": "Comptes d'Actif Circulant",
+        "4": "Comptes de Passif Circulant",
+        "5": "Comptes de Trésorerie",
+        "6": "Comptes de Charges",
+        "7": "Comptes de Produits"
+      },
+      "importBtn": "Import Selected Accounts",
+      "skipBtn": "Skip for now",
+      "importSuccess": "{{count}} accounts imported successfully.",
+      "allExist": "All selected accounts already exist in your chart.",
+      "emptyTitle": "No accounts configured",
+      "emptySubtitle": "Set up your Moroccan chart of accounts to start recording journal entries and generating financial reports.",
+      "setupCta": "Set Up Chart of Accounts"
+    }
   },
   "topbar": {
     "toggleMenu": "Toggle navigation menu",
@@ -702,5 +738,235 @@
     "invalidEmail": "Invalid email address",
     "loadFailed": "Failed to load data",
     "saveFailed": "Failed to save"
+  },
+  "accounting": {
+    "title": "Accounting",
+    "subtitle": "Double-entry bookkeeping and financial statements",
+    "dashboard": {
+      "title": "Accounting Overview",
+      "totalAssets": "Total Assets",
+      "totalLiabilities": "Total Liabilities",
+      "netEquity": "Net Equity",
+      "cashBalance": "Cash Balance",
+      "accountsReceivable": "Accounts Receivable",
+      "accountsPayable": "Accounts Payable",
+      "monthRevenue": "Month Revenue",
+      "monthExpenses": "Month Expenses",
+      "netIncome": "Net Income",
+      "recentEntries": "Recent Journal Entries",
+      "topAccounts": "Account Balances",
+      "booksBalanced": "Books are Balanced",
+      "outOfBalance": "Out of Balance by {{amount}}"
+    },
+    "accounts": {
+      "title": "Chart of Accounts",
+      "addAccount": "Add Account",
+      "code": "Account Code",
+      "name": "Account Name",
+      "nameAr": "Arabic Name",
+      "nameFr": "French Name",
+      "type": "Account Type",
+      "category": "Category",
+      "normalBalance": "Normal Balance",
+      "parentAccount": "Parent Account",
+      "description": "Description",
+      "isActive": "Active",
+      "isSystem": "System Account",
+      "types": {
+        "asset": "Asset",
+        "liability": "Liability",
+        "equity": "Equity",
+        "revenue": "Revenue",
+        "expense": "Expense"
+      },
+      "categories": {
+        "current_asset": "Current Asset",
+        "fixed_asset": "Fixed Asset",
+        "other_asset": "Other Asset",
+        "current_liability": "Current Liability",
+        "long_term_liability": "Long-term Liability",
+        "owners_equity": "Owner's Equity",
+        "retained_earnings": "Retained Earnings",
+        "operating_revenue": "Operating Revenue",
+        "other_revenue": "Other Revenue",
+        "cost_of_goods_sold": "Cost of Goods Sold",
+        "operating_expense": "Operating Expense",
+        "other_expense": "Other Expense",
+        "tax_expense": "Tax Expense"
+      },
+      "normalBalances": {
+        "debit": "Debit",
+        "credit": "Credit"
+      },
+      "errors": {
+        "codeRequired": "Account code is required",
+        "codeExists": "This account code is already in use",
+        "nameRequired": "Account name is required",
+        "cannotDeleteSystem": "System accounts cannot be deleted",
+        "cannotDeleteWithEntries": "Cannot delete account with journal entries"
+      }
+    },
+    "journal": {
+      "title": "General Journal",
+      "newEntry": "New Entry",
+      "entryNumber": "Entry #",
+      "date": "Date",
+      "description": "Description",
+      "reference": "Reference",
+      "source": "Source",
+      "debitTotal": "Debit Total",
+      "creditTotal": "Credit Total",
+      "status": "Status",
+      "lines": "Journal Lines",
+      "addLine": "Add Line",
+      "account": "Account",
+      "debit": "Debit",
+      "credit": "Credit",
+      "balanced": "Balanced",
+      "unbalanced": "Unbalanced — Difference: {{amount}}",
+      "postEntry": "Post Entry",
+      "saveDraft": "Save as Draft",
+      "reverseEntry": "Reverse Entry",
+      "reversalDate": "Reversal Date",
+      "reversalDescription": "Reversal Description",
+      "reversalOf": "Reversal of {{ref}}",
+      "statuses": {
+        "draft": "Draft",
+        "posted": "Posted",
+        "reversed": "Reversed"
+      },
+      "sources": {
+        "manual": "Manual",
+        "sale": "Sale",
+        "invoice_payment": "Invoice Payment",
+        "purchase": "Purchase",
+        "purchase_payment": "Purchase Payment",
+        "return_refund": "Return/Refund",
+        "inventory_adjustment": "Inventory Adj.",
+        "period_closing": "Period Closing"
+      },
+      "errors": {
+        "minTwoLines": "A journal entry requires at least 2 lines",
+        "mustBalance": "Total debits must equal total credits",
+        "invalidLine": "Each line must have either a debit or credit amount, not both",
+        "periodClosed": "The selected fiscal period is closed",
+        "cannotDeletePosted": "Posted entries cannot be deleted. Use Reverse instead.",
+        "entryNotFound": "Journal entry not found",
+        "onlyDraftCanBePosted": "Only draft entries can be posted",
+        "onlyDraftCanBeDeleted": "Only draft entries can be deleted",
+        "onlyPostedCanBeReversed": "Only posted entries can be reversed",
+        "noOpenPeriod": "No open fiscal period found for the reversal date",
+        "entryNotBalanced": "Entry is not balanced",
+        "accountNotFound": "Account not found",
+        "accountInactive": "Account {{code}} is inactive",
+        "lineNonZero": "Each line must have a non-zero debit or credit"
+      }
+    },
+    "ledger": {
+      "title": "General Ledger",
+      "selectAccount": "Select an account to view its ledger",
+      "openingBalance": "Opening Balance",
+      "closingBalance": "Closing Balance",
+      "runningBalance": "Balance",
+      "totalDebits": "Total Debits",
+      "totalCredits": "Total Credits",
+      "netChange": "Net Change"
+    },
+    "trialBalance": {
+      "title": "Trial Balance",
+      "asOf": "As of",
+      "debitBalance": "Debit Balance",
+      "creditBalance": "Credit Balance",
+      "totalDebits": "Total Debits",
+      "totalCredits": "Total Credits",
+      "balanced": "Trial Balance is Balanced",
+      "outOfBalance": "Out of Balance — Difference: {{amount}}",
+      "showZeroBalances": "Show zero-balance accounts"
+    },
+    "incomeStatement": {
+      "title": "Income Statement",
+      "revenue": "Revenue",
+      "totalRevenue": "Total Revenue",
+      "cogs": "Cost of Goods Sold",
+      "grossProfit": "Gross Profit",
+      "operatingExpenses": "Operating Expenses",
+      "totalOpEx": "Total Operating Expenses",
+      "operatingIncome": "Operating Income",
+      "otherIncome": "Other Income",
+      "otherExpenses": "Other Expenses",
+      "incomeBeforeTax": "Income Before Tax",
+      "taxExpense": "Tax Expense",
+      "netIncome": "Net Income",
+      "margin": "{{value}}% margin"
+    },
+    "balanceSheet": {
+      "title": "Balance Sheet",
+      "asOf": "As of",
+      "assets": "Assets",
+      "currentAssets": "Current Assets",
+      "fixedAssets": "Fixed Assets",
+      "otherAssets": "Other Assets",
+      "totalAssets": "Total Assets",
+      "liabilities": "Liabilities",
+      "currentLiabilities": "Current Liabilities",
+      "longTermLiabilities": "Long-term Liabilities",
+      "totalLiabilities": "Total Liabilities",
+      "equity": "Equity",
+      "totalEquity": "Total Equity",
+      "totalLiabilitiesAndEquity": "Total Liabilities & Equity",
+      "balanced": "Balance Sheet Balanced",
+      "outOfBalance": "Out of Balance by {{amount}}"
+    },
+    "cashFlow": {
+      "title": "Cash Flow Statement",
+      "operating": "Operating Activities",
+      "investing": "Investing Activities",
+      "financing": "Financing Activities",
+      "netOperating": "Net Cash from Operations",
+      "netInvesting": "Net Cash from Investing",
+      "netFinancing": "Net Cash from Financing",
+      "netChange": "Net Change in Cash",
+      "openingCash": "Opening Cash Balance",
+      "closingCash": "Closing Cash Balance"
+    },
+    "taxReport": {
+      "title": "Tax Report",
+      "taxableAmount": "Taxable Amount",
+      "taxAmount": "Tax Amount",
+      "totalTaxable": "Total Taxable Sales",
+      "totalTax": "Total Tax Collected",
+      "taxPayable": "Tax Payable"
+    },
+    "costCenters": {
+      "title": "Cost Centers",
+      "addCostCenter": "Add Cost Center",
+      "code": "Code",
+      "name": "Name",
+      "parent": "Parent Cost Center",
+      "description": "Description",
+      "isActive": "Active"
+    },
+    "fiscalPeriods": {
+      "title": "Fiscal Periods",
+      "addPeriod": "Add Period",
+      "name": "Period Name",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "status": "Status",
+      "isCurrent": "Current Period",
+      "setAsCurrent": "Set as Current",
+      "closePeriod": "Close Period",
+      "lockPeriod": "Lock Period",
+      "statuses": {
+        "open": "Open",
+        "closed": "Closed",
+        "locked": "Locked"
+      },
+      "closeWarning": "Closing this period is permanent. All entries will be locked.",
+      "draftEntriesBlock": "Cannot close period: {{count}} draft journal entries exist. Post or delete them first.",
+      "errors": {
+        "dateOverlap": "This period's dates overlap with an existing period"
+      }
+    }
   }
 }

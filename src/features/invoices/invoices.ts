@@ -11,6 +11,7 @@ import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
 import { printInvoice, exportInvoicePDF } from '@shared/utils/invoicePdf';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
+import { accountingIntegrationService } from '@services/accountingIntegrationService';
 import type { Invoice } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -607,6 +608,11 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
       return;
     }
     invoiceService.recordPayment(invoice.id, amount);
+    // Accounting integration: post payment entry
+    const updatedInvoice = invoiceService.getById(invoice.id)!;
+    if (updatedInvoice.status === 'paid') {
+      accountingIntegrationService.postInvoicePaymentEntry(updatedInvoice, amount, 'cash').catch(console.error);
+    }
     notifications.success(`${i18n.t('invoices.paid')} : ${formatCurrency(amount)}`);
     close();
     onUpdate();
@@ -777,6 +783,14 @@ function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
         amountDue,
         notes: (form.querySelector('#ie-notes') as HTMLTextAreaElement).value.trim(),
       });
+
+      // Accounting integration
+      if (status === 'paid' && invoice.status !== 'paid') {
+        const updatedInv = invoiceService.getById(invoice.id)!;
+        accountingIntegrationService.postInvoicePaymentEntry(updatedInv, amountPaid, 'transfer').catch(console.error);
+      } else if (status === 'cancelled' && invoice.status !== 'cancelled') {
+        accountingIntegrationService.reverseEntryForSource('invoice_payment', invoice.id).catch(console.error);
+      }
 
       notifications.success(i18n.t('common.save'));
       onSave();

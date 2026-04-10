@@ -4,7 +4,7 @@
  * All icons are 20×20 by default, viewBox 0 0 24 24.
  */
 
-type IconSize = 14 | 16 | 20 | 24 | 32;
+type IconSize = 12 | 14 | 16 | 18 | 20 | 22 | 24 | 32;
 
 function icon(path: string, size: IconSize = 20, sw = '1.75'): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
@@ -188,4 +188,46 @@ export const Icons = {
 
   arrowRight: (s: IconSize = 20) =>
     icon('<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>', s),
+
+  // ── Accounting ────────────────────────────────────────────────────────────
+
+  /** Accounting — landmark/columned building */
+  accounting: (s: IconSize = 20) =>
+    icon('<path d="M3 22h18"/><path d="M6 18V11"/><path d="M10 18V11"/><path d="M14 18V11"/><path d="M18 18V11"/><path d="M2 11l10-7 10 7"/>', s),
+
+  /** Chart of Accounts — list-tree */
+  chartOfAccounts: (s: IconSize = 20) =>
+    icon('<path d="M21 12H9"/><path d="M21 6H9"/><path d="M21 18H9"/><path d="M3 6v4c0 1.1.9 2 2 2h2"/><path d="M3 10v6c0 1.1.9 2 2 2h2"/>', s),
+
+  /** Journal — book-open */
+  journal: (s: IconSize = 20) =>
+    icon('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>', s),
+
+  /** Ledger — book */
+  ledger: (s: IconSize = 20) =>
+    icon('<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>', s),
+
+  /** Trial Balance — scale */
+  trialBalance: (s: IconSize = 20) =>
+    icon('<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>', s),
+
+  /** Income Statement — trending-up */
+  incomeStatement: (s: IconSize = 20) =>
+    icon('<path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>', s),
+
+  /** Balance Sheet — layers */
+  balanceSheet: (s: IconSize = 20) =>
+    icon('<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>', s),
+
+  /** Cash Flow — arrow-left-right */
+  cashFlow: (s: IconSize = 20) =>
+    icon('<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>', s),
+
+  /** Cost Center — git-branch */
+  costCenter: (s: IconSize = 20) =>
+    icon('<line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>', s),
+
+  /** Calendar */
+  calendar: (s: IconSize = 20) =>
+    icon('<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>', s),
 };

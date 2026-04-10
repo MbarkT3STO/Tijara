@@ -12,6 +12,7 @@ import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
+import { accountingIntegrationService } from '@services/accountingIntegrationService';
 import type { Purchase, PurchaseItem, Product } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -110,6 +111,9 @@ export function renderPurchases(): HTMLElement {
           i18n.t('purchases.modals.receiveMsg', { no: po.poNumber }),
           () => {
             purchaseService.updateStatus(po.id, 'received');
+            // Accounting integration
+            const updatedPo = purchaseService.getById(po.id)!;
+            accountingIntegrationService.postPurchaseEntry(updatedPo).catch(console.error);
             notifications.success(i18n.t('purchases.modals.receiveTitle'));
             state.purchases = purchaseService.getAll(); applyFilters(); render();
           },
@@ -352,6 +356,10 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
     if (isNaN(amount) || amount <= 0) { notifications.error(i18n.t('errors.required')); return; }
     const newStatus: Purchase['paymentStatus'] = amount >= po.total ? 'paid' : 'partial';
     purchaseService.updatePaymentStatus(po.id, newStatus);
+    // Accounting integration
+    if (newStatus === 'paid') {
+      accountingIntegrationService.postPurchasePaymentEntry(po, amount).catch(console.error);
+    }
     notifications.success(i18n.t('common.save'));
     close(); onUpdate();
   });
@@ -368,6 +376,9 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
       i18n.t('purchases.modals.receiveMsg', { no: po.poNumber }),
       () => {
         purchaseService.updateStatus(po.id, 'received');
+        // Accounting integration
+        const updatedPo = purchaseService.getById(po.id)!;
+        accountingIntegrationService.postPurchaseEntry(updatedPo).catch(console.error);
         notifications.success(i18n.t('common.save'));
         close(); onUpdate();
       },

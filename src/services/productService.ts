@@ -24,9 +24,9 @@ export const productService = {
   /** Create a new product and record an initial stock movement if stock > 0 */
   create(data: Omit<Product, 'id' | 'createdAt'>): Product {
     const product: Product = {
-      reorderPoint: 0,
-      reorderQuantity: 0,
       ...data,
+      reorderPoint: data.reorderPoint ?? 0,
+      reorderQuantity: data.reorderQuantity ?? 0,
       id: generateId(),
       createdAt: getCurrentISODate(),
     };

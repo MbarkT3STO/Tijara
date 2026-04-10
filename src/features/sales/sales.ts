@@ -12,6 +12,7 @@ import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce, autoNote } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
+import { accountingIntegrationService } from '@services/accountingIntegrationService';
 import type { Sale, OrderItem, Product } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -692,6 +693,14 @@ function openSaleEditModal(sale: Sale, onSave: () => void): void {
         paymentMethod: (form.querySelector('#se-payment-method') as HTMLSelectElement).value as Sale['paymentMethod'],
         notes:         (form.querySelector('#se-notes') as HTMLTextAreaElement).value.trim(),
       });
+
+      // Accounting integration
+      const updatedSale = saleService.getById(sale.id)!;
+      if (newStatus === 'delivered' && sale.status !== 'delivered') {
+        accountingIntegrationService.postSaleEntry(updatedSale).catch(console.error);
+      } else if (newStatus === 'cancelled' && sale.status !== 'cancelled') {
+        accountingIntegrationService.reverseEntryForSource('sale', sale.id).catch(console.error);
+      }
 
       notifications.success(i18n.t('common.save'));
       onSave();

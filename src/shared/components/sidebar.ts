@@ -17,17 +17,27 @@ import type { User } from '@core/types';
 
 // Settings is intentionally absent — it's accessible via the user dropdown in the topbar.
 const NAV_ITEMS: { route: Route; icon: (s?: number) => string; section?: string }[] = [
-  { route: 'dashboard', icon: (s) => Icons.dashboard(s),    section: 'main' },
-  { route: 'customers', icon: (s) => Icons.customers(s),    section: 'management' },
-  { route: 'products',  icon: (s) => Icons.products(s) },
-  { route: 'inventory', icon: (s) => Icons.package(s) },
-  { route: 'suppliers', icon: (s) => Icons.truck(s) },
-  { route: 'purchases', icon: (s) => Icons.shoppingCart(s) },
-  { route: 'returns',   icon: (s) => Icons.refresh(s) },
-  { route: 'sales',     icon: (s) => Icons.sales(s) },
-  { route: 'invoices',  icon: (s) => Icons.invoices(s) },
-  { route: 'reports',   icon: (s) => Icons.barChart(s),     section: 'analytics' },
-  { route: 'users',     icon: (s) => Icons.users(s),        section: 'admin' },
+  { route: 'dashboard', icon: (s) => Icons.dashboard(s as any),    section: 'main' },
+  { route: 'customers', icon: (s) => Icons.customers(s as any),    section: 'management' },
+  { route: 'products',  icon: (s) => Icons.products(s as any) },
+  { route: 'inventory', icon: (s) => Icons.package(s as any) },
+  { route: 'suppliers', icon: (s) => Icons.truck(s as any) },
+  { route: 'purchases', icon: (s) => Icons.shoppingCart(s as any) },
+  { route: 'returns',   icon: (s) => Icons.refresh(s as any) },
+  { route: 'sales',     icon: (s) => Icons.sales(s as any) },
+  { route: 'invoices',  icon: (s) => Icons.invoices(s as any) },
+  { route: 'reports',   icon: (s) => Icons.barChart(s as any),     section: 'analytics' },
+  { route: 'accounting',        icon: (s) => Icons.accounting(s as any),       section: 'accounting' },
+  { route: 'chart-of-accounts', icon: (s) => Icons.chartOfAccounts(s as any) },
+  { route: 'journal',           icon: (s) => Icons.journal(s as any) },
+  { route: 'ledger',            icon: (s) => Icons.ledger(s as any) },
+  { route: 'trial-balance',     icon: (s) => Icons.trialBalance(s as any) },
+  { route: 'income-statement',  icon: (s) => Icons.incomeStatement(s as any) },
+  { route: 'balance-sheet',     icon: (s) => Icons.balanceSheet(s as any) },
+  { route: 'cash-flow',         icon: (s) => Icons.cashFlow(s as any) },
+  { route: 'cost-centers',      icon: (s) => Icons.costCenter(s as any) },
+  { route: 'fiscal-periods',    icon: (s) => Icons.calendar(s as any) },
+  { route: 'users',     icon: (s) => Icons.users(s as any),        section: 'admin' },
 ];
 
 const FLOAT_COLLAPSED_KEY = 'tijara_float_sidebar_collapsed';

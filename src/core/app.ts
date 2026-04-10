@@ -13,7 +13,7 @@ import { createTopbar } from '@shared/components/topbar';
 import { initToasts } from '@shared/components/toast';
 import { initRailTooltips } from '@shared/components/rail-tooltip';
 import { repository } from '@data/excelRepository';
-import { sidebarThemeService } from './sidebarTheme';
+import '@core/sidebarTheme'; // side-effect: sets data-sidebar on body on import
 import type { Route, User } from './types';
 
 /** Lazy-loaded page renderers */
@@ -30,12 +30,22 @@ const PAGE_RENDERERS: Record<Route, () => Promise<HTMLElement>> = {
   reports:   () => import('@features/reports/reports').then((m) => m.renderReports()),
   users:     () => import('@features/users/users').then((m) => m.renderUsers()),
   settings:  () => import('@features/settings/settings').then((m) => m.renderSettings()),
+  // Accounting routes
+  'accounting':        () => import('@features/accounting/accounting').then((m) => m.renderAccounting()),
+  'chart-of-accounts': () => import('@features/accounting/chartOfAccounts').then((m) => m.renderChartOfAccounts()),
+  'journal':           () => import('@features/accounting/journal').then((m) => m.renderJournal()),
+  'ledger':            () => import('@features/accounting/ledger').then((m) => m.renderLedger()),
+  'trial-balance':     () => import('@features/accounting/trialBalance').then((m) => m.renderTrialBalance()),
+  'income-statement':  () => import('@features/accounting/incomeStatement').then((m) => m.renderIncomeStatement()),
+  'balance-sheet':     () => import('@features/accounting/balanceSheet').then((m) => m.renderBalanceSheet()),
+  'cash-flow':         () => import('@features/accounting/cashFlow').then((m) => m.renderCashFlow()),
+  'tax-report':        () => import('@features/accounting/taxReport').then((m) => m.renderTaxReport()),
+  'cost-centers':      () => import('@features/accounting/costCenters').then((m) => m.renderCostCenters()),
+  'fiscal-periods':    () => import('@features/accounting/fiscalPeriods').then((m) => m.renderFiscalPeriods()),
 };
 
 export async function bootstrap(root: HTMLElement): Promise<void> {
   await repository.init();
-
-  // sidebarThemeService constructor runs on import and sets data-sidebar on body
 
   // Load profile early so currency is set before any page renders
   profileService.get();

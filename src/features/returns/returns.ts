@@ -10,6 +10,7 @@ import { confirmDialog, openModal, showModalError } from '@shared/components/mod
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { accountingIntegrationService } from '@services/accountingIntegrationService';
 import type { Return, ReturnItem, ReturnReason, Sale } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -383,6 +384,9 @@ function openReturnDetailModal(ret: Return, onUpdate: () => void): void {
 
   content.querySelector('#detail-refunded-btn')?.addEventListener('click', () => {
     returnService.updateStatus(ret.id, 'refunded');
+    // Accounting integration
+    const updatedReturn = returnService.getById(ret.id)!;
+    accountingIntegrationService.postReturnEntry(updatedReturn).catch(console.error);
     notifications.success(i18n.t('common.save'));
     close(); onUpdate();
   });

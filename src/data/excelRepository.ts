@@ -11,7 +11,7 @@
  */
 
 import * as XLSX from 'xlsx-js-style';
-import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier, Purchase, Return } from '@core/types';
+import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier, Purchase, Return, Account, JournalEntry, FiscalPeriod, CostCenter, TaxRate } from '@core/types';
 import type { ElectronAPI } from '../../electron/preload';
 
 /** All data collections stored in the workbook */
@@ -25,6 +25,11 @@ export interface WorkbookData {
   suppliers: Supplier[];
   purchases: Purchase[];
   returns: Return[];
+  accounts: Account[];
+  journalEntries: JournalEntry[];
+  fiscalPeriods: FiscalPeriod[];
+  costCenters: CostCenter[];
+  taxRates: TaxRate[];
 }
 
 const SHEET_NAMES = {
@@ -37,6 +42,11 @@ const SHEET_NAMES = {
   suppliers: 'Suppliers',
   purchases: 'Purchases',
   returns: 'Returns',
+  accounts: 'Accounts',
+  journalEntries: 'Journal Entries',
+  fiscalPeriods: 'Fiscal Periods',
+  costCenters: 'Cost Centers',
+  taxRates: 'Tax Rates',
 } as const;
 
 const STORAGE_KEY = 'tijara-data';
@@ -57,6 +67,11 @@ class ExcelRepository {
     suppliers: [],
     purchases: [],
     returns: [],
+    accounts: [],
+    journalEntries: [],
+    fiscalPeriods: [],
+    costCenters: [],
+    taxRates: [],
   };
 
   private initialized = false;
@@ -83,6 +98,11 @@ class ExcelRepository {
           suppliers:      Array.isArray(parsed.suppliers)      ? parsed.suppliers      : [],
           purchases:      Array.isArray(parsed.purchases)      ? parsed.purchases      : [],
           returns:        Array.isArray(parsed.returns)        ? parsed.returns        : [],
+          accounts:       Array.isArray(parsed.accounts)       ? parsed.accounts       : [],
+          journalEntries: Array.isArray(parsed.journalEntries) ? parsed.journalEntries : [],
+          fiscalPeriods:  Array.isArray(parsed.fiscalPeriods)  ? parsed.fiscalPeriods  : [],
+          costCenters:    Array.isArray(parsed.costCenters)    ? parsed.costCenters    : [],
+          taxRates:       Array.isArray(parsed.taxRates)       ? parsed.taxRates       : [],
         };
 
         // Patch products that predate the reorderPoint/reorderQuantity fields
@@ -320,6 +340,65 @@ class ExcelRepository {
           { key: 'restockItems',  header: 'Restocked',     width: 12, type: 'text' },
           { key: 'notes',         header: 'Notes',         width: 30, type: 'text' },
           { key: 'createdAt',     header: 'Date',          width: 20, type: 'date' },
+        ],
+      },
+      accounts: {
+        label: 'Accounts',
+        cols: [
+          { key: 'code',          header: 'Code',          width: 12, type: 'text' },
+          { key: 'name',          header: 'Name',          width: 30, type: 'text' },
+          { key: 'type',          header: 'Type',          width: 14, type: 'text' },
+          { key: 'category',      header: 'Category',      width: 22, type: 'text' },
+          { key: 'normalBalance', header: 'Normal Balance',width: 16, type: 'text' },
+          { key: 'isActive',      header: 'Active',        width: 10, type: 'text' },
+          { key: 'isSystem',      header: 'System',        width: 10, type: 'text' },
+          { key: 'createdAt',     header: 'Created',       width: 20, type: 'date' },
+        ],
+      },
+      journalEntries: {
+        label: 'Journal Entries',
+        cols: [
+          { key: 'entryNumber',   header: 'Entry #',       width: 18, type: 'text' },
+          { key: 'date',          header: 'Date',          width: 20, type: 'date' },
+          { key: 'description',   header: 'Description',   width: 32, type: 'text' },
+          { key: 'reference',     header: 'Reference',     width: 18, type: 'text' },
+          { key: 'sourceType',    header: 'Source',        width: 18, type: 'text' },
+          { key: 'totalDebit',    header: 'Total Debit',   width: 16, type: 'currency' },
+          { key: 'totalCredit',   header: 'Total Credit',  width: 16, type: 'currency' },
+          { key: 'status',        header: 'Status',        width: 12, type: 'text' },
+          { key: 'createdAt',     header: 'Created',       width: 20, type: 'date' },
+        ],
+      },
+      fiscalPeriods: {
+        label: 'Fiscal Periods',
+        cols: [
+          { key: 'name',          header: 'Name',          width: 24, type: 'text' },
+          { key: 'startDate',     header: 'Start Date',    width: 20, type: 'date' },
+          { key: 'endDate',       header: 'End Date',      width: 20, type: 'date' },
+          { key: 'status',        header: 'Status',        width: 12, type: 'text' },
+          { key: 'isCurrent',     header: 'Current',       width: 10, type: 'text' },
+          { key: 'createdAt',     header: 'Created',       width: 20, type: 'date' },
+        ],
+      },
+      costCenters: {
+        label: 'Cost Centers',
+        cols: [
+          { key: 'code',          header: 'Code',          width: 12, type: 'text' },
+          { key: 'name',          header: 'Name',          width: 28, type: 'text' },
+          { key: 'description',   header: 'Description',   width: 32, type: 'text' },
+          { key: 'isActive',      header: 'Active',        width: 10, type: 'text' },
+          { key: 'createdAt',     header: 'Created',       width: 20, type: 'date' },
+        ],
+      },
+      taxRates: {
+        label: 'Tax Rates',
+        cols: [
+          { key: 'name',          header: 'Name',          width: 24, type: 'text' },
+          { key: 'code',          header: 'Code',          width: 12, type: 'text' },
+          { key: 'rate',          header: 'Rate %',        width: 10, type: 'number' },
+          { key: 'isDefault',     header: 'Default',       width: 10, type: 'text' },
+          { key: 'isActive',      header: 'Active',        width: 10, type: 'text' },
+          { key: 'createdAt',     header: 'Created',       width: 20, type: 'date' },
         ],
       },
     };
@@ -668,6 +747,86 @@ class ExcelRepository {
 
   private getSeedData(): WorkbookData {
     const now = new Date().toISOString();
+    const today = new Date();
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString();
+
+    // ── Accounting seed data ──────────────────────────────────────────────
+    const accounts: import('@core/types').Account[] = [
+      { id: 'acc-1000', code: '1000', name: 'Cash and Cash Equivalents', nameAr: 'النقد وما يعادله', nameFr: 'Trésorerie et équivalents', type: 'asset', category: 'current_asset', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-1100', code: '1100', name: 'Accounts Receivable', nameAr: 'الذمم المدينة', nameFr: 'Créances clients', type: 'asset', category: 'current_asset', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-1200', code: '1200', name: 'Inventory', nameAr: 'المخزون', nameFr: 'Stocks', type: 'asset', category: 'current_asset', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-1300', code: '1300', name: 'Prepaid Expenses', nameAr: 'المصروفات المدفوعة مقدماً', nameFr: 'Charges payées d\'avance', type: 'asset', category: 'current_asset', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-1500', code: '1500', name: 'Property and Equipment', nameAr: 'الممتلكات والمعدات', nameFr: 'Immobilisations corporelles', type: 'asset', category: 'fixed_asset', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-1510', code: '1510', name: 'Accumulated Depreciation', nameAr: 'مجمع الاستهلاك', nameFr: 'Amortissements cumulés', type: 'asset', category: 'fixed_asset', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-2000', code: '2000', name: 'Accounts Payable', nameAr: 'الذمم الدائنة', nameFr: 'Fournisseurs', type: 'liability', category: 'current_liability', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-2100', code: '2100', name: 'Accrued Liabilities', nameAr: 'الالتزامات المستحقة', nameFr: 'Charges à payer', type: 'liability', category: 'current_liability', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-2200', code: '2200', name: 'Tax Payable', nameAr: 'ضريبة القيمة المضافة المستحقة', nameFr: 'TVA à payer', type: 'liability', category: 'current_liability', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-2500', code: '2500', name: 'Long-term Debt', nameAr: 'الديون طويلة الأجل', nameFr: 'Dettes à long terme', type: 'liability', category: 'long_term_liability', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-3000', code: '3000', name: 'Owner\'s Equity', nameAr: 'حقوق الملكية', nameFr: 'Capitaux propres', type: 'equity', category: 'owners_equity', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-3100', code: '3100', name: 'Retained Earnings', nameAr: 'الأرباح المحتجزة', nameFr: 'Bénéfices non distribués', type: 'equity', category: 'retained_earnings', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-4000', code: '4000', name: 'Sales Revenue', nameAr: 'إيرادات المبيعات', nameFr: 'Chiffre d\'affaires', type: 'revenue', category: 'operating_revenue', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-4100', code: '4100', name: 'Other Income', nameAr: 'إيرادات أخرى', nameFr: 'Autres produits', type: 'revenue', category: 'other_revenue', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-5000', code: '5000', name: 'Cost of Goods Sold', nameAr: 'تكلفة البضاعة المباعة', nameFr: 'Coût des marchandises vendues', type: 'expense', category: 'cost_of_goods_sold', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-6000', code: '6000', name: 'Salaries Expense', nameAr: 'مصروف الرواتب', nameFr: 'Charges de personnel', type: 'expense', category: 'operating_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-6100', code: '6100', name: 'Rent Expense', nameAr: 'مصروف الإيجار', nameFr: 'Charges de loyer', type: 'expense', category: 'operating_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-6200', code: '6200', name: 'Utilities Expense', nameAr: 'مصروف المرافق', nameFr: 'Charges de services', type: 'expense', category: 'operating_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-6300', code: '6300', name: 'Marketing Expense', nameAr: 'مصروف التسويق', nameFr: 'Charges marketing', type: 'expense', category: 'operating_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-6400', code: '6400', name: 'Depreciation Expense', nameAr: 'مصروف الاستهلاك', nameFr: 'Dotations aux amortissements', type: 'expense', category: 'operating_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-7000', code: '7000', name: 'Interest Expense', nameAr: 'مصروف الفوائد', nameFr: 'Charges financières', type: 'expense', category: 'other_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+      { id: 'acc-7100', code: '7100', name: 'Tax Expense', nameAr: 'مصروف الضريبة', nameFr: 'Charge d\'impôt', type: 'expense', category: 'tax_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
+    ];
+
+    const fiscalPeriods: import('@core/types').FiscalPeriod[] = [
+      {
+        id: 'fp-current',
+        name: `${today.toLocaleString('en-US', { month: 'long' })} ${today.getFullYear()}`,
+        startDate: monthStart,
+        endDate: monthEnd,
+        status: 'open',
+        isCurrent: true,
+        createdAt: now,
+      },
+    ];
+
+    const taxRates: import('@core/types').TaxRate[] = [
+      { id: 'tr-1', name: 'Standard VAT', code: 'VAT', rate: 10, accountId: 'acc-2200', isDefault: true, isActive: true, createdAt: now },
+    ];
+
+    // Sample journal entries
+    const journalEntries: import('@core/types').JournalEntry[] = [
+      {
+        id: 'je-1', entryNumber: 'JE-2024-0001', date: now, description: 'Sale to Acme Corp',
+        reference: 'ORD-2024-001', sourceType: 'sale', sourceId: 's1',
+        lines: [
+          { id: 'jl-1a', accountId: 'acc-1100', accountCode: '1100', accountName: 'Accounts Receivable', debit: 2826.95, credit: 0 },
+          { id: 'jl-1b', accountId: 'acc-4000', accountCode: '4000', accountName: 'Sales Revenue', debit: 0, credit: 2569.96 },
+          { id: 'jl-1c', accountId: 'acc-2200', accountCode: '2200', accountName: 'Tax Payable', debit: 0, credit: 256.99 },
+        ],
+        totalDebit: 2826.95, totalCredit: 2826.95, status: 'posted',
+        fiscalPeriodId: 'fp-current', createdAt: now, updatedAt: now,
+      },
+      {
+        id: 'je-2', entryNumber: 'JE-2024-0002', date: now, description: 'Payment received from Acme Corp',
+        reference: 'INV-2024-001', sourceType: 'invoice_payment', sourceId: 'i1',
+        lines: [
+          { id: 'jl-2a', accountId: 'acc-1000', accountCode: '1000', accountName: 'Cash and Cash Equivalents', debit: 2826.95, credit: 0 },
+          { id: 'jl-2b', accountId: 'acc-1100', accountCode: '1100', accountName: 'Accounts Receivable', debit: 0, credit: 2826.95 },
+        ],
+        totalDebit: 2826.95, totalCredit: 2826.95, status: 'posted',
+        fiscalPeriodId: 'fp-current', createdAt: now, updatedAt: now,
+      },
+      {
+        id: 'je-3', entryNumber: 'JE-2024-0003', date: now, description: 'Monthly salaries',
+        sourceType: 'manual',
+        lines: [
+          { id: 'jl-3a', accountId: 'acc-6000', accountCode: '6000', accountName: 'Salaries Expense', debit: 5000, credit: 0 },
+          { id: 'jl-3b', accountId: 'acc-1000', accountCode: '1000', accountName: 'Cash and Cash Equivalents', debit: 0, credit: 5000 },
+        ],
+        totalDebit: 5000, totalCredit: 5000, status: 'posted',
+        fiscalPeriodId: 'fp-current', createdAt: now, updatedAt: now,
+      },
+    ];
 
     const customers: Customer[] = [
       { id: 'c1', name: 'Acme Corp', email: 'contact@acme.com', phone: '+1-555-0100', address: '123 Main St', city: 'New York', country: 'USA', createdAt: now, notes: 'Key account' },
@@ -701,7 +860,7 @@ class ExcelRepository {
       { id: 'u2', name: 'Sales Manager', email: 'manager@tijara.app', passwordHash: '866485796cfa8d7c0cf7111640205b83076433547577511d81f8030ae99ecea5', role: 'manager', active: true, createdAt: now },
     ];
 
-    return { customers, products, sales, invoices, users, stockMovements: [], suppliers: [], purchases: [], returns: [] };
+    return { customers, products, sales, invoices, users, stockMovements: [], suppliers: [], purchases: [], returns: [], accounts, journalEntries, fiscalPeriods, costCenters: [], taxRates };
   }
 }
 

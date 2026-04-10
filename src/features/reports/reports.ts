@@ -183,6 +183,20 @@ function buildHTML(monthRange: number): string {
         </div>
       </div>
     </div>
+
+    <!-- Financial Reports Section -->
+    <div style="margin-top:var(--space-6);">
+      <h3 style="font-size:var(--font-size-lg);font-weight:var(--font-weight-semibold);margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-2);">
+        ${Icons.accounting(18)} ${i18n.t('accounting.title' as any)}
+      </h3>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:var(--space-4);">
+        ${buildFinancialReportCard(i18n.t('accounting.incomeStatement.title' as any), i18n.t('accounting.subtitle' as any), Icons.incomeStatement(20), 'income-statement', 'success')}
+        ${buildFinancialReportCard(i18n.t('accounting.balanceSheet.title' as any), i18n.t('accounting.balanceSheet.assets' as any) + ' & ' + i18n.t('accounting.balanceSheet.liabilities' as any), Icons.balanceSheet(20), 'balance-sheet', 'info')}
+        ${buildFinancialReportCard(i18n.t('accounting.cashFlow.title' as any), i18n.t('accounting.cashFlow.operating' as any), Icons.cashFlow(20), 'cash-flow', 'primary')}
+        ${buildFinancialReportCard(i18n.t('accounting.trialBalance.title' as any), i18n.t('accounting.trialBalance.balanced' as any), Icons.trialBalance(20), 'trial-balance', 'warning')}
+        ${buildFinancialReportCard(i18n.t('accounting.taxReport.title' as any), i18n.t('accounting.taxReport.taxPayable' as any), Icons.fileText(20), 'tax-report', 'error')}
+      </div>
+    </div>
   `;
 }
 
@@ -192,6 +206,20 @@ function buildKpi(label: string, value: string, iconSvg: string, color: string):
       <div class="stat-card-icon" style="background:var(--color-${color}-subtle);color:var(--color-${color});">${iconSvg}</div>
       <div class="stat-card-value">${value}</div>
       <div class="stat-card-label">${label}</div>
+    </div>`;
+}
+
+function buildFinancialReportCard(title: string, desc: string, iconSvg: string, route: string, color: string): string {
+  return `
+    <div class="card card-hover" style="padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-3);cursor:pointer;" onclick="window.location.hash='#/${route}'">
+      <div style="width:40px;height:40px;border-radius:var(--radius-md);background:var(--color-${color}-subtle);color:var(--color-${color});display:flex;align-items:center;justify-content:center;">${iconSvg}</div>
+      <div>
+        <div style="font-weight:var(--font-weight-semibold);font-size:var(--font-size-sm);">${title}</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-top:2px;">${desc}</div>
+      </div>
+      <div style="margin-top:auto;font-size:var(--font-size-xs);color:var(--color-primary);display:flex;align-items:center;gap:4px;">
+        ${i18n.t('dashboard.viewAll')} ${Icons.chevronRight(12)}
+      </div>
     </div>`;
 }
 
