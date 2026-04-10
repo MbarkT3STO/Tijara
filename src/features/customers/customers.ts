@@ -8,7 +8,7 @@ import { invoiceService } from '@services/invoiceService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatDate, formatCurrency, debounce, getInitials } from '@shared/utils/helpers';
+import { formatDate, formatCurrency, debounce, getInitials, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { Customer } from '@core/types';
 
@@ -200,15 +200,15 @@ function buildHTML(state: State): string {
                   <div style="display: flex; align-items: center; gap: var(--space-3);">
                     <div class="avatar avatar-sm">${getInitials(c.name)}</div>
                     <div>
-                      <div style="font-weight: 500;">${c.name}</div>
-                      ${c.notes ? `<div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary);">${c.notes}</div>` : ''}
+                      <div style="font-weight: 500;">${escapeHtml(c.name)}</div>
+                      ${c.notes ? `<div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary);">${escapeHtml(c.notes)}</div>` : ''}
                     </div>
                   </div>
                 </td>
-                <td style="color: var(--color-text-secondary);">${c.email}</td>
-                <td style="color: var(--color-text-secondary);"><span class="force-ltr">${c.phone}</span></td>
-                <td>${c.city}</td>
-                <td>${c.country}</td>
+                <td style="color: var(--color-text-secondary);">${escapeHtml(c.email)}</td>
+                <td style="color: var(--color-text-secondary);"><span class="force-ltr">${escapeHtml(c.phone)}</span></td>
+                <td>${escapeHtml(c.city)}</td>
+                <td>${escapeHtml(c.country)}</td>
                 <td style="color: var(--color-text-secondary);">${formatDate(c.createdAt)}</td>
                 <td>
                   <div class="table-actions">
@@ -278,36 +278,36 @@ function openCustomerModal(customer: Customer | null, onSave: () => void): void 
     <div class="form-row">
       <div class="form-group">
         <label class="form-label required" for="c-name">${i18n.t('customers.modals.fullName')}</label>
-        <input type="text" id="c-name" class="form-control" placeholder="..." value="${customer?.name ?? ''}" required />
+        <input type="text" id="c-name" class="form-control" placeholder="..." value="${escapeHtml(customer?.name ?? '')}" required />
       </div>
       <div class="form-group">
         <label class="form-label required" for="c-email">${i18n.t('customers.modals.email')}</label>
-        <input type="email" id="c-email" class="form-control" placeholder="..." value="${customer?.email ?? ''}" required />
+        <input type="email" id="c-email" class="form-control" placeholder="..." value="${escapeHtml(customer?.email ?? '')}" required />
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
         <label class="form-label" for="c-phone">${i18n.t('customers.modals.phone')}</label>
-        <input type="tel" id="c-phone" class="form-control force-ltr" placeholder="..." value="${customer?.phone ?? ''}" />
+        <input type="tel" id="c-phone" class="form-control force-ltr" placeholder="..." value="${escapeHtml(customer?.phone ?? '')}" />
       </div>
       <div class="form-group">
         <label class="form-label" for="c-address">${i18n.t('customers.modals.address')}</label>
-        <input type="text" id="c-address" class="form-control" placeholder="..." value="${customer?.address ?? ''}" />
+        <input type="text" id="c-address" class="form-control" placeholder="..." value="${escapeHtml(customer?.address ?? '')}" />
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
         <label class="form-label" for="c-city">${i18n.t('customers.modals.city')}</label>
-        <input type="text" id="c-city" class="form-control" placeholder="..." value="${customer?.city ?? ''}" />
+        <input type="text" id="c-city" class="form-control" placeholder="..." value="${escapeHtml(customer?.city ?? '')}" />
       </div>
       <div class="form-group">
         <label class="form-label" for="c-country">${i18n.t('customers.modals.country')}</label>
-        <input type="text" id="c-country" class="form-control" placeholder="..." value="${customer?.country ?? ''}" />
+        <input type="text" id="c-country" class="form-control" placeholder="..." value="${escapeHtml(customer?.country ?? '')}" />
       </div>
     </div>
     <div class="form-group">
       <label class="form-label" for="c-notes">${i18n.t('customers.modals.notes')}</label>
-      <textarea id="c-notes" class="form-control" placeholder="...">${customer?.notes ?? ''}</textarea>
+      <textarea id="c-notes" class="form-control" placeholder="...">${escapeHtml(customer?.notes ?? '')}</textarea>
     </div>
   `;
 
@@ -380,11 +380,14 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
     <div style="display:flex;align-items:center;gap:var(--space-4);padding-bottom:var(--space-5);border-bottom:1px solid var(--color-border);margin-bottom:var(--space-5);">
       <div class="avatar avatar-lg">${getInitials(customer.name)}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:var(--font-size-xl);font-weight:700;">${customer.name}</div>
-        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${customer.email}</div>
-        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);"><span class="force-ltr">${customer.phone}</span></div>
+        <div style="font-size:var(--font-size-xl);font-weight:700;">${escapeHtml(customer.name)}</div>
+        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${escapeHtml(customer.email)}</div>
+        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);"><span class="force-ltr">${escapeHtml(customer.phone)}</span></div>
       </div>
-      <button class="btn btn-secondary btn-sm" id="profile-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>
+      <div style="display:flex;gap:var(--space-2);">
+        <button class="btn btn-secondary btn-sm" id="profile-statement-btn">${Icons.fileText(16)} ${i18n.t('customers.statement' as any)}</button>
+        <button class="btn btn-secondary btn-sm" id="profile-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>
+      </div>
     </div>
 
     <!-- KPI strip -->
@@ -407,13 +410,13 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-bottom:var(--space-5);font-size:var(--font-size-sm);">
       <div>
         <span style="color:var(--color-text-tertiary);">${i18n.t('settings.address')}: </span>
-        <span>${[customer.address, customer.city, customer.country].filter(Boolean).join(', ') || '—'}</span>
+        <span>${escapeHtml([customer.address, customer.city, customer.country].filter(Boolean).join(', ') || '—')}</span>
       </div>
       <div>
         <span style="color:var(--color-text-tertiary);">${i18n.t('customers.modals.customerSince')}: </span>
         <span>${formatDate(customer.createdAt)}</span>
       </div>
-      ${customer.notes ? `<div style="grid-column:1/-1;"><span style="color:var(--color-text-tertiary);">${i18n.t('customers.modals.notes')}: </span><span>${customer.notes}</span></div>` : ''}
+      ${customer.notes ? `<div style="grid-column:1/-1;"><span style="color:var(--color-text-tertiary);">${i18n.t('customers.modals.notes')}: </span><span>${escapeHtml(customer.notes)}</span></div>` : ''}
     </div>
 
     <!-- Tabs -->
@@ -432,7 +435,7 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
               <tbody>
                 ${[...sales].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((s) => `
                   <tr>
-                    <td><span style="font-weight:600;color:var(--color-primary);">${s.orderNumber}</span></td>
+                    <td><span style="font-weight:600;color:var(--color-primary);">${escapeHtml(s.orderNumber)}</span></td>
                     <td style="color:var(--color-text-secondary);">${formatDate(s.createdAt)}</td>
                     <td style="color:var(--color-text-secondary);">${s.items.length}</td>
                     <td><strong>${formatCurrency(s.total)}</strong></td>
@@ -455,7 +458,7 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
               <tbody>
                 ${[...invoices].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((i) => `
                   <tr>
-                    <td><span style="font-weight:600;color:var(--color-primary);">${i.invoiceNumber}</span></td>
+                    <td><span style="font-weight:600;color:var(--color-primary);">${escapeHtml(i.invoiceNumber)}</span></td>
                     <td style="color:var(--color-text-secondary);">${formatDate(i.createdAt)}</td>
                     <td><strong>${formatCurrency(i.total)}</strong></td>
                     <td style="color:var(--color-success);">${formatCurrency(i.amountPaid)}</td>
@@ -485,5 +488,128 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
   content.querySelector('#profile-edit-btn')?.addEventListener('click', () => {
     close();
     onEdit();
+  });
+
+  content.querySelector('#profile-statement-btn')?.addEventListener('click', () => {
+    openCustomerStatementModal(customer);
+  });
+}
+
+/** Open customer account statement modal */
+function openCustomerStatementModal(customer: Customer): void {
+  const now = new Date();
+  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const today = now.toISOString().slice(0, 10);
+
+  const wrapper = document.createElement('div');
+
+  const renderStatement = (startDate: string, endDate: string) => {
+    const allInvoices = invoiceService.getByCustomer(customer.id);
+    const filtered = allInvoices.filter((inv) => {
+      const d = inv.createdAt.slice(0, 10);
+      return d >= startDate && d <= endDate;
+    });
+
+    // Build statement rows
+    interface StatRow { date: string; doc: string; description: string; debit: number; credit: number; balance: number; }
+    const rows: StatRow[] = [];
+    let runningBalance = 0;
+
+    // Opening balance = sum of amountDue on invoices before startDate
+    const openingBalance = allInvoices
+      .filter((inv) => inv.createdAt.slice(0, 10) < startDate && inv.status !== 'cancelled')
+      .reduce((s, inv) => s + inv.amountDue, 0);
+    runningBalance = openingBalance;
+
+    for (const inv of [...filtered].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
+      if (inv.status === 'cancelled') continue;
+      // Invoice = debit (amount owed)
+      runningBalance += inv.total;
+      rows.push({ date: inv.createdAt, doc: inv.invoiceNumber, description: i18n.t('nav.invoices'), debit: inv.total, credit: 0, balance: runningBalance });
+      // Payment = credit
+      if (inv.amountPaid > 0) {
+        runningBalance -= inv.amountPaid;
+        rows.push({ date: inv.createdAt, doc: inv.invoiceNumber, description: i18n.t('invoices.modals.recordPayment' as any), debit: 0, credit: inv.amountPaid, balance: runningBalance });
+      }
+    }
+
+    const closingBalance = runningBalance;
+
+    wrapper.innerHTML = `
+      <div style="margin-bottom:var(--space-4);">
+        <div style="font-size:var(--font-size-lg);font-weight:700;margin-bottom:var(--space-1);">${escapeHtml(customer.name)}</div>
+        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${escapeHtml(customer.email)} · <span class="force-ltr">${escapeHtml(customer.phone)}</span></div>
+      </div>
+      <div class="form-row" style="margin-bottom:var(--space-4);">
+        <div class="form-group">
+          <label class="form-label">${i18n.t('common.date')} ${i18n.t('common.showing' as any)}</label>
+          <input type="date" id="stmt-start" class="form-control" value="${startDate}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">${i18n.t('common.to')}</label>
+          <input type="date" id="stmt-end" class="form-control" value="${endDate}" />
+        </div>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>${i18n.t('common.date')}</th>
+              <th>${i18n.t('common.description')}</th>
+              <th>${i18n.t('invoices.invoiceNumber')}</th>
+              <th style="text-align:right;">${i18n.t('invoices.modals.amount' as any)}</th>
+              <th style="text-align:right;">${i18n.t('invoices.paid')}</th>
+              <th style="text-align:right;">${i18n.t('accounting.ledger.runningBalance' as any)}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:var(--color-bg-secondary);font-style:italic;color:var(--color-text-secondary);">
+              <td colspan="5">${i18n.t('accounting.ledger.openingBalance' as any)}</td>
+              <td style="text-align:right;font-weight:600;">${formatCurrency(openingBalance)}</td>
+            </tr>
+            ${rows.length === 0
+              ? `<tr><td colspan="6" style="text-align:center;padding:var(--space-6);color:var(--color-text-tertiary);">${i18n.t('common.noData')}</td></tr>`
+              : rows.map((r) => `
+                <tr>
+                  <td style="color:var(--color-text-secondary);">${formatDate(r.date)}</td>
+                  <td>${escapeHtml(r.description)}</td>
+                  <td><span style="font-weight:600;color:var(--color-primary);">${escapeHtml(r.doc)}</span></td>
+                  <td style="text-align:right;">${r.debit > 0 ? formatCurrency(r.debit) : '—'}</td>
+                  <td style="text-align:right;color:var(--color-success);">${r.credit > 0 ? formatCurrency(r.credit) : '—'}</td>
+                  <td style="text-align:right;font-weight:600;color:${r.balance > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatCurrency(r.balance)}</td>
+                </tr>`).join('')
+            }
+            <tr style="background:var(--color-bg-secondary);font-weight:700;border-top:2px solid var(--color-border);">
+              <td colspan="5">${i18n.t('accounting.ledger.closingBalance' as any)}</td>
+              <td style="text-align:right;color:${closingBalance > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatCurrency(closingBalance)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4);justify-content:flex-end;">
+        <button class="btn btn-secondary btn-sm" id="stmt-print-btn">${Icons.print ? Icons.print(16) : '🖨'} ${i18n.t('common.print')}</button>
+      </div>
+    `;
+
+    // Date range change handlers
+    wrapper.querySelector<HTMLInputElement>('#stmt-start')?.addEventListener('change', (e) => {
+      renderStatement((e.target as HTMLInputElement).value, (wrapper.querySelector<HTMLInputElement>('#stmt-end')?.value ?? endDate));
+    });
+    wrapper.querySelector<HTMLInputElement>('#stmt-end')?.addEventListener('change', (e) => {
+      renderStatement((wrapper.querySelector<HTMLInputElement>('#stmt-start')?.value ?? startDate), (e.target as HTMLInputElement).value);
+    });
+
+    wrapper.querySelector('#stmt-print-btn')?.addEventListener('click', () => {
+      window.print();
+    });
+  };
+
+  renderStatement(firstOfMonth, today);
+
+  openModal({
+    title: i18n.t('customers.statement' as any),
+    content: wrapper,
+    size: 'lg',
+    hideFooter: true,
   });
 }

@@ -14,6 +14,9 @@ import { createTopbar } from '@shared/components/topbar';
 import { initToasts } from '@shared/components/toast';
 import { initRailTooltips } from '@shared/components/rail-tooltip';
 import { repository } from '@data/excelRepository';
+import { hasPermission } from '@shared/utils/helpers';
+import { Icons } from '@shared/components/icons';
+import { i18n } from '@core/i18n';
 import '@core/sidebarTheme'; // side-effect: sets data-sidebar on body on import
 import type { Route, User } from './types';
 
@@ -135,6 +138,32 @@ async function loadPage(
 ): Promise<void> {
   closeMobileMenu(sidebar, overlay);
   contentArea.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:200px;"><div class="spinner"></div></div>`;
+
+  // RBAC: gate protected routes
+  const currentUser = authService.getUser();
+  if (currentUser) {
+    const PROTECTED_ROUTES: Partial<Record<Route, string>> = {
+      'users':             'page:users',
+      'settings':          'page:settings',
+      'journal':           'page:journal',
+      'chart-of-accounts': 'page:accounts',
+      'fiscal-periods':    'page:fiscalPeriods',
+      'cost-centers':      'page:costCenters',
+    };
+    const requiredPermission = PROTECTED_ROUTES[route];
+    if (requiredPermission && !hasPermission(currentUser.role, requiredPermission)) {
+      contentArea.innerHTML = `
+        <div class="content-inner">
+          <div class="empty-state">
+            <div class="empty-state-icon">${Icons.alertCircle(48)}</div>
+            <p class="empty-state-title">${i18n.t('errors.accessDenied' as any)}</p>
+            <p class="empty-state-subtitle">${i18n.t('errors.accessDeniedMsg' as any)}</p>
+          </div>
+        </div>`;
+      return;
+    }
+  }
+
   try {
     const el = await PAGE_RENDERERS[route]();
     contentArea.innerHTML = '';

@@ -326,8 +326,13 @@ class JournalService {
       percentage: totalRevenue > 0 ? (r.amount / totalRevenue) * 100 : 0,
     }));
 
+    // Resolve the matching fiscal period
+    const matchingPeriod = fiscalPeriodService.getAll().find(
+      (p) => p.startDate <= startDate && p.endDate >= endDate
+    );
+
     return {
-      periodId: '',
+      periodId: matchingPeriod?.id ?? '',
       startDate,
       endDate,
       revenue: withPct(revenue),
@@ -440,23 +445,23 @@ class JournalService {
 
     // Net income from operations
     const is = this.computeIncomeStatement(startDate, endDate);
-    operatingActivities.push({ description: 'Net Income', amount: is.netIncome });
+    operatingActivities.push({ description: i18n.t('accounting.cashFlow.netIncome' as any), amount: is.netIncome });
 
     // Changes in working capital — use code-based lookup (CGNC + seed fallback)
     const arChange = this._getNetChangeByCode('3411', postedEntries) + this._getNetChangeByCode('1100', postedEntries);
-    if (arChange !== 0) operatingActivities.push({ description: 'Change in Accounts Receivable', amount: -arChange });
+    if (arChange !== 0) operatingActivities.push({ description: i18n.t('accounting.cashFlow.changeAR' as any), amount: -arChange });
     const invChange = this._getNetChangeByCode('3111', postedEntries) + this._getNetChangeByCode('1200', postedEntries);
-    if (invChange !== 0) operatingActivities.push({ description: 'Change in Inventory', amount: -invChange });
+    if (invChange !== 0) operatingActivities.push({ description: i18n.t('accounting.cashFlow.changeInventory' as any), amount: -invChange });
     const apChange = this._getNetChangeByCode('4411', postedEntries) + this._getNetChangeByCode('2000', postedEntries);
-    if (apChange !== 0) operatingActivities.push({ description: 'Change in Accounts Payable', amount: apChange });
+    if (apChange !== 0) operatingActivities.push({ description: i18n.t('accounting.cashFlow.changeAP' as any), amount: apChange });
 
     // Fixed asset changes → investing
     const fixedChange = this._getNetChangeByCode('2300', postedEntries) + this._getNetChangeByCode('1500', postedEntries);
-    if (fixedChange !== 0) investingActivities.push({ description: 'Capital Expenditures', amount: -fixedChange });
+    if (fixedChange !== 0) investingActivities.push({ description: i18n.t('accounting.cashFlow.capEx' as any), amount: -fixedChange });
 
     // Long-term debt changes → financing
     const debtChange = this._getNetChangeByCode('1410', postedEntries) + this._getNetChangeByCode('2500', postedEntries);
-    if (debtChange !== 0) financingActivities.push({ description: 'Long-term Debt', amount: debtChange });
+    if (debtChange !== 0) financingActivities.push({ description: i18n.t('accounting.cashFlow.longTermDebt' as any), amount: debtChange });
 
     const netOperating = operatingActivities.reduce((s, i) => s + i.amount, 0);
     const netInvesting = investingActivities.reduce((s, i) => s + i.amount, 0);

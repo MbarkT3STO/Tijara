@@ -12,6 +12,7 @@ import { Icons } from './icons';
 import { i18n } from '@core/i18n';
 import { layoutService } from '@core/layout';
 import { themeManager } from '@core/theme';
+import { hasPermission } from '@shared/utils/helpers';
 import type { Route } from '@core/types';
 import type { User } from '@core/types';
 
@@ -45,7 +46,7 @@ const FLOAT_EXPANDED_KEY  = 'tijara_float_sidebar_expanded';
 const CLASSIC_COLLAPSED_KEY = 'tijara_classic_sidebar_collapsed';
 
 /** Build and return the sidebar element */
-export function createSidebar(_currentUser?: User): HTMLElement {
+export function createSidebar(currentUser?: User): HTMLElement {
   const sidebar = document.createElement('aside');
   sidebar.className = 'sidebar';
   sidebar.setAttribute('aria-label', 'Main navigation');
@@ -70,7 +71,24 @@ export function createSidebar(_currentUser?: User): HTMLElement {
     nav.innerHTML = '';
     let currentSection = '';
 
-    NAV_ITEMS.forEach((item) => {
+    // Permission check for nav items
+    const RESTRICTED_ROUTES: Partial<Record<Route, string>> = {
+      'users':             'page:users',
+      'settings':          'page:settings',
+      'journal':           'page:journal',
+      'chart-of-accounts': 'page:accounts',
+      'fiscal-periods':    'page:fiscalPeriods',
+      'cost-centers':      'page:costCenters',
+    };
+
+    const canSeeItem = (route: Route): boolean => {
+      if (!currentUser) return true;
+      const permission = RESTRICTED_ROUTES[route];
+      if (!permission) return true;
+      return hasPermission(currentUser.role, permission);
+    };
+
+    NAV_ITEMS.filter((item) => canSeeItem(item.route)).forEach((item) => {
       // Section label + gap divider
       if (item.section && item.section !== currentSection) {
         if (currentSection !== '') {

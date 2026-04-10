@@ -8,6 +8,7 @@ import { fiscalPeriodService } from '@services/fiscalPeriodService';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, formatPercent } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { router } from '@core/router';
 import type { DashboardStats } from '@core/types';
 
 /** Render and return the dashboard page element */
@@ -31,6 +32,13 @@ export function renderDashboard(): HTMLElement {
 
   page.innerHTML = buildDashboardHTML(stats, accountingStats, booksBalanced);
 
+  // Wire data-navigate buttons
+  page.querySelectorAll<HTMLButtonElement>('[data-navigate]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      router.navigate(btn.getAttribute('data-navigate') as any);
+    });
+  });
+
   return page;
 }
 
@@ -45,10 +53,10 @@ function buildDashboardHTML(stats: DashboardStats, accountingStats: ReturnType<t
         </div>
       </div>
       <div style="display:flex;gap:var(--space-2);">
-        <button class="btn btn-secondary btn-sm" onclick="window.location.hash='#/sales'">
+        <button class="btn btn-secondary btn-sm" data-navigate="sales">
           ${Icons.plus(14)} ${i18n.t('nav.sales')}
         </button>
-        <button class="btn btn-primary btn-sm" onclick="window.location.hash='#/invoices'">
+        <button class="btn btn-primary btn-sm" data-navigate="invoices">
           ${Icons.fileText(14)} ${i18n.t('nav.invoices')}
         </button>
       </div>
@@ -69,7 +77,7 @@ function buildDashboardHTML(stats: DashboardStats, accountingStats: ReturnType<t
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">${i18n.t('dashboard.recentSales')}</h3>
-          <button class="btn btn-ghost btn-sm" onclick="window.location.hash='#/sales'">
+          <button class="btn btn-ghost btn-sm" data-navigate="sales">
             ${i18n.t('dashboard.viewAll')} ${Icons.chevronRight(14)}
           </button>
         </div>
@@ -112,7 +120,7 @@ function buildDashboardHTML(stats: DashboardStats, accountingStats: ReturnType<t
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">${i18n.t('dashboard.topProducts')}</h3>
-          <button class="btn btn-ghost btn-sm" onclick="window.location.hash='#/products'">
+          <button class="btn btn-ghost btn-sm" data-navigate="products">
             ${i18n.t('dashboard.viewAll')} ${Icons.chevronRight(14)}
           </button>
         </div>
@@ -141,17 +149,17 @@ function buildDashboardHTML(stats: DashboardStats, accountingStats: ReturnType<t
     ${accountingStats ? `
     <!-- Accounting Health Row -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-top:var(--space-5);">
-      <div class="card stat-card card-hover" style="cursor:pointer;" onclick="window.location.hash='#/accounting'">
+      <div class="card stat-card card-hover" style="cursor:pointer;" data-navigate="accounting">
         <div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success);">${Icons.incomeStatement(20)}</div>
         <div class="stat-card-value">${formatCurrency(accountingStats.currentMonthNetIncome)}</div>
         <div class="stat-card-label">${i18n.t('accounting.dashboard.netIncome' as any)}</div>
       </div>
-      <div class="card stat-card card-hover" style="cursor:pointer;" onclick="window.location.hash='#/accounting'">
+      <div class="card stat-card card-hover" style="cursor:pointer;" data-navigate="accounting">
         <div class="stat-card-icon" style="background:var(--color-primary-subtle);color:var(--color-primary);">${Icons.accounting(20)}</div>
         <div class="stat-card-value">${formatCurrency(accountingStats.totalAssets)}</div>
         <div class="stat-card-label">${i18n.t('accounting.dashboard.totalAssets' as any)}</div>
       </div>
-      <div class="card stat-card card-hover" style="cursor:pointer;" onclick="window.location.hash='#/accounting'">
+      <div class="card stat-card card-hover" style="cursor:pointer;" data-navigate="accounting">
         <div class="stat-card-icon" style="background:${booksBalanced === false ? 'var(--color-warning-subtle)' : 'var(--color-success-subtle)'};color:${booksBalanced === false ? 'var(--color-warning)' : 'var(--color-success)'};">${booksBalanced === false ? Icons.alertCircle(20) : Icons.check(20)}</div>
         <div class="stat-card-value" style="font-size:var(--font-size-lg);">${booksBalanced === null ? '—' : booksBalanced ? i18n.t('accounting.dashboard.booksBalanced' as any) : i18n.t('accounting.trialBalance.outOfBalance' as any, { amount: '' })}</div>
         <div class="stat-card-label">${i18n.t('accounting.title' as any)}</div>
@@ -164,7 +172,7 @@ function buildLowStockCard(count: number): string {
   const color = count === 0 ? 'success' : 'error';
   const icon = count === 0 ? Icons.check(20) : Icons.alertCircle(20);
   return `
-    <div class="card stat-card card-hover" style="cursor:pointer;" onclick="window.location.hash='#/inventory'">
+    <div class="card stat-card card-hover" style="cursor:pointer;" data-navigate="inventory">
       <div class="stat-card-icon stat-icon-${color}">${icon}</div>
       <div class="stat-card-value">${count}</div>
       <div class="stat-card-label">${i18n.t('dashboard.lowStockItems')}</div>

@@ -77,6 +77,26 @@ function buildHTML(state: State): string {
     ? ledgerEntries[ledgerEntries.length - 1].balance
     : openingBalance;
 
+  // Pre-compute all account balances in a single pass for the sidebar
+  const allPosted = journalService.getPosted();
+  const aggMap = new Map<string, { debits: number; credits: number }>();
+  for (const entry of allPosted) {
+    for (const line of entry.lines) {
+      const cur = aggMap.get(line.accountId) ?? { debits: 0, credits: 0 };
+      aggMap.set(line.accountId, {
+        debits: cur.debits + line.debit,
+        credits: cur.credits + line.credit,
+      });
+    }
+  }
+
+  const getBalanceFast = (accountId: string): number => {
+    const acc = accountService.getById(accountId);
+    if (!acc) return 0;
+    const { debits = 0, credits = 0 } = aggMap.get(accountId) ?? {};
+    return acc.normalBalance === 'debit' ? debits - credits : credits - debits;
+  };
+
   return `
     <div class="page-header">
       <div>
@@ -92,7 +112,7 @@ function buildHTML(state: State): string {
             <span class="badge badge-${type}" style="font-size:10px;">${i18n.t(`accounting.accounts.types.${type}` as any)}</span>
           </div>
           ${accs.map((a) => {
-            const balance = journalService.getAccountBalance(a.id);
+            const balance = getBalanceFast(a.id);
             const isSelected = state.selectedAccountId === a.id;
             return `
               <button data-account="${a.id}" class="btn btn-ghost" style="width:100%;text-align:start;border-radius:0;padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--color-border-subtle);${isSelected ? 'background:var(--color-primary-subtle);color:var(--color-primary);' : ''}">

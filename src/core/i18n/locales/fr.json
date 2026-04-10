@@ -454,6 +454,11 @@
     "phone": "Téléphone",
     "balance": "Solde",
     "lastOrder": "Dernière commande",
+    "statement": "Relevé de compte",
+    "statementFor": "Relevé pour {{name}}",
+    "openingBalance": "Solde d'ouverture",
+    "closingBalance": "Solde de clôture",
+    "printStatement": "Imprimer le relevé",
     "modals": {
       "addTitle": "Ajouter un client",
       "editTitle": "Modifier le client",
@@ -531,6 +536,7 @@
     "countTotal": "{{count}} facture au total",
     "countPlural": "{{count}} factures au total",
     "created": "Facture créée",
+    "createInvoice": "Créer une facture",
     "invoiceNumber": "N° Facture",
     "customer": "Client",
     "total": "Total",
@@ -575,6 +581,12 @@
     "categorySales": "Ventes par catégorie",
     "topCustomers": "Meilleurs clients",
     "topProducts": "Meilleurs produits",
+    "arAging": "Échéancier des créances clients",
+    "apAging": "Échéancier des dettes fournisseurs",
+    "agingBucket1": "0–30 jours",
+    "agingBucket2": "31–60 jours",
+    "agingBucket3": "61–90 jours",
+    "agingBucket4": "90+ jours",
     "kpis": {
       "totalRevenue": "Chiffre d'affaires total",
       "totalProfit": "Bénéfice total",
@@ -746,7 +758,9 @@
     "required": "Ce champ est requis",
     "invalidEmail": "Adresse email invalide",
     "loadFailed": "Échec du chargement des données",
-    "saveFailed": "L'enregistrement a échoué"
+    "saveFailed": "L'enregistrement a échoué",
+    "accessDenied": "Accès refusé",
+    "accessDeniedMsg": "Vous n'avez pas la permission d'accéder à cette page. Contactez votre administrateur."
   },
   "accounting": {
     "title": "Comptabilité",
@@ -935,7 +949,13 @@
       "netFinancing": "Flux Net du Financement",
       "netChange": "Variation Nette de Trésorerie",
       "openingCash": "Trésorerie d'Ouverture",
-      "closingCash": "Trésorerie de Clôture"
+      "closingCash": "Trésorerie de Clôture",
+      "netIncome": "Résultat net",
+      "changeAR": "Variation des créances clients",
+      "changeInventory": "Variation des stocks",
+      "changeAP": "Variation des fournisseurs",
+      "capEx": "Investissements",
+      "longTermDebt": "Emprunts à long terme"
     },
     "taxReport": {
       "title": "Rapport Fiscal",

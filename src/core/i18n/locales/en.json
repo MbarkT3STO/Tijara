@@ -451,6 +451,11 @@
     "phone": "Phone",
     "balance": "Balance",
     "lastOrder": "Last Order",
+    "statement": "Account Statement",
+    "statementFor": "Statement for {{name}}",
+    "openingBalance": "Opening Balance",
+    "closingBalance": "Closing Balance",
+    "printStatement": "Print Statement",
     "modals": {
       "addTitle": "Add Customer",
       "editTitle": "Edit Customer",
@@ -528,6 +533,7 @@
     "countTotal": "{{count}} invoice total",
     "countPlural": "{{count}} invoices total",
     "created": "Invoice created",
+    "createInvoice": "Create Invoice",
     "invoiceNumber": "Invoice #",
     "customer": "Customer",
     "total": "Total",
@@ -572,6 +578,12 @@
     "categorySales": "Sales by Category",
     "topCustomers": "Top Customers",
     "topProducts": "Top Products",
+    "arAging": "Accounts Receivable Aging",
+    "apAging": "Accounts Payable Aging",
+    "agingBucket1": "0–30 days",
+    "agingBucket2": "31–60 days",
+    "agingBucket3": "61–90 days",
+    "agingBucket4": "90+ days",
     "kpis": {
       "totalRevenue": "Total Revenue",
       "totalProfit": "Total Profit",
@@ -743,7 +755,9 @@
     "required": "This field is required",
     "invalidEmail": "Invalid email address",
     "loadFailed": "Failed to load data",
-    "saveFailed": "Failed to save"
+    "saveFailed": "Failed to save",
+    "accessDenied": "Access Denied",
+    "accessDeniedMsg": "You don't have permission to access this page. Contact your administrator."
   },
   "accounting": {
     "title": "Accounting",
@@ -939,7 +953,13 @@
       "netFinancing": "Net Cash from Financing",
       "netChange": "Net Change in Cash",
       "openingCash": "Opening Cash Balance",
-      "closingCash": "Closing Cash Balance"
+      "closingCash": "Closing Cash Balance",
+      "netIncome": "Net Income",
+      "changeAR": "Change in Accounts Receivable",
+      "changeInventory": "Change in Inventory",
+      "changeAP": "Change in Accounts Payable",
+      "capEx": "Capital Expenditures",
+      "longTermDebt": "Long-term Debt"
     },
     "taxReport": {
       "title": "Tax Report",

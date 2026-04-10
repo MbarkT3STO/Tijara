@@ -452,6 +452,11 @@
     "phone": "الهاتف",
     "balance": "الرصيد",
     "lastOrder": "آخر طلب",
+    "statement": "كشف حساب",
+    "statementFor": "كشف حساب {{name}}",
+    "openingBalance": "رصيد أول المدة",
+    "closingBalance": "رصيد آخر المدة",
+    "printStatement": "طباعة الكشف",
     "modals": {
       "addTitle": "إضافة عميل",
       "editTitle": "تعديل العميل",
@@ -530,6 +535,7 @@
     "countTotal": "فاتورة واحدة إجمالاً",
     "countPlural": "{{count}} فواتير إجمالاً",
     "created": "تم إنشاء الفاتورة",
+    "createInvoice": "إنشاء فاتورة",
     "invoiceNumber": "رقم الفاتورة",
     "customer": "العميل",
     "total": "الإجمالي",
@@ -574,6 +580,12 @@
     "categorySales": "المبيعات حسب الفئة",
     "topCustomers": "أفضل العملاء",
     "topProducts": "أفضل المنتجات",
+    "arAging": "تقادم الذمم المدينة",
+    "apAging": "تقادم الذمم الدائنة",
+    "agingBucket1": "0–30 يوم",
+    "agingBucket2": "31–60 يوم",
+    "agingBucket3": "61–90 يوم",
+    "agingBucket4": "أكثر من 90 يوم",
     "kpis": {
       "totalRevenue": "إجمالي الإيرادات",
       "totalProfit": "إجمالي الربح",
@@ -745,7 +757,9 @@
     "required": "هذا الحقل مطلوب",
     "invalidEmail": "عنوان البريد الإلكتروني غير صالح",
     "loadFailed": "فشل في تحميل البيانات",
-    "saveFailed": "فشل في الحفظ"
+    "saveFailed": "فشل في الحفظ",
+    "accessDenied": "وصول مرفوض",
+    "accessDeniedMsg": "ليس لديك صلاحية الوصول إلى هذه الصفحة. تواصل مع المسؤول."
   },
   "accounting": {
     "title": "المحاسبة",
@@ -934,7 +948,13 @@
       "netFinancing": "صافي التدفق من التمويل",
       "netChange": "صافي التغيير في النقدية",
       "openingCash": "رصيد النقدية أول المدة",
-      "closingCash": "رصيد النقدية آخر المدة"
+      "closingCash": "رصيد النقدية آخر المدة",
+      "netIncome": "صافي الدخل",
+      "changeAR": "تغير الذمم المدينة",
+      "changeInventory": "تغير المخزون",
+      "changeAP": "تغير الذمم الدائنة",
+      "capEx": "النفقات الرأسمالية",
+      "longTermDebt": "الديون طويلة الأجل"
     },
     "taxReport": {
       "title": "تقرير الضرائب",

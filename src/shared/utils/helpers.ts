@@ -1,4 +1,46 @@
 import { i18n } from '@core/i18n';
+import type { UserRole } from '@core/types';
+
+/**
+ * Escape HTML special characters to prevent XSS.
+ * Always use this when inserting user-provided strings into innerHTML.
+ */
+export function escapeHtml(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Permission map: which roles can perform which actions */
+const PERMISSIONS: Record<string, UserRole[]> = {
+  'page:users':          ['admin'],
+  'page:settings':       ['admin', 'manager'],
+  'page:journal':        ['admin', 'manager'],
+  'page:accounts':       ['admin', 'manager'],
+  'page:fiscalPeriods':  ['admin'],
+  'page:costCenters':    ['admin', 'manager'],
+  'action:delete':       ['admin', 'manager'],
+  'action:editSale':     ['admin', 'manager', 'sales'],
+  'action:createSale':   ['admin', 'manager', 'sales'],
+  'action:editInvoice':  ['admin', 'manager'],
+  'action:postJournal':  ['admin', 'manager'],
+  'action:closeperiod':  ['admin'],
+  'action:manageUsers':  ['admin'],
+};
+
+export function hasPermission(role: UserRole, permission: string): boolean {
+  return (PERMISSIONS[permission] ?? []).includes(role);
+}
+
+export function canView(role: UserRole, page: string): boolean {
+  const restrictedPages = ['users', 'settings', 'journal', 'accounts', 'fiscalPeriods'];
+  if (role === 'viewer' && restrictedPages.includes(page)) return false;
+  return hasPermission(role, `page:${page}`) || !PERMISSIONS[`page:${page}`];
+}
 
 /** Generate a random UUID-like ID */
 export function generateId(): string {

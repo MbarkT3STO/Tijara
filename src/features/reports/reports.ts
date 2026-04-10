@@ -4,9 +4,12 @@
  */
 
 import { reportsService } from '@services/reportsService';
+import { invoiceService } from '@services/invoiceService';
+import { purchaseService } from '@services/purchaseService';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, formatPercent } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { router } from '@core/router';
 
 export function renderReports(): HTMLElement {
   const page = document.createElement('div');
@@ -25,6 +28,13 @@ export function renderReports(): HTMLElement {
       btn.addEventListener('click', () => {
         monthRange = parseInt(btn.getAttribute('data-range')!, 10);
         render();
+      });
+    });
+
+    // Wire data-navigate buttons
+    page.querySelectorAll<HTMLButtonElement>('[data-navigate]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        router.navigate(btn.getAttribute('data-navigate') as any);
       });
     });
   }
@@ -104,7 +114,7 @@ function buildHTML(monthRange: number): string {
       <div class="card">
         <div class="card-header">
           <h3 class="card-title" style="display:flex;align-items:center;gap:var(--space-2);">${Icons.customers(16)} ${i18n.t('reports.topCustomers')}</h3>
-          <button class="btn btn-ghost btn-sm" onclick="window.location.hash='#/customers'">
+          <button class="btn btn-ghost btn-sm" data-navigate="customers">
             ${i18n.t('dashboard.viewAll')} ${Icons.chevronRight(16)}
           </button>
         </div>
@@ -144,7 +154,7 @@ function buildHTML(monthRange: number): string {
       <div class="card">
         <div class="card-header">
           <h3 class="card-title" style="display:flex;align-items:center;gap:var(--space-2);">${Icons.products(16)} ${i18n.t('reports.topProducts')}</h3>
-          <button class="btn btn-ghost btn-sm" onclick="window.location.hash='#/products'">
+          <button class="btn btn-ghost btn-sm" data-navigate="products">
             ${i18n.t('dashboard.viewAll')} ${Icons.chevronRight(16)}
           </button>
         </div>
@@ -197,6 +207,9 @@ function buildHTML(monthRange: number): string {
         ${buildFinancialReportCard(i18n.t('accounting.taxReport.title' as any), i18n.t('accounting.taxReport.taxPayable' as any), Icons.fileText(20), 'tax-report', 'error')}
       </div>
     </div>
+
+    <!-- AR/AP Aging Reports -->
+    ${buildAgingSection()}
   `;
 }
 
@@ -211,7 +224,7 @@ function buildKpi(label: string, value: string, iconSvg: string, color: string):
 
 function buildFinancialReportCard(title: string, desc: string, iconSvg: string, route: string, color: string): string {
   return `
-    <div class="card card-hover" style="padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-3);cursor:pointer;" onclick="window.location.hash='#/${route}'">
+    <div class="card card-hover" style="padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-3);cursor:pointer;" data-navigate="${route}">
       <div style="width:40px;height:40px;border-radius:var(--radius-md);background:var(--color-${color}-subtle);color:var(--color-${color});display:flex;align-items:center;justify-content:center;">${iconSvg}</div>
       <div>
         <div style="font-weight:var(--font-weight-semibold);font-size:var(--font-size-sm);">${title}</div>
@@ -278,6 +291,113 @@ function buildCategoryRow(c: ReturnType<typeof reportsService.getCategorySales>[
       <div style="height:6px;background:var(--color-bg-secondary);border-radius:var(--radius-full);overflow:hidden;">
         <div style="height:100%;width:${c.percentage}%;background:var(--color-primary);border-radius:var(--radius-full);transition:width var(--transition-slow);"></div>
       </div>
+    </div>`;
+}
+
+function buildAgingSection(): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const ageDays = (dateStr: string): number => {
+    const d = new Date(dateStr);
+    d.setHours(0, 0, 0, 0);
+    return Math.max(0, Math.floor((today.getTime() - d.getTime()) / 86400000));
+  };
+
+  const bucket = (days: number): 0 | 1 | 2 | 3 => {
+    if (days <= 30) return 0;
+    if (days <= 60) return 1;
+    if (days <= 90) return 2;
+    return 3;
+  };
+
+  // AR Aging
+  const arInvoices = invoiceService.getAll().filter((inv) => inv.amountDue > 0 && inv.status !== 'cancelled');
+  const arByCustomer = new Map<string, { name: string; buckets: [number, number, number, number] }>();
+  for (const inv of arInvoices) {
+    const age = ageDays(inv.dueDate);
+    const b = bucket(age);
+    const entry = arByCustomer.get(inv.customerId) ?? { name: inv.customerName, buckets: [0, 0, 0, 0] };
+    entry.buckets[b] += inv.amountDue;
+    arByCustomer.set(inv.customerId, entry);
+  }
+  const arRows = [...arByCustomer.values()];
+  const arTotals: [number, number, number, number] = [0, 0, 0, 0];
+  arRows.forEach((r) => r.buckets.forEach((v, i) => { arTotals[i] += v; }));
+
+  // AP Aging
+  const apPurchases = purchaseService.getAll().filter((p) => p.paymentStatus !== 'paid' && p.status !== 'cancelled');
+  const apBySupplier = new Map<string, { name: string; buckets: [number, number, number, number] }>();
+  for (const p of apPurchases) {
+    const age = ageDays(p.expectedDate ?? p.createdAt);
+    const b = bucket(age);
+    const balance = p.total - (p.amountPaid ?? 0);
+    const entry = apBySupplier.get(p.supplierId) ?? { name: p.supplierName, buckets: [0, 0, 0, 0] };
+    entry.buckets[b] += balance;
+    apBySupplier.set(p.supplierId, entry);
+  }
+  const apRows = [...apBySupplier.values()];
+  const apTotals: [number, number, number, number] = [0, 0, 0, 0];
+  apRows.forEach((r) => r.buckets.forEach((v, i) => { apTotals[i] += v; }));
+
+  const bucketLabels = [
+    i18n.t('reports.agingBucket1' as any),
+    i18n.t('reports.agingBucket2' as any),
+    i18n.t('reports.agingBucket3' as any),
+    i18n.t('reports.agingBucket4' as any),
+  ];
+
+  const buildAgingTable = (rows: { name: string; buckets: [number, number, number, number] }[], totals: [number, number, number, number], title: string): string => {
+    const grandTotal = totals.reduce((s, v) => s + v, 0);
+    return `
+      <div class="card" style="margin-top:var(--space-5);">
+        <div class="card-header">
+          <h3 class="card-title">${title}</h3>
+        </div>
+        <div class="table-container" style="border:none;border-radius:0;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>${i18n.t('customers.name')}</th>
+                ${bucketLabels.map((l) => `<th style="text-align:right;">${l}</th>`).join('')}
+                <th style="text-align:right;">${i18n.t('common.total')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.length === 0
+                ? `<tr><td colspan="6" style="text-align:center;padding:var(--space-6);color:var(--color-text-tertiary);">${i18n.t('reports.charts.noData')}</td></tr>`
+                : rows.map((r) => {
+                    const rowTotal = r.buckets.reduce((s, v) => s + v, 0);
+                    return `<tr>
+                      <td style="font-weight:500;">${r.name}</td>
+                      ${r.buckets.map((v, i) => `<td style="text-align:right;color:${i >= 2 ? 'var(--color-error)' : i === 1 ? 'var(--color-warning)' : 'var(--color-text-primary)'};">${v > 0 ? formatCurrency(v) : '—'}</td>`).join('')}
+                      <td style="text-align:right;font-weight:600;">${formatCurrency(rowTotal)}</td>
+                    </tr>`;
+                  }).join('')
+              }
+              ${rows.length > 0 ? `
+              <tr style="background:var(--color-bg-secondary);font-weight:700;border-top:2px solid var(--color-border);">
+                <td>${i18n.t('common.total')}</td>
+                ${totals.map((v) => `<td style="text-align:right;">${formatCurrency(v)}</td>`).join('')}
+                <td style="text-align:right;color:var(--color-primary);">${formatCurrency(grandTotal)}</td>
+              </tr>` : ''}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  };
+
+  return `
+    <div style="margin-top:var(--space-6);">
+      <h3 style="font-size:var(--font-size-lg);font-weight:var(--font-weight-semibold);margin-bottom:var(--space-2);display:flex;align-items:center;gap:var(--space-2);">
+        ${Icons.invoices(18)} ${i18n.t('reports.arAging' as any)}
+      </h3>
+      ${buildAgingTable(arRows, arTotals, i18n.t('reports.arAging' as any))}
+      ${apRows.length > 0 ? `
+      <h3 style="font-size:var(--font-size-lg);font-weight:var(--font-weight-semibold);margin-top:var(--space-6);margin-bottom:var(--space-2);display:flex;align-items:center;gap:var(--space-2);">
+        ${Icons.truck(18)} ${i18n.t('reports.apAging' as any)}
+      </h3>
+      ${buildAgingTable(apRows, apTotals, i18n.t('reports.apAging' as any))}` : ''}
     </div>`;
 }
 

@@ -425,7 +425,7 @@ function openSaleDetailModal(sale: Sale): void {
   if (sale.status === 'delivered' && !existingInvoice) {
     const createInvoiceBtn = document.createElement('div');
     createInvoiceBtn.style.cssText = 'margin-top:var(--space-4);display:flex;justify-content:flex-end;';
-    createInvoiceBtn.innerHTML = `<button class="btn btn-primary" id="create-invoice-btn">${Icons.fileText ? Icons.fileText(16) : '📄'} ${i18n.t('invoices.created' as any)}</button>`;
+    createInvoiceBtn.innerHTML = `<button class="btn btn-primary" id="create-invoice-btn">${Icons.fileText ? Icons.fileText(16) : '📄'} ${i18n.t('invoices.createInvoice' as any)}</button>`;
     content.appendChild(createInvoiceBtn);
     createInvoiceBtn.querySelector('#create-invoice-btn')?.addEventListener('click', () => {
       const invoice = invoiceService.createFromSale(sale);

@@ -36,9 +36,9 @@ class AccountingIntegrationService {
       const existing = journalService.getBySource('sale', sale.id);
       if (existing && existing.status !== 'reversed') return;
 
-      const ar = this.getAccountByCode('1100');
-      const revenue = this.getAccountByCode('4000');
-      const taxPayable = this.getAccountByCode('2200');
+      const ar         = this.getAccountByCode('3411') ?? this.getAccountByCode('1100');
+      const revenue    = this.getAccountByCode('7111') ?? this.getAccountByCode('4000');
+      const taxPayable = this.getAccountByCode('4443') ?? this.getAccountByCode('2200');
       if (!ar || !revenue) return;
 
       // ── Entry 1: Revenue recognition ──────────────────────────────────────
@@ -66,8 +66,8 @@ class AccountingIntegrationService {
       });
 
       // ── Entry 2: COGS recognition ──────────────────────────────────────────
-      const inventory = this.getAccountByCode('1200');
-      const cogs = this.getAccountByCode('5000');
+      const inventory = this.getAccountByCode('3111') ?? this.getAccountByCode('1200');
+      const cogs      = this.getAccountByCode('6111') ?? this.getAccountByCode('5000');
       if (inventory && cogs) {
         const totalCost = sale.items.reduce((sum, item) => {
           const product = productService.getById(item.productId);
@@ -118,8 +118,8 @@ class AccountingIntegrationService {
         ? invoice.id                       // first payment keeps simple id
         : `${invoice.id}_p${paymentIndex}`; // subsequent payments get suffix
 
-      const cash = this.getAccountByCode('1000');
-      const ar = this.getAccountByCode('1100');
+      const cash = this.getAccountByCode('5161') ?? this.getAccountByCode('5141') ?? this.getAccountByCode('1000');
+      const ar   = this.getAccountByCode('3411') ?? this.getAccountByCode('1100');
       if (!cash || !ar) return;
 
       const description = existingPayments.length === 0
@@ -172,7 +172,7 @@ class AccountingIntegrationService {
       lines.push(this.makeLine(ap.id, ap.code, ap.name, 0, purchase.total));
 
       await journalService.createEntry({
-        date: (purchase.expectedDate ?? purchase.createdAt).split('T')[0],
+        date: getCurrentISODate(),
         description: `${i18n.t('accounting.integration.purchaseReceived' as any)}: ${purchase.poNumber}`,
         reference: purchase.poNumber,
         sourceType: 'purchase',
@@ -242,9 +242,9 @@ class AccountingIntegrationService {
       const existing = journalService.getBySource('return_refund', returnRecord.id);
       if (existing && existing.status !== 'reversed') return;
 
-      const revenue = this.getAccountByCode('4000');
-      const ar = this.getAccountByCode('1100');
-      const cash = this.getAccountByCode('1000');
+      const revenue = this.getAccountByCode('7111') ?? this.getAccountByCode('4000');
+      const ar      = this.getAccountByCode('3411') ?? this.getAccountByCode('1100');
+      const cash    = this.getAccountByCode('5161') ?? this.getAccountByCode('5141') ?? this.getAccountByCode('1000');
       if (!revenue) return;
 
       const refundAccount = returnRecord.refundMethod === 'cash' ? cash : ar;
@@ -258,8 +258,8 @@ class AccountingIntegrationService {
       let cogsReversal = 0;
 
       if (returnRecord.restockItems) {
-        const inventory = this.getAccountByCode('1200');
-        const cogs = this.getAccountByCode('5000');
+        const inventory = this.getAccountByCode('3111') ?? this.getAccountByCode('1200');
+        const cogs      = this.getAccountByCode('6111') ?? this.getAccountByCode('5000');
         if (inventory && cogs) {
           // Use actual product cost, not a magic ratio
           const costValue = returnRecord.items.reduce((s, item) => {
@@ -314,7 +314,7 @@ class AccountingIntegrationService {
       if (!product || product.cost <= 0) return;
 
       const costValue = Math.abs(qtyChange) * product.cost;
-      const inventory = this.getAccountByCode('1200');
+      const inventory = this.getAccountByCode('3111') ?? this.getAccountByCode('1200');
 
       // Try CGNC account 6395 for losses, fall back to general expense account
       const adjustmentAccount = qtyChange < 0
