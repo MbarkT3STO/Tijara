@@ -57,7 +57,7 @@ export function createSidebar(currentUser?: User): HTMLElement {
   logo.className = 'sidebar-logo';
   logo.innerHTML = `
     <div class="sidebar-logo-icon" aria-hidden="true">
-      <img src="/icons/icon-512.png" alt="Tijara" width="28" height="28" style="object-fit:contain; border-radius: 4px;" />
+      <img src="./icons/icon-512.png" alt="Tijara" width="28" height="28" style="object-fit:contain; border-radius: 4px;" />
     </div>
     <span class="sidebar-logo-text">Ti<span>jara</span></span>
   `;

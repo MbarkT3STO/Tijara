@@ -159,7 +159,7 @@ function buildHTML(view: AuthView): string {
         <!-- Logo -->
         <div class="auth-logo">
           <div class="auth-logo-icon">
-            <img src="/icons/icon-512.png" alt="Tijara" width="32" height="32" style="object-fit:contain; border-radius: 6px;" />
+            <img src="./icons/icon-512.png" alt="Tijara" width="32" height="32" style="object-fit:contain; border-radius: 6px;" />
           </div>
           <div>
             <div class="auth-logo-name">${i18n.t('app.name')}</div>
@@ -189,7 +189,7 @@ function buildHTML(view: AuthView): string {
       <div class="auth-panel" aria-hidden="true">
         <div class="auth-panel-content">
           <div class="auth-panel-icon">
-            <img src="/icons/icon-512.png" alt="" width="64" height="64" style="object-fit:contain; border-radius: 14px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));" />
+            <img src="./icons/icon-512.png" alt="" width="64" height="64" style="object-fit:contain; border-radius: 14px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));" />
           </div>
           <h2 class="auth-panel-title">${i18n.t('auth.manageBusinessSmarter')}</h2>
           <ul class="auth-panel-features">
