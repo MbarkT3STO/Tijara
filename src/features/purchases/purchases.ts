@@ -328,6 +328,13 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
       <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-lg);font-weight:700;border-top:1px solid var(--color-border);padding-top:var(--space-2);margin-top:var(--space-1);">
         <span>${i18n.t('purchases.total')}</span><span style="color:var(--color-primary);">${formatCurrency(po.total)}</span>
       </div>
+      ${(po.amountPaid ?? 0) > 0 ? `
+      <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);font-weight:500;color:var(--color-success);">
+        <span>${i18n.t('purchases.amountPaid')}</span><span>${formatCurrency(po.amountPaid ?? 0)}</span>
+      </div>
+      <div style="display:flex;gap:var(--space-8);font-size:var(--font-size-sm);font-weight:700;color:${po.total - (po.amountPaid ?? 0) > 0 ? 'var(--color-error)' : 'var(--color-success)'};">
+        <span>${i18n.t('purchases.balanceDue')}</span><span>${formatCurrency(po.total - (po.amountPaid ?? 0))}</span>
+      </div>` : ''}
     </div>
 
     ${po.notes ? `<div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">${po.notes}</div>` : ''}
@@ -335,9 +342,20 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
     ${po.status === 'received' && po.paymentStatus !== 'paid' ? `
     <div style="margin-top:var(--space-5);padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);border:1px solid var(--color-border);">
       <div style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-3);">${i18n.t('purchases.modals.recordPayment')}</div>
+      ${(po.amountPaid ?? 0) > 0 ? `
+      <div style="display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-3);font-size:var(--font-size-sm);">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--color-text-secondary);">${i18n.t('purchases.amountPaid')}</span>
+          <span style="color:var(--color-success);font-weight:600;">${formatCurrency(po.amountPaid ?? 0)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--color-text-secondary);">${i18n.t('purchases.balanceDue')}</span>
+          <span style="color:var(--color-error);font-weight:600;">${formatCurrency(po.total - (po.amountPaid ?? 0))}</span>
+        </div>
+      </div>` : ''}
       <div style="display:flex;gap:var(--space-2);">
         <input type="number" id="po-payment-amount" class="form-control" placeholder="${i18n.t('common.amount')}"
-          min="0" step="0.01" value="${po.total}" />
+          min="0" step="0.01" max="${po.total - (po.amountPaid ?? 0)}" value="${po.total - (po.amountPaid ?? 0)}" />
         <button type="button" class="btn btn-primary" id="po-record-payment-btn">${i18n.t('common.save')}</button>
       </div>
     </div>` : ''}
@@ -359,10 +377,12 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
   content.querySelector('#po-record-payment-btn')?.addEventListener('click', () => {
     const amount = parseFloat((content.querySelector('#po-payment-amount') as HTMLInputElement).value);
     if (isNaN(amount) || amount <= 0) { notifications.error(i18n.t('errors.required')); return; }
-    const newStatus: Purchase['paymentStatus'] = amount >= po.total ? 'paid' : 'partial';
-    purchaseService.updatePaymentStatus(po.id, newStatus);
+    const remaining = po.total - (po.amountPaid ?? 0);
+    const capped = Math.min(amount, remaining);
+    const newStatus: Purchase['paymentStatus'] = capped >= remaining ? 'paid' : 'partial';
+    purchaseService.updatePaymentStatus(po.id, newStatus, capped);
     // Accounting integration — post for any payment amount (partial or full)
-    accountingIntegrationService.postPurchasePaymentEntry(po, amount).catch(console.error);
+    accountingIntegrationService.postPurchasePaymentEntry(po, capped).catch(console.error);
     notifications.success(i18n.t('common.save'));
     close(); onUpdate();
   });

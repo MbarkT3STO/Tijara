@@ -209,6 +209,7 @@ export interface Purchase {
   taxAmount: number;
   shippingCost: number;
   total: number;
+  amountPaid: number;
   status: 'draft' | 'ordered' | 'received' | 'cancelled';
   paymentStatus: 'unpaid' | 'partial' | 'paid';
   paymentMethod: 'cash' | 'card' | 'transfer' | 'other';

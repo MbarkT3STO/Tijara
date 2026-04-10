@@ -281,6 +281,7 @@ class ExcelRepository {
           { key: 'taxAmount',     header: 'Tax',           width: 12, type: 'currency' },
           { key: 'shippingCost',  header: 'Shipping',      width: 12, type: 'currency' },
           { key: 'total',         header: 'Total',         width: 14, type: 'currency' },
+          { key: 'amountPaid',    header: 'Paid',          width: 14, type: 'currency' },
           { key: 'status',        header: 'Status',        width: 14, type: 'text' },
           { key: 'paymentStatus', header: 'Payment',       width: 14, type: 'text' },
           { key: 'paymentMethod', header: 'Method',        width: 14, type: 'text' },

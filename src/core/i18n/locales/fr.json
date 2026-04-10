@@ -635,6 +635,8 @@
     "pendingDelivery": "Livraison en attente",
     "unpaidBalance": "Solde impayé",
     "totalOrders": "Total des commandes",
+    "amountPaid": "Montant payé",
+    "balanceDue": "Solde dû",
     "allStatuses": "Tous les statuts",
     "orderItems": "Articles de la commande",
     "statuses": {

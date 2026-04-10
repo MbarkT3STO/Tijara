@@ -632,6 +632,8 @@
     "pendingDelivery": "Pending Delivery",
     "unpaidBalance": "Unpaid Balance",
     "totalOrders": "Total Orders",
+    "amountPaid": "Amount Paid",
+    "balanceDue": "Balance Due",
     "allStatuses": "All Statuses",
     "orderItems": "Order Items",
     "statuses": {

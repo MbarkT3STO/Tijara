@@ -51,6 +51,7 @@ export const purchaseService = {
       subtotal,
       taxAmount,
       total,
+      amountPaid: 0,
       createdAt: getCurrentISODate(),
       updatedAt: getCurrentISODate(),
     };
@@ -91,8 +92,17 @@ export const purchaseService = {
     return repository.update('purchases', id, { status, updatedAt: getCurrentISODate() });
   },
 
-  updatePaymentStatus(id: string, paymentStatus: Purchase['paymentStatus']): boolean {
-    return repository.update('purchases', id, { paymentStatus, updatedAt: getCurrentISODate() });
+  updatePaymentStatus(id: string, paymentStatus: Purchase['paymentStatus'], amountPaid?: number): boolean {
+    const prev = repository.getById('purchases', id);
+    if (!prev) return false;
+    const newAmountPaid = amountPaid !== undefined
+      ? Math.min((prev.amountPaid ?? 0) + amountPaid, prev.total)
+      : prev.amountPaid ?? 0;
+    return repository.update('purchases', id, {
+      paymentStatus,
+      amountPaid: newAmountPaid,
+      updatedAt: getCurrentISODate(),
+    });
   },
 
   update(id: string, data: Partial<Omit<Purchase, 'id' | 'createdAt'>>): boolean {

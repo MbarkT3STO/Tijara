@@ -634,6 +634,8 @@
     "pendingDelivery": "في انتظار التسليم",
     "unpaidBalance": "الرصيد غير المدفوع",
     "totalOrders": "إجمالي الطلبات",
+    "amountPaid": "المبلغ المدفوع",
+    "balanceDue": "الرصيد المستحق",
     "allStatuses": "جميع الحالات",
     "orderItems": "أصناف الطلب",
     "statuses": {
