@@ -8,11 +8,16 @@ import { inventoryService } from './inventoryService';
 import type { Sale, OrderItem } from '@core/types';
 import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';
 
-let orderCounter = 1000;
-
 function nextOrderNumber(): string {
   const year = new Date().getFullYear();
-  return `ORD-${year}-${String(++orderCounter).padStart(4, '0')}`;
+  const prefix = `ORD-${year}-`;
+  const max = repository.getAll('sales')
+    .filter((s) => s.orderNumber.startsWith(prefix))
+    .reduce((m, s) => {
+      const n = parseInt(s.orderNumber.slice(prefix.length), 10);
+      return isNaN(n) ? m : Math.max(m, n);
+    }, 1000);
+  return `${prefix}${String(max + 1).padStart(4, '0')}`;
 }
 
 export const saleService = {

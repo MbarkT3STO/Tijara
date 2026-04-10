@@ -3,6 +3,7 @@
  */
 
 import { journalService } from '@services/journalService';
+import { journalTemplateService } from '@services/journalTemplateService';
 import { accountService } from '@services/accountService';
 import { fiscalPeriodService } from '@services/fiscalPeriodService';
 import { notifications } from '@core/notifications';
@@ -436,10 +437,75 @@ function openJournalModal(entry: JournalEntry | null, onSave: () => void): void 
         <input type="text" id="je-ref" class="form-control" value="${entry?.reference ?? ''}" />
       </div>
     </div>
+    <div style="display:flex;justify-content:flex-end;gap:var(--space-2);margin-bottom:var(--space-3);">
+      <button type="button" class="btn btn-secondary btn-sm" id="je-use-template">${i18n.t('accounting.journal.useTemplate' as any)}</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="je-save-as-template">${i18n.t('accounting.journal.saveAsTemplate' as any)}</button>
+    </div>
     <div id="je-lines-container"></div>
   `;
 
   renderLines();
+
+  // ── Template buttons ──────────────────────────────────────────────────────
+  form.querySelector('#je-use-template')?.addEventListener('click', () => {
+    const templates = journalTemplateService.getAll();
+    if (templates.length === 0) {
+      notifications.error(i18n.t('accounting.journal.noTemplates' as any));
+      return;
+    }
+    const picker = document.createElement('div');
+    picker.innerHTML = `
+      <div class="form-group">
+        <label class="form-label">${i18n.t('accounting.journal.templates' as any)}</label>
+        <select id="tpl-select" class="form-control">
+          <option value="">— ${i18n.t('accounting.journal.templates' as any)} —</option>
+          ${templates.map((t) => `<option value="${t.id}">${t.name}</option>`).join('')}
+        </select>
+      </div>
+    `;
+    openModal({
+      title: i18n.t('accounting.journal.useTemplate' as any),
+      content: picker,
+      confirmText: i18n.t('common.confirm'),
+      onConfirm: () => {
+        const tplId = (picker.querySelector('#tpl-select') as HTMLSelectElement).value;
+        if (!tplId) return false;
+        const tpl = journalTemplateService.getById(tplId);
+        if (!tpl) return false;
+        // Pre-fill description and lines from template
+        (form.querySelector('#je-desc') as HTMLInputElement).value = tpl.description;
+        lines.length = 0;
+        tpl.lines.forEach((l) => lines.push({ ...l, id: generateId() }));
+        renderLines();
+      },
+    });
+  });
+
+  form.querySelector('#je-save-as-template')?.addEventListener('click', () => {
+    const descInput = form.querySelector('#je-desc') as HTMLInputElement;
+    const namePicker = document.createElement('div');
+    namePicker.innerHTML = `
+      <div class="form-group">
+        <label class="form-label required" for="tpl-name">${i18n.t('accounting.journal.templateName' as any)}</label>
+        <input type="text" id="tpl-name" class="form-control" value="${descInput.value}" />
+      </div>
+    `;
+    openModal({
+      title: i18n.t('accounting.journal.saveAsTemplate' as any),
+      content: namePicker,
+      confirmText: i18n.t('common.save'),
+      onConfirm: () => {
+        const name = (namePicker.querySelector('#tpl-name') as HTMLInputElement).value.trim();
+        if (!name) { showModalError(namePicker, i18n.t('errors.required'), ['tpl-name']); return false; }
+        journalTemplateService.create({
+          name,
+          description: descInput.value,
+          lines: lines.map(({ id: _id, ...rest }) => rest),
+        });
+        notifications.success(i18n.t('common.save'));
+      },
+    });
+  });
 
   const saveEntry = async (status: 'draft' | 'posted') => {
     const description = (form.querySelector('#je-desc') as HTMLInputElement).value.trim();

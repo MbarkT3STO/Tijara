@@ -6,6 +6,7 @@
 import { saleService } from '@services/saleService';
 import { customerService } from '@services/customerService';
 import { productService } from '@services/productService';
+import { invoiceService } from '@services/invoiceService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
@@ -116,6 +117,7 @@ export function renderSales(): HTMLElement {
         const sale = saleService.getById(btn.getAttribute('data-delete')!);
         if (!sale) return;
         confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${sale.orderNumber}"?`, () => {
+          accountingIntegrationService.reverseEntryForSource('sale', sale.id).catch(console.error);
           saleService.delete(sale.id);
           notifications.success(i18n.t('common.delete'));
           state.sales = saleService.getAll(); applyFilters(); render();
@@ -417,6 +419,20 @@ function openSaleDetailModal(sale: Sale): void {
     </div>
     ${sale.notes ? `<div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">${sale.notes}</div>` : ''}
   `;
+
+  // Add "Create Invoice" button for delivered sales with no existing invoice
+  const existingInvoice = invoiceService.getAll().find((inv) => inv.saleId === sale.id);
+  if (sale.status === 'delivered' && !existingInvoice) {
+    const createInvoiceBtn = document.createElement('div');
+    createInvoiceBtn.style.cssText = 'margin-top:var(--space-4);display:flex;justify-content:flex-end;';
+    createInvoiceBtn.innerHTML = `<button class="btn btn-primary" id="create-invoice-btn">${Icons.fileText ? Icons.fileText(16) : '📄'} ${i18n.t('invoices.created' as any)}</button>`;
+    content.appendChild(createInvoiceBtn);
+    createInvoiceBtn.querySelector('#create-invoice-btn')?.addEventListener('click', () => {
+      const invoice = invoiceService.createFromSale(sale);
+      notifications.success(`${i18n.t('invoices.created' as any)}: ${invoice.invoiceNumber}`);
+    });
+  }
+
   openModal({ title: `${i18n.t('dashboard.order')} ${sale.orderNumber}`, content, size: 'lg', hideFooter: true });
 }
 

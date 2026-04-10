@@ -11,7 +11,7 @@
  */
 
 import * as XLSX from 'xlsx-js-style';
-import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier, Purchase, Return, Account, JournalEntry, FiscalPeriod, CostCenter, TaxRate } from '@core/types';
+import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier, Purchase, Return, Account, JournalEntry, FiscalPeriod, CostCenter, TaxRate, JournalTemplate } from '@core/types';
 import type { ElectronAPI } from '../../electron/preload';
 
 /** All data collections stored in the workbook */
@@ -30,6 +30,7 @@ export interface WorkbookData {
   fiscalPeriods: FiscalPeriod[];
   costCenters: CostCenter[];
   taxRates: TaxRate[];
+  journalTemplates: JournalTemplate[];
 }
 
 const SHEET_NAMES = {
@@ -47,6 +48,7 @@ const SHEET_NAMES = {
   fiscalPeriods: 'Fiscal Periods',
   costCenters: 'Cost Centers',
   taxRates: 'Tax Rates',
+  journalTemplates: 'Journal Templates',
 } as const;
 
 const STORAGE_KEY = 'tijara-data';
@@ -72,6 +74,7 @@ class ExcelRepository {
     fiscalPeriods: [],
     costCenters: [],
     taxRates: [],
+    journalTemplates: [],
   };
 
   private initialized = false;
@@ -89,20 +92,21 @@ class ExcelRepository {
         // Merge with defaults so any collection added after initial save
         // is always an array, never undefined (forward-compatibility guard).
         this.data = {
-          customers:      Array.isArray(parsed.customers)      ? parsed.customers      : [],
-          products:       Array.isArray(parsed.products)       ? parsed.products       : [],
-          sales:          Array.isArray(parsed.sales)          ? parsed.sales          : [],
-          invoices:       Array.isArray(parsed.invoices)       ? parsed.invoices       : [],
-          users:          Array.isArray(parsed.users)          ? parsed.users          : [],
-          stockMovements: Array.isArray(parsed.stockMovements) ? parsed.stockMovements : [],
-          suppliers:      Array.isArray(parsed.suppliers)      ? parsed.suppliers      : [],
-          purchases:      Array.isArray(parsed.purchases)      ? parsed.purchases      : [],
-          returns:        Array.isArray(parsed.returns)        ? parsed.returns        : [],
-          accounts:       Array.isArray(parsed.accounts)       ? parsed.accounts       : [],
-          journalEntries: Array.isArray(parsed.journalEntries) ? parsed.journalEntries : [],
-          fiscalPeriods:  Array.isArray(parsed.fiscalPeriods)  ? parsed.fiscalPeriods  : [],
-          costCenters:    Array.isArray(parsed.costCenters)    ? parsed.costCenters    : [],
-          taxRates:       Array.isArray(parsed.taxRates)       ? parsed.taxRates       : [],
+          customers:        Array.isArray(parsed.customers)        ? parsed.customers        : [],
+          products:         Array.isArray(parsed.products)         ? parsed.products         : [],
+          sales:            Array.isArray(parsed.sales)            ? parsed.sales            : [],
+          invoices:         Array.isArray(parsed.invoices)         ? parsed.invoices         : [],
+          users:            Array.isArray(parsed.users)            ? parsed.users            : [],
+          stockMovements:   Array.isArray(parsed.stockMovements)   ? parsed.stockMovements   : [],
+          suppliers:        Array.isArray(parsed.suppliers)        ? parsed.suppliers        : [],
+          purchases:        Array.isArray(parsed.purchases)        ? parsed.purchases        : [],
+          returns:          Array.isArray(parsed.returns)          ? parsed.returns          : [],
+          accounts:         Array.isArray(parsed.accounts)         ? parsed.accounts         : [],
+          journalEntries:   Array.isArray(parsed.journalEntries)   ? parsed.journalEntries   : [],
+          fiscalPeriods:    Array.isArray(parsed.fiscalPeriods)    ? parsed.fiscalPeriods    : [],
+          costCenters:      Array.isArray(parsed.costCenters)      ? parsed.costCenters      : [],
+          taxRates:         Array.isArray(parsed.taxRates)         ? parsed.taxRates         : [],
+          journalTemplates: Array.isArray(parsed.journalTemplates) ? parsed.journalTemplates : [],
         };
 
         // Patch products that predate the reorderPoint/reorderQuantity fields
@@ -860,7 +864,40 @@ class ExcelRepository {
       { id: 'u2', name: 'Sales Manager', email: 'manager@tijara.app', passwordHash: '866485796cfa8d7c0cf7111640205b83076433547577511d81f8030ae99ecea5', role: 'manager', active: true, createdAt: now },
     ];
 
-    return { customers, products, sales, invoices, users, stockMovements: [], suppliers: [], purchases: [], returns: [], accounts, journalEntries, fiscalPeriods, costCenters: [], taxRates };
+    const seedJournalTemplates: import('@core/types').JournalTemplate[] = [
+      {
+        id: 'jt-payroll',
+        name: 'Monthly Salaries',
+        description: 'Monthly payroll entry',
+        lines: [
+          { accountId: 'acc-6000', accountCode: '6000', accountName: 'Salaries Expense', debit: 0, credit: 0 },
+          { accountId: 'acc-2100', accountCode: '2100', accountName: 'Accrued Liabilities', debit: 0, credit: 0 },
+        ],
+        createdAt: now,
+      },
+      {
+        id: 'jt-depreciation',
+        name: 'Monthly Depreciation',
+        description: 'Monthly depreciation entry',
+        lines: [
+          { accountId: 'acc-6400', accountCode: '6400', accountName: 'Depreciation Expense', debit: 0, credit: 0 },
+          { accountId: 'acc-1510', accountCode: '1510', accountName: 'Accumulated Depreciation', debit: 0, credit: 0 },
+        ],
+        createdAt: now,
+      },
+      {
+        id: 'jt-rent',
+        name: 'Monthly Rent',
+        description: 'Monthly rent payment',
+        lines: [
+          { accountId: 'acc-6100', accountCode: '6100', accountName: 'Rent Expense', debit: 0, credit: 0 },
+          { accountId: 'acc-1000', accountCode: '1000', accountName: 'Cash and Cash Equivalents', debit: 0, credit: 0 },
+        ],
+        createdAt: now,
+      },
+    ];
+
+    return { customers, products, sales, invoices, users, stockMovements: [], suppliers: [], purchases: [], returns: [], accounts, journalEntries, fiscalPeriods, costCenters: [], taxRates, journalTemplates: seedJournalTemplates };
   }
 }
 

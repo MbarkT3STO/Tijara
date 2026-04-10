@@ -9,11 +9,16 @@ import { inventoryService } from './inventoryService';
 import type { Purchase, PurchaseItem } from '@core/types';
 import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';
 
-let poCounter = 1000;
-
 function nextPoNumber(): string {
   const year = new Date().getFullYear();
-  return `PO-${year}-${String(++poCounter).padStart(4, '0')}`;
+  const prefix = `PO-${year}-`;
+  const max = repository.getAll('purchases')
+    .filter((p) => p.poNumber.startsWith(prefix))
+    .reduce((m, p) => {
+      const n = parseInt(p.poNumber.slice(prefix.length), 10);
+      return isNaN(n) ? m : Math.max(m, n);
+    }, 1000);
+  return `${prefix}${String(max + 1).padStart(4, '0')}`;
 }
 
 export const purchaseService = {

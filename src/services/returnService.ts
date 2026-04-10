@@ -9,11 +9,16 @@ import { inventoryService } from './inventoryService';
 import type { Return, ReturnItem } from '@core/types';
 import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';
 
-let returnCounter = 1000;
-
 function nextReturnNumber(): string {
   const year = new Date().getFullYear();
-  return `RET-${year}-${String(++returnCounter).padStart(4, '0')}`;
+  const prefix = `RET-${year}-`;
+  const max = repository.getAll('returns')
+    .filter((r) => r.returnNumber.startsWith(prefix))
+    .reduce((m, r) => {
+      const n = parseInt(r.returnNumber.slice(prefix.length), 10);
+      return isNaN(n) ? m : Math.max(m, n);
+    }, 1000);
+  return `${prefix}${String(max + 1).padStart(4, '0')}`;
 }
 
 export const returnService = {

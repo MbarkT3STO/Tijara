@@ -529,6 +529,7 @@
     "subtitle": "إدارة فواتير العملاء والمدفوعات",
     "countTotal": "فاتورة واحدة إجمالاً",
     "countPlural": "{{count}} فواتير إجمالاً",
+    "created": "تم إنشاء الفاتورة",
     "invoiceNumber": "رقم الفاتورة",
     "customer": "العميل",
     "total": "الإجمالي",
@@ -858,7 +859,12 @@
         "accountNotFound": "الحساب غير موجود",
         "accountInactive": "الحساب {{code}} غير نشط",
         "lineNonZero": "يجب أن يحتوي كل سطر على مبلغ مدين أو دائن غير صفري"
-      }
+      },
+      "templates": "القوالب",
+      "useTemplate": "استخدام قالب",
+      "saveAsTemplate": "حفظ كقالب",
+      "templateName": "اسم القالب",
+      "noTemplates": "لا توجد قوالب محفوظة"
     },
     "ledger": {
       "title": "دفتر الأستاذ العام",
@@ -913,7 +919,8 @@
       "totalEquity": "إجمالي حقوق الملكية",
       "totalLiabilitiesAndEquity": "إجمالي الخصوم وحقوق الملكية",
       "balanced": "الميزانية متوازنة",
-      "outOfBalance": "عدم توازن بمقدار {{amount}}"
+      "outOfBalance": "عدم توازن بمقدار {{amount}}",
+      "currentNetIncome": "صافي نتيجة الدورة"
     },
     "cashFlow": {
       "title": "قائمة التدفقات النقدية",

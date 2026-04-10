@@ -99,7 +99,7 @@ export interface Sale {
   subtotal: number;
   taxRate: number;
   taxAmount: number;
-  discount: number;
+  discount: number; // flat discount amount deducted from order total (in currency)
   total: number;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
   paymentStatus: 'unpaid' | 'partial' | 'paid';
@@ -532,4 +532,13 @@ export interface AccountingStats {
   cashBalance: number;
   revenueGrowth: number;
   expenseGrowth: number;
+}
+
+/** Journal entry template for recurring entries (payroll, rent, depreciation, etc.) */
+export interface JournalTemplate {
+  id: string;
+  name: string;               // e.g. "Monthly Payroll", "Rent", "Depreciation"
+  description: string;        // pre-filled journal entry description
+  lines: Omit<JournalLine, 'id'>[];  // template lines (amount 0 = fill at use time)
+  createdAt: string;
 }

@@ -192,21 +192,33 @@ class AccountingIntegrationService {
     try {
       const periodId = this.getCurrentPeriodId();
       if (!periodId) return;
+      if (amountPaid <= 0) return;
 
-      // Duplicate guard
-      const existing = journalService.getBySource('purchase_payment', purchase.id);
-      if (existing && existing.status !== 'reversed') return;
+      // Allow multiple partial payment entries (mirrors invoice payment logic)
+      const existingPayments = journalService.getAll().filter(
+        (e) => e.sourceType === 'purchase_payment' &&
+               e.sourceId?.startsWith(purchase.id) &&
+               e.status !== 'reversed'
+      );
+      const paymentIndex = existingPayments.length + 1;
+      const paymentSourceId = existingPayments.length === 0
+        ? purchase.id
+        : `${purchase.id}_p${paymentIndex}`;
 
-      const ap = this.getAccountByCode('2000');
-      const cash = this.getAccountByCode('1000');
+      const ap = this.getAccountByCode('4411') ?? this.getAccountByCode('2000');
+      const cash = this.getAccountByCode('5161') ?? this.getAccountByCode('5141') ?? this.getAccountByCode('1000');
       if (!ap || !cash) return;
+
+      const description = existingPayments.length === 0
+        ? `${i18n.t('accounting.integration.purchasePayment' as any)}: ${purchase.poNumber}`
+        : `${i18n.t('accounting.integration.purchasePayment' as any)} #${paymentIndex}: ${purchase.poNumber}`;
 
       await journalService.createEntry({
         date: getCurrentISODate(),
-        description: `${i18n.t('accounting.integration.purchasePayment' as any)}: ${purchase.poNumber}`,
+        description,
         reference: purchase.poNumber,
         sourceType: 'purchase_payment',
-        sourceId: purchase.id,
+        sourceId: paymentSourceId,
         lines: [
           this.makeLine(ap.id, ap.code, ap.name, amountPaid, 0),
           this.makeLine(cash.id, cash.code, cash.name, 0, amountPaid),
@@ -382,6 +394,25 @@ class AccountingIntegrationService {
             );
           }
           i++;
+          if (i > 50) break;
+        }
+      }
+
+      // For purchase_payment: also reverse any partial payment entries (_p2, _p3, ...)
+      if (sourceType === 'purchase_payment') {
+        let i = 2;
+        while (true) {
+          const partialEntry = journalService.getBySource(sourceType, `${sourceId}_p${i}`);
+          if (!partialEntry) break;
+          if (partialEntry.status === 'posted') {
+            await journalService.reverseEntry(
+              partialEntry.id,
+              getCurrentISODate(),
+              `REV: ${partialEntry.entryNumber}`
+            );
+          }
+          i++;
+          if (i > 50) break;
         }
       }
     } catch (err) {

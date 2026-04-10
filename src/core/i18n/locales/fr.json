@@ -530,6 +530,7 @@
     "subtitle": "Gérez les factures clients et les paiements",
     "countTotal": "{{count}} facture au total",
     "countPlural": "{{count}} factures au total",
+    "created": "Facture créée",
     "invoiceNumber": "N° Facture",
     "customer": "Client",
     "total": "Total",
@@ -859,7 +860,12 @@
         "accountNotFound": "Compte introuvable",
         "accountInactive": "Le compte {{code}} est inactif",
         "lineNonZero": "Chaque ligne doit avoir un montant débit ou crédit non nul"
-      }
+      },
+      "templates": "Modèles",
+      "useTemplate": "Utiliser un modèle",
+      "saveAsTemplate": "Enregistrer comme modèle",
+      "templateName": "Nom du modèle",
+      "noTemplates": "Aucun modèle enregistré"
     },
     "ledger": {
       "title": "Grand Livre",
@@ -914,7 +920,8 @@
       "totalEquity": "Total Capitaux Propres",
       "totalLiabilitiesAndEquity": "Total Passif & Capitaux Propres",
       "balanced": "Bilan équilibré",
-      "outOfBalance": "Déséquilibre de {{amount}}"
+      "outOfBalance": "Déséquilibre de {{amount}}",
+      "currentNetIncome": "Résultat net de l'exercice"
     },
     "cashFlow": {
       "title": "Tableau des Flux de Trésorerie",

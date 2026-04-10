@@ -6,12 +6,17 @@ import { repository } from '@data/excelRepository';
 import type { Invoice, Sale } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
 
-let invoiceCounter = 1000;
-
 /** Generate a sequential invoice number */
 function nextInvoiceNumber(): string {
   const year = new Date().getFullYear();
-  return `INV-${year}-${String(++invoiceCounter).padStart(4, '0')}`;
+  const prefix = `INV-${year}-`;
+  const max = repository.getAll('invoices')
+    .filter((i) => i.invoiceNumber.startsWith(prefix))
+    .reduce((m, i) => {
+      const n = parseInt(i.invoiceNumber.slice(prefix.length), 10);
+      return isNaN(n) ? m : Math.max(m, n);
+    }, 1000);
+  return `${prefix}${String(max + 1).padStart(4, '0')}`;
 }
 
 export const invoiceService = {

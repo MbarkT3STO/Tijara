@@ -13,6 +13,7 @@ import type {
   AccountType,
 } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
+import { i18n } from '@core/i18n';
 
 class JournalService {
   getAll(): JournalEntry[] {
@@ -227,15 +228,25 @@ class JournalService {
       (e) => e.date <= asOfDate.split('T')[0]
     );
 
+    // PRE-AGGREGATE: build balance map once
+    const balanceMap = new Map<string, { debits: number; credits: number }>();
+    for (const entry of postedEntries) {
+      for (const line of entry.lines) {
+        const cur = balanceMap.get(line.accountId) ?? { debits: 0, credits: 0 };
+        balanceMap.set(line.accountId, {
+          debits: cur.debits + line.debit,
+          credits: cur.credits + line.credit,
+        });
+      }
+    }
+
     // Collect all account IDs that have at least one posted line
-    const activeAccountIds = new Set(postedEntries.flatMap((e) => e.lines.map((l) => l.accountId)));
+    const activeAccountIds = new Set(balanceMap.keys());
 
     const rows = accounts
       .filter((a) => activeAccountIds.has(a.id))
       .map((a) => {
-        const lines = postedEntries.flatMap((e) => e.lines).filter((l) => l.accountId === a.id);
-        const debits = lines.reduce((s, l) => s + l.debit, 0);
-        const credits = lines.reduce((s, l) => s + l.credit, 0);
+        const { debits = 0, credits = 0 } = balanceMap.get(a.id) ?? {};
         const balance = a.normalBalance === 'debit' ? debits - credits : credits - debits;
         return {
           accountCode: a.code,
@@ -262,13 +273,26 @@ class JournalService {
 
   computeIncomeStatement(startDate: string, endDate: string): IncomeStatement {
     const accounts = accountService.getAll();
-    const postedEntries = this.getPosted().filter((e) => e.date >= startDate && e.date <= endDate);
+    const start = startDate.split('T')[0];
+    const end = endDate.split('T')[0];
+    const postedEntries = this.getPosted().filter((e) => e.date >= start && e.date <= end);
+
+    // PRE-AGGREGATE: build balance map once
+    const balanceMap = new Map<string, { debits: number; credits: number }>();
+    for (const entry of postedEntries) {
+      for (const line of entry.lines) {
+        const cur = balanceMap.get(line.accountId) ?? { debits: 0, credits: 0 };
+        balanceMap.set(line.accountId, {
+          debits: cur.debits + line.debit,
+          credits: cur.credits + line.credit,
+        });
+      }
+    }
 
     const getBalance = (accountId: string): number => {
       const acc = accounts.find((a) => a.id === accountId);
       if (!acc) return 0;
-      const debits = postedEntries.flatMap((e) => e.lines).filter((l) => l.accountId === accountId).reduce((s, l) => s + l.debit, 0);
-      const credits = postedEntries.flatMap((e) => e.lines).filter((l) => l.accountId === accountId).reduce((s, l) => s + l.credit, 0);
+      const { debits = 0, credits = 0 } = balanceMap.get(accountId) ?? {};
       return acc.normalBalance === 'debit' ? debits - credits : credits - debits;
     };
 
@@ -323,13 +347,25 @@ class JournalService {
 
   computeBalanceSheet(asOf: string): BalanceSheet {
     const accounts = accountService.getAll();
+    const asOfDate = asOf.split('T')[0];
+
+    // PRE-AGGREGATE: build balance map once instead of re-scanning per account
+    const allEntries = this.getPosted().filter((e) => e.date <= asOfDate);
+    const balanceMap = new Map<string, { debits: number; credits: number }>();
+    for (const entry of allEntries) {
+      for (const line of entry.lines) {
+        const cur = balanceMap.get(line.accountId) ?? { debits: 0, credits: 0 };
+        balanceMap.set(line.accountId, {
+          debits: cur.debits + line.debit,
+          credits: cur.credits + line.credit,
+        });
+      }
+    }
 
     const getBalance = (accountId: string): number => {
       const acc = accounts.find((a) => a.id === accountId);
       if (!acc) return 0;
-      const entries = this.getPosted().filter((e) => e.date <= asOf);
-      const debits = entries.flatMap((e) => e.lines).filter((l) => l.accountId === accountId).reduce((s, l) => s + l.debit, 0);
-      const credits = entries.flatMap((e) => e.lines).filter((l) => l.accountId === accountId).reduce((s, l) => s + l.credit, 0);
+      const { debits = 0, credits = 0 } = balanceMap.get(accountId) ?? {};
       return acc.normalBalance === 'debit' ? debits - credits : credits - debits;
     };
 
@@ -351,7 +387,7 @@ class JournalService {
     const yearStart = today.slice(0, 4) + '-01-01';
     const is = this.computeIncomeStatement(yearStart, today);
     if (is.netIncome !== 0) {
-      equity.push({ accountCode: 'NET', accountName: 'Current Net Income', amount: is.netIncome });
+      equity.push({ accountCode: 'NET', accountName: i18n.t('accounting.balanceSheet.currentNetIncome' as any), amount: is.netIncome });
     }
 
     const totalCurrentAssets = currentAssets.reduce((s, r) => s + r.amount, 0);
@@ -495,10 +531,19 @@ class JournalService {
   computeAccountingStats(): AccountingStats {
     const today = getCurrentISODate();
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
-    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-    const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const prevM = now.getMonth() === 0 ? '12' : String(now.getMonth()).padStart(2, '0');
+    const prevY = now.getMonth() === 0 ? y - 1 : y;
+
+    // Date-only strings — no toISOString() to avoid UTC timezone issues
+    const monthStart = `${y}-${m}-01`;
+    const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+    const monthEnd = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
+
+    const prevLastDay = new Date(prevY, now.getMonth() === 0 ? 0 : now.getMonth(), 0).getDate();
+    const prevMonthStart = `${prevY}-${prevM}-01`;
+    const prevMonthEnd = `${prevY}-${prevM}-${String(prevLastDay).padStart(2, '0')}`;
 
     const bs = this.computeBalanceSheet(today);
     const is = this.computeIncomeStatement(monthStart, monthEnd);

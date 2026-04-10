@@ -361,10 +361,8 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
     if (isNaN(amount) || amount <= 0) { notifications.error(i18n.t('errors.required')); return; }
     const newStatus: Purchase['paymentStatus'] = amount >= po.total ? 'paid' : 'partial';
     purchaseService.updatePaymentStatus(po.id, newStatus);
-    // Accounting integration
-    if (newStatus === 'paid') {
-      accountingIntegrationService.postPurchasePaymentEntry(po, amount).catch(console.error);
-    }
+    // Accounting integration — post for any payment amount (partial or full)
+    accountingIntegrationService.postPurchasePaymentEntry(po, amount).catch(console.error);
     notifications.success(i18n.t('common.save'));
     close(); onUpdate();
   });
