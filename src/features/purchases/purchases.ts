@@ -347,6 +347,11 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
       <button class="btn btn-secondary" id="detail-status-ordered" ${po.status === 'ordered' ? 'disabled' : ''}>${i18n.t('purchases.modals.markOrdered')}</button>
       <button class="btn btn-primary" id="detail-status-received">${i18n.t('purchases.modals.markReceived')}</button>
     </div>` : ''}
+
+    ${po.status === 'received' ? `
+    <div style="margin-top:var(--space-4);">
+      <button class="btn btn-secondary" id="detail-cancel-po" style="color:var(--color-error);border-color:var(--color-error);">${i18n.t('purchases.modals.cancelPurchase' as any)}</button>
+    </div>` : ''}
   `;
 
   const close = openModal({ title: `${i18n.t('purchases.poNumber')} ${po.poNumber}`, content, size: 'lg', hideFooter: true });
@@ -384,6 +389,21 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
       },
       i18n.t('purchases.modals.receiveConfirm'),
       'btn-primary'
+    );
+  });
+
+  content.querySelector('#detail-cancel-po')?.addEventListener('click', () => {
+    confirmDialog(
+      i18n.t('purchases.statuses.cancelled'),
+      i18n.t('purchases.modals.cancelPurchaseMsg' as any, { no: po.poNumber }),
+      () => {
+        purchaseService.updateStatus(po.id, 'cancelled');
+        accountingIntegrationService.reverseEntryForSource('purchase', po.id).catch(console.error);
+        notifications.success(i18n.t('common.save'));
+        close(); onUpdate();
+      },
+      i18n.t('common.confirm'),
+      'btn-secondary'
     );
   });
 }

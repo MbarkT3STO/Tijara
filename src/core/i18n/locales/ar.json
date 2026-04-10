@@ -306,6 +306,7 @@
     "category": "الفئة",
     "notes": "ملاحظات",
     "allTypes": "جميع الأنواع",
+    "restockNote": "يجب إدخال عمليات التموين التي لها فاتورة مورد كأمر شراء لضمان التسجيل المحاسبي الصحيح.",
     "type": {
       "purchase": "شراء",
       "initial": "أولي",
@@ -649,6 +650,8 @@
       "recordPayment": "تسجيل الدفعة",
       "markOrdered": "تم الطلب",
       "markReceived": "تم الاستلام",
+      "cancelPurchase": "إلغاء الشراء",
+      "cancelPurchaseMsg": "إلغاء طلب الشراء \"{{no}}\"؟ سيؤدي هذا إلى عكس قيود المخزون والموردين.",
       "selectSupplier": "اختر المورد...",
       "noItems": "لم يتم إضافة أصناف بعد",
       "addItem": "إضافة صنف"
@@ -956,6 +959,16 @@
       "closeWarning": "إغلاق هذه الفترة نهائي. سيتم قفل جميع القيود.",
       "draftEntriesBlock": "لا يمكن الإغلاق: {{count}} قيود مسودة. رحّلها أو احذفها أولاً.",
       "errors": { "dateOverlap": "تتداخل تواريخ هذه الفترة مع فترة موجودة" }
+    },
+    "integration": {
+      "saleRevenue":           "بيع — الإيراد",
+      "saleCogs":              "بيع — تكلفة البضاعة المباعة",
+      "invoicePayment":        "تسديد الفاتورة",
+      "invoicePartialPayment": "دفعة جزئية مستلمة",
+      "purchaseReceived":      "استلام المشتريات",
+      "purchasePayment":       "سداد مبلغ للمورد",
+      "returnRefund":          "مرتجع — استرداد المبلغ",
+      "inventoryAdjust":       "تسوية المخزون"
     }
   }
 }

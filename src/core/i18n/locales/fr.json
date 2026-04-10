@@ -308,6 +308,7 @@
     "category": "Catégorie",
     "notes": "Notes",
     "allTypes": "Tous les types",
+    "restockNote": "Les réapprovisionnements avec facture fournisseur doivent être saisis comme Bon de Commande pour une comptabilisation correcte.",
     "type": {
       "purchase": "Achat",
       "initial": "Initial",
@@ -650,6 +651,8 @@
       "recordPayment": "Enregistrer le paiement",
       "markOrdered": "Marquer comme commandé",
       "markReceived": "Marquer comme reçu",
+      "cancelPurchase": "Annuler l'achat",
+      "cancelPurchaseMsg": "Annuler le BC \"{{no}}\" ? Cela annulera les écritures de stock et de fournisseur.",
       "selectSupplier": "Sélectionner un fournisseur...",
       "noItems": "Aucun article ajouté pour l'instant",
       "addItem": "Ajouter un article"
@@ -957,6 +960,16 @@
       "closeWarning": "La clôture de cette période est définitive.",
       "draftEntriesBlock": "Impossible de clôturer: {{count}} écritures en brouillon. Validez ou supprimez-les d'abord.",
       "errors": { "dateOverlap": "Les dates de cette période chevauchent une période existante" }
+    },
+    "integration": {
+      "saleRevenue":           "Vente — Produit",
+      "saleCogs":              "Vente — Coût des marchandises vendues",
+      "invoicePayment":        "Règlement facture reçu",
+      "invoicePartialPayment": "Règlement partiel reçu",
+      "purchaseReceived":      "Achat réceptionné",
+      "purchasePayment":       "Paiement fournisseur effectué",
+      "returnRefund":          "Retour — Remboursement émis",
+      "inventoryAdjust":       "Ajustement de stock"
     }
   }
 }

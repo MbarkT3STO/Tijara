@@ -608,11 +608,9 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
       return;
     }
     invoiceService.recordPayment(invoice.id, amount);
-    // Accounting integration: post payment entry
+    // Accounting integration: post payment entry for any amount
     const updatedInvoice = invoiceService.getById(invoice.id)!;
-    if (updatedInvoice.status === 'paid') {
-      accountingIntegrationService.postInvoicePaymentEntry(updatedInvoice, amount, 'cash').catch(console.error);
-    }
+    accountingIntegrationService.postInvoicePaymentEntry(updatedInvoice, amount, 'cash').catch(console.error);
     notifications.success(`${i18n.t('invoices.paid')} : ${formatCurrency(amount)}`);
     close();
     onUpdate();
@@ -785,9 +783,13 @@ function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
       });
 
       // Accounting integration
-      if (status === 'paid' && invoice.status !== 'paid') {
-        const updatedInv = invoiceService.getById(invoice.id)!;
-        accountingIntegrationService.postInvoicePaymentEntry(updatedInv, amountPaid, 'transfer').catch(console.error);
+      if (amountPaid > 0 && amountPaid !== invoice.amountPaid) {
+        // Only post the delta (new payment amount - previously recorded amount)
+        const delta = amountPaid - invoice.amountPaid;
+        if (delta > 0) {
+          const updatedInv = invoiceService.getById(invoice.id)!;
+          accountingIntegrationService.postInvoicePaymentEntry(updatedInv, delta, 'transfer').catch(console.error);
+        }
       } else if (status === 'cancelled' && invoice.status !== 'cancelled') {
         accountingIntegrationService.reverseEntryForSource('invoice_payment', invoice.id).catch(console.error);
       }

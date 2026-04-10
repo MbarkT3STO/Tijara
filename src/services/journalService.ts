@@ -219,17 +219,23 @@ class JournalService {
 
   computeTrialBalance(periodId: string): TrialBalance {
     const period = fiscalPeriodService.getById(periodId);
+    const asOfDate = period?.endDate ?? getCurrentISODate();
     const accounts = accountService.getAll();
-    const postedEntries = this.getPosted().filter((e) => e.fiscalPeriodId === periodId);
 
-    // Collect all account IDs that have at least one posted line in this period
+    // FIXED: use ALL posted entries up to the period's end date (cumulative)
+    const postedEntries = this.getPosted().filter(
+      (e) => e.date <= asOfDate.split('T')[0]
+    );
+
+    // Collect all account IDs that have at least one posted line
     const activeAccountIds = new Set(postedEntries.flatMap((e) => e.lines.map((l) => l.accountId)));
 
     const rows = accounts
       .filter((a) => activeAccountIds.has(a.id))
       .map((a) => {
-        const debits = postedEntries.flatMap((e) => e.lines).filter((l) => l.accountId === a.id).reduce((s, l) => s + l.debit, 0);
-        const credits = postedEntries.flatMap((e) => e.lines).filter((l) => l.accountId === a.id).reduce((s, l) => s + l.credit, 0);
+        const lines = postedEntries.flatMap((e) => e.lines).filter((l) => l.accountId === a.id);
+        const debits = lines.reduce((s, l) => s + l.debit, 0);
+        const credits = lines.reduce((s, l) => s + l.credit, 0);
         const balance = a.normalBalance === 'debit' ? debits - credits : credits - debits;
         return {
           accountCode: a.code,
@@ -246,7 +252,7 @@ class JournalService {
 
     return {
       periodId,
-      asOf: period?.endDate ?? getCurrentISODate(),
+      asOf: asOfDate,
       rows,
       totalDebits,
       totalCredits,
@@ -378,8 +384,15 @@ class JournalService {
   }
 
   computeCashFlowStatement(startDate: string, endDate: string): CashFlowStatement {
-    const cashAccountIds = accountService.getByCategory('current_asset')
-      .filter((a) => a.code === '1000' || a.name.toLowerCase().includes('cash'))
+    // Collect cash accounts by name/code pattern (supports both seed and CGNC accounts)
+    const cashAccountIds = accountService.getAll()
+      .filter((a) => {
+        if (a.category !== 'current_asset') return false;
+        const n = a.name.toLowerCase();
+        return n.includes('cash') || n.includes('caisse') ||
+               n.includes('bank') || n.includes('banque') ||
+               n.includes('trésorerie') || a.code.startsWith('5');
+      })
       .map((a) => a.id);
 
     const postedEntries = this.getPosted().filter((e) => e.date >= startDate && e.date <= endDate);
@@ -393,20 +406,20 @@ class JournalService {
     const is = this.computeIncomeStatement(startDate, endDate);
     operatingActivities.push({ description: 'Net Income', amount: is.netIncome });
 
-    // Changes in working capital (AR, AP, Inventory)
-    const arChange = this._getAccountNetChange('acc-1100', postedEntries);
+    // Changes in working capital — use code-based lookup (CGNC + seed fallback)
+    const arChange = this._getNetChangeByCode('3411', postedEntries) + this._getNetChangeByCode('1100', postedEntries);
     if (arChange !== 0) operatingActivities.push({ description: 'Change in Accounts Receivable', amount: -arChange });
-    const invChange = this._getAccountNetChange('acc-1200', postedEntries);
+    const invChange = this._getNetChangeByCode('3111', postedEntries) + this._getNetChangeByCode('1200', postedEntries);
     if (invChange !== 0) operatingActivities.push({ description: 'Change in Inventory', amount: -invChange });
-    const apChange = this._getAccountNetChange('acc-2000', postedEntries);
+    const apChange = this._getNetChangeByCode('4411', postedEntries) + this._getNetChangeByCode('2000', postedEntries);
     if (apChange !== 0) operatingActivities.push({ description: 'Change in Accounts Payable', amount: apChange });
 
     // Fixed asset changes → investing
-    const fixedChange = this._getAccountNetChange('acc-1500', postedEntries);
+    const fixedChange = this._getNetChangeByCode('2300', postedEntries) + this._getNetChangeByCode('1500', postedEntries);
     if (fixedChange !== 0) investingActivities.push({ description: 'Capital Expenditures', amount: -fixedChange });
 
     // Long-term debt changes → financing
-    const debtChange = this._getAccountNetChange('acc-2500', postedEntries);
+    const debtChange = this._getNetChangeByCode('1410', postedEntries) + this._getNetChangeByCode('2500', postedEntries);
     if (debtChange !== 0) financingActivities.push({ description: 'Long-term Debt', amount: debtChange });
 
     const netOperating = operatingActivities.reduce((s, i) => s + i.amount, 0);
@@ -435,6 +448,20 @@ class JournalService {
     const debits = entries.flatMap((e) => e.lines).filter((l) => l.accountId === accountId).reduce((s, l) => s + l.debit, 0);
     const credits = entries.flatMap((e) => e.lines).filter((l) => l.accountId === accountId).reduce((s, l) => s + l.credit, 0);
     return acc.normalBalance === 'debit' ? debits - credits : credits - debits;
+  }
+
+  /** Get account balance by account code (supports both seed and CGNC codes) */
+  private getBalanceByCode(code: string, asOf?: string): number {
+    const account = accountService.getByCode(code);
+    if (!account) return 0;
+    return this.getAccountBalance(account.id, asOf);
+  }
+
+  /** Get net change for an account by code within a set of entries */
+  private _getNetChangeByCode(code: string, entries: JournalEntry[]): number {
+    const account = accountService.getByCode(code);
+    if (!account) return 0;
+    return this._getAccountNetChange(account.id, entries);
   }
 
   computeTaxReport(startDate: string, endDate: string): TaxReport {
@@ -477,9 +504,16 @@ class JournalService {
     const is = this.computeIncomeStatement(monthStart, monthEnd);
     const prevIs = this.computeIncomeStatement(prevMonthStart, prevMonthEnd);
 
-    const cashBalance = this.getAccountBalance('acc-1000', today);
-    const ar = this.getAccountBalance('acc-1100', today);
-    const ap = this.getAccountBalance('acc-2000', today);
+    // Use code-based lookup: try CGNC codes first, fall back to seed codes
+    const cashBalance = this.getBalanceByCode('5161', today)    // Caisse principale (CGNC)
+                      + this.getBalanceByCode('5141', today)    // Banques (CGNC)
+                      + this.getBalanceByCode('1000', today);   // Seed fallback
+
+    const ar = this.getBalanceByCode('3411', today)             // Clients CGNC
+             + this.getBalanceByCode('1100', today);            // Seed fallback
+
+    const ap = this.getBalanceByCode('4411', today)             // Fournisseurs CGNC
+             + this.getBalanceByCode('2000', today);            // Seed fallback
 
     const currentRevenue = is.revenue.reduce((s, r) => s + r.amount, 0);
     const currentExpenses = [...is.costOfGoodsSold, ...is.operatingExpenses, ...is.otherExpenses].reduce((s, r) => s + r.amount, 0);

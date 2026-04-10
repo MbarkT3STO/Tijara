@@ -305,6 +305,7 @@
     "category": "Category",
     "notes": "Notes",
     "allTypes": "All Types",
+    "restockNote": "Restocks with a supplier invoice should be entered as a Purchase Order for proper accounting.",
     "type": {
       "purchase": "Purchase",
       "initial": "Initial",
@@ -647,6 +648,8 @@
       "recordPayment": "Record Payment",
       "markOrdered": "Mark Ordered",
       "markReceived": "Mark Received",
+      "cancelPurchase": "Cancel Purchase",
+      "cancelPurchaseMsg": "Cancel PO \"{{no}}\"? This will reverse the inventory and payables entries.",
       "selectSupplier": "Select supplier...",
       "noItems": "No items added yet",
       "addItem": "Add Item"
@@ -967,6 +970,16 @@
       "errors": {
         "dateOverlap": "This period's dates overlap with an existing period"
       }
+    },
+    "integration": {
+      "saleRevenue":           "Sale — Revenue",
+      "saleCogs":              "Sale — Cost of Goods Sold",
+      "invoicePayment":        "Invoice payment received",
+      "invoicePartialPayment": "Partial payment received",
+      "purchaseReceived":      "Purchase received",
+      "purchasePayment":       "Purchase payment made",
+      "returnRefund":          "Return — Refund issued",
+      "inventoryAdjust":       "Inventory adjustment"
     }
   }
 }

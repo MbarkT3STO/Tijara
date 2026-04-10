@@ -10,6 +10,7 @@ import { openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDateTime, debounce, resolveMovementNote } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { accountingIntegrationService } from '@services/accountingIntegrationService';
 import type { StockMovement, StockMovementType, Product } from '@core/types';
 
 const PAGE_SIZE = 15;
@@ -437,6 +438,13 @@ function openAdjustModal(onSave: () => void): void {
       const result = inventoryService.adjust(productId, qty, notes || undefined);
       if (result) {
         const product = productService.getById(productId)!;
+        // Accounting integration — silent
+        accountingIntegrationService.postInventoryAdjustmentEntry(
+          productId,
+          product.name,
+          qty,
+          notes || undefined
+        ).catch(console.error);
         notifications.success(`${i18n.t('inventory.type.adjustment')}: ${product.name} → ${result.stockAfter} ${product.unit}`);
         onSave();
       } else {
@@ -472,6 +480,9 @@ function openRestockModal(onSave: () => void, preselected?: Product): void {
     <div class="form-group">
       <label class="form-label" for="rs-notes">${i18n.t('inventory.notes')}</label>
       <textarea id="rs-notes" class="form-control" placeholder="..."></textarea>
+    </div>
+    <div style="margin-top:var(--space-3);padding:var(--space-3);background:var(--color-warning-subtle);border-radius:var(--radius-sm);font-size:var(--font-size-xs);color:var(--color-text-secondary);">
+      ${i18n.t('inventory.restockNote' as any)}
     </div>
   `;
 
