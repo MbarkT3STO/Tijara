@@ -12,6 +12,8 @@ export interface ElectronAPI {
   readData: () => Promise<string | null>;
   /** Write JSON data to disk */
   writeData: (json: string) => Promise<boolean>;
+  /** Clear all data - delete the data file */
+  clearData: () => Promise<boolean>;
   /** Export data as Excel – opens native save dialog */
   exportExcel: (buffer: ArrayBuffer) => Promise<boolean>;
   /** Import data from Excel – opens native open dialog */
@@ -29,6 +31,7 @@ export interface ElectronAPI {
 const api: ElectronAPI = {
   readData: () => ipcRenderer.invoke('data:read'),
   writeData: (json) => ipcRenderer.invoke('data:write', json),
+  clearData: () => ipcRenderer.invoke('data:clear'),
   exportExcel: (buffer) => ipcRenderer.invoke('excel:export', buffer),
   importExcel: () => ipcRenderer.invoke('excel:import'),
   getDataPath: () => ipcRenderer.invoke('app:dataPath'),

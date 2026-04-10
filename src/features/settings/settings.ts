@@ -703,8 +703,8 @@ export function renderSettings(): HTMLElement {
           content,
           confirmText: i18n.t('common.delete' as any),
           confirmClass: 'btn-danger',
-          onConfirm: () => {
-            localStorage.clear();
+          onConfirm: async () => {
+            await repository.clearAll();
             notifications.success(i18n.t('settings.notifications.clearedSuccess' as any));
             setTimeout(() => window.location.reload(), 1500);
           }

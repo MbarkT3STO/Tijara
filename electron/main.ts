@@ -234,6 +234,20 @@ ipcMain.handle('excel:import', async (): Promise<ArrayBuffer | null> => {
 /** Get the path to the data file (for display in settings) */
 ipcMain.handle('app:dataPath', (): string => DATA_FILE);
 
+/** Clear all data - delete the data file */
+ipcMain.handle('data:clear', (): boolean => {
+  try {
+    if (existsSync(DATA_FILE)) {
+      const fs = require('fs');
+      fs.unlinkSync(DATA_FILE);
+    }
+    return true;
+  } catch (err) {
+    console.error('[main] data:clear error', err);
+    return false;
+  }
+});
+
 /** Export an invoice as PDF – renders HTML in a hidden window, saves via dialog */
 ipcMain.handle('invoice:exportPDF', async (_event, html: string, invoiceNumber: string): Promise<boolean> => {
   // Create a hidden off-screen window to render the invoice HTML

@@ -193,6 +193,24 @@ class ExcelRepository {
     return (this.data[collection] as { id: string }[]).length < before;
   }
 
+  /** Clear all data - reset to seed data and delete persisted storage */
+  async clearAll(): Promise<void> {
+    // Reset in-memory data to seed data
+    this.data = this.getSeedData();
+    
+    // Clear localStorage
+    localStorage.clear();
+    
+    // Clear Electron file storage if available
+    const electron = getElectron();
+    if (electron) {
+      await electron.clearData();
+    }
+    
+    // Persist the seed data
+    await this.persist();
+  }
+
   // ── Excel export ──────────────────────────────────────────────────────────
 
   /** Export all data to a beautifully styled Excel workbook */
@@ -752,153 +770,29 @@ class ExcelRepository {
 
   private getSeedData(): WorkbookData {
     const now = new Date().toISOString();
-    const today = new Date();
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
-    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString();
 
-    // ── Accounting seed data ──────────────────────────────────────────────
-    const accounts: import('@core/types').Account[] = [
-      { id: 'acc-1000', code: '1000', name: 'Cash and Cash Equivalents', nameAr: 'النقد وما يعادله', nameFr: 'Trésorerie et équivalents', type: 'asset', category: 'current_asset', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-1100', code: '1100', name: 'Accounts Receivable', nameAr: 'الذمم المدينة', nameFr: 'Créances clients', type: 'asset', category: 'current_asset', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-1200', code: '1200', name: 'Inventory', nameAr: 'المخزون', nameFr: 'Stocks', type: 'asset', category: 'current_asset', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-1300', code: '1300', name: 'Prepaid Expenses', nameAr: 'المصروفات المدفوعة مقدماً', nameFr: 'Charges payées d\'avance', type: 'asset', category: 'current_asset', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-1500', code: '1500', name: 'Property and Equipment', nameAr: 'الممتلكات والمعدات', nameFr: 'Immobilisations corporelles', type: 'asset', category: 'fixed_asset', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-1510', code: '1510', name: 'Accumulated Depreciation', nameAr: 'مجمع الاستهلاك', nameFr: 'Amortissements cumulés', type: 'asset', category: 'fixed_asset', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-2000', code: '2000', name: 'Accounts Payable', nameAr: 'الذمم الدائنة', nameFr: 'Fournisseurs', type: 'liability', category: 'current_liability', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-2100', code: '2100', name: 'Accrued Liabilities', nameAr: 'الالتزامات المستحقة', nameFr: 'Charges à payer', type: 'liability', category: 'current_liability', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-2200', code: '2200', name: 'Tax Payable', nameAr: 'ضريبة القيمة المضافة المستحقة', nameFr: 'TVA à payer', type: 'liability', category: 'current_liability', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-2500', code: '2500', name: 'Long-term Debt', nameAr: 'الديون طويلة الأجل', nameFr: 'Dettes à long terme', type: 'liability', category: 'long_term_liability', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-3000', code: '3000', name: 'Owner\'s Equity', nameAr: 'حقوق الملكية', nameFr: 'Capitaux propres', type: 'equity', category: 'owners_equity', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-3100', code: '3100', name: 'Retained Earnings', nameAr: 'الأرباح المحتجزة', nameFr: 'Bénéfices non distribués', type: 'equity', category: 'retained_earnings', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-4000', code: '4000', name: 'Sales Revenue', nameAr: 'إيرادات المبيعات', nameFr: 'Chiffre d\'affaires', type: 'revenue', category: 'operating_revenue', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-4100', code: '4100', name: 'Other Income', nameAr: 'إيرادات أخرى', nameFr: 'Autres produits', type: 'revenue', category: 'other_revenue', normalBalance: 'credit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-5000', code: '5000', name: 'Cost of Goods Sold', nameAr: 'تكلفة البضاعة المباعة', nameFr: 'Coût des marchandises vendues', type: 'expense', category: 'cost_of_goods_sold', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-6000', code: '6000', name: 'Salaries Expense', nameAr: 'مصروف الرواتب', nameFr: 'Charges de personnel', type: 'expense', category: 'operating_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-6100', code: '6100', name: 'Rent Expense', nameAr: 'مصروف الإيجار', nameFr: 'Charges de loyer', type: 'expense', category: 'operating_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-6200', code: '6200', name: 'Utilities Expense', nameAr: 'مصروف المرافق', nameFr: 'Charges de services', type: 'expense', category: 'operating_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-6300', code: '6300', name: 'Marketing Expense', nameAr: 'مصروف التسويق', nameFr: 'Charges marketing', type: 'expense', category: 'operating_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-6400', code: '6400', name: 'Depreciation Expense', nameAr: 'مصروف الاستهلاك', nameFr: 'Dotations aux amortissements', type: 'expense', category: 'operating_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-7000', code: '7000', name: 'Interest Expense', nameAr: 'مصروف الفوائد', nameFr: 'Charges financières', type: 'expense', category: 'other_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-      { id: 'acc-7100', code: '7100', name: 'Tax Expense', nameAr: 'مصروف الضريبة', nameFr: 'Charge d\'impôt', type: 'expense', category: 'tax_expense', normalBalance: 'debit', isSystem: true, isActive: true, createdAt: now },
-    ];
-
-    const fiscalPeriods: import('@core/types').FiscalPeriod[] = [
-      {
-        id: 'fp-current',
-        name: `${today.toLocaleString('en-US', { month: 'long' })} ${today.getFullYear()}`,
-        startDate: monthStart,
-        endDate: monthEnd,
-        status: 'open',
-        isCurrent: true,
-        createdAt: now,
-      },
-    ];
-
-    const taxRates: import('@core/types').TaxRate[] = [
-      { id: 'tr-1', name: 'Standard VAT', code: 'VAT', rate: 10, accountId: 'acc-2200', isDefault: true, isActive: true, createdAt: now },
-    ];
-
-    // Sample journal entries
-    const journalEntries: import('@core/types').JournalEntry[] = [
-      {
-        id: 'je-1', entryNumber: 'JE-2024-0001', date: now, description: 'Sale to Acme Corp',
-        reference: 'ORD-2024-001', sourceType: 'sale', sourceId: 's1',
-        lines: [
-          { id: 'jl-1a', accountId: 'acc-1100', accountCode: '1100', accountName: 'Accounts Receivable', debit: 2826.95, credit: 0 },
-          { id: 'jl-1b', accountId: 'acc-4000', accountCode: '4000', accountName: 'Sales Revenue', debit: 0, credit: 2569.96 },
-          { id: 'jl-1c', accountId: 'acc-2200', accountCode: '2200', accountName: 'Tax Payable', debit: 0, credit: 256.99 },
-        ],
-        totalDebit: 2826.95, totalCredit: 2826.95, status: 'posted',
-        fiscalPeriodId: 'fp-current', createdAt: now, updatedAt: now,
-      },
-      {
-        id: 'je-2', entryNumber: 'JE-2024-0002', date: now, description: 'Payment received from Acme Corp',
-        reference: 'INV-2024-001', sourceType: 'invoice_payment', sourceId: 'i1',
-        lines: [
-          { id: 'jl-2a', accountId: 'acc-1000', accountCode: '1000', accountName: 'Cash and Cash Equivalents', debit: 2826.95, credit: 0 },
-          { id: 'jl-2b', accountId: 'acc-1100', accountCode: '1100', accountName: 'Accounts Receivable', debit: 0, credit: 2826.95 },
-        ],
-        totalDebit: 2826.95, totalCredit: 2826.95, status: 'posted',
-        fiscalPeriodId: 'fp-current', createdAt: now, updatedAt: now,
-      },
-      {
-        id: 'je-3', entryNumber: 'JE-2024-0003', date: now, description: 'Monthly salaries',
-        sourceType: 'manual',
-        lines: [
-          { id: 'jl-3a', accountId: 'acc-6000', accountCode: '6000', accountName: 'Salaries Expense', debit: 5000, credit: 0 },
-          { id: 'jl-3b', accountId: 'acc-1000', accountCode: '1000', accountName: 'Cash and Cash Equivalents', debit: 0, credit: 5000 },
-        ],
-        totalDebit: 5000, totalCredit: 5000, status: 'posted',
-        fiscalPeriodId: 'fp-current', createdAt: now, updatedAt: now,
-      },
-    ];
-
-    const customers: Customer[] = [
-      { id: 'c1', name: 'Acme Corp', email: 'contact@acme.com', phone: '+1-555-0100', address: '123 Main St', city: 'New York', country: 'USA', createdAt: now, notes: 'Key account' },
-      { id: 'c2', name: 'Globex Inc', email: 'info@globex.com', phone: '+1-555-0200', address: '456 Oak Ave', city: 'Los Angeles', country: 'USA', createdAt: now },
-      { id: 'c3', name: 'Initech LLC', email: 'hello@initech.com', phone: '+1-555-0300', address: '789 Pine Rd', city: 'Chicago', country: 'USA', createdAt: now },
-    ];
-
-    const products: Product[] = [
-      { id: 'p1', name: 'Laptop Pro 15', sku: 'LP-001', category: 'Electronics', price: 1299.99, cost: 850.0, stock: 45, unit: 'pcs', description: 'High-performance laptop', reorderPoint: 10, reorderQuantity: 20, createdAt: now },
-      { id: 'p2', name: 'Wireless Mouse', sku: 'WM-002', category: 'Accessories', price: 49.99, cost: 18.0, stock: 200, unit: 'pcs', reorderPoint: 30, reorderQuantity: 100, createdAt: now },
-      { id: 'p3', name: 'USB-C Hub', sku: 'UH-003', category: 'Accessories', price: 79.99, cost: 30.0, stock: 150, unit: 'pcs', reorderPoint: 20, reorderQuantity: 50, createdAt: now },
-      { id: 'p4', name: 'Monitor 27"', sku: 'MN-004', category: 'Electronics', price: 399.99, cost: 250.0, stock: 30, unit: 'pcs', reorderPoint: 5, reorderQuantity: 15, createdAt: now },
-    ];
-
-    const saleItems = [
-      { productId: 'p1', productName: 'Laptop Pro 15', quantity: 2, unitPrice: 1299.99, discount: 5, total: 2469.98 },
-      { productId: 'p2', productName: 'Wireless Mouse', quantity: 2, unitPrice: 49.99, discount: 0, total: 99.98 },
-    ];
-
-    const sales: Sale[] = [
-      { id: 's1', orderNumber: 'ORD-2024-001', customerId: 'c1', customerName: 'Acme Corp', items: saleItems, subtotal: 2569.96, taxRate: 10, taxAmount: 256.99, discount: 0, total: 2826.95, status: 'delivered', paymentStatus: 'paid', paymentMethod: 'transfer', createdAt: now, updatedAt: now },
-      { id: 's2', orderNumber: 'ORD-2024-002', customerId: 'c2', customerName: 'Globex Inc', items: [{ productId: 'p3', productName: 'USB-C Hub', quantity: 5, unitPrice: 79.99, discount: 10, total: 359.96 }], subtotal: 359.96, taxRate: 10, taxAmount: 36.0, discount: 0, total: 395.96, status: 'confirmed', paymentStatus: 'unpaid', paymentMethod: 'card', createdAt: now, updatedAt: now },
-    ];
-
-    const invoices: Invoice[] = [
-      { id: 'i1', invoiceNumber: 'INV-2024-001', saleId: 's1', customerId: 'c1', customerName: 'Acme Corp', items: saleItems, subtotal: 2569.96, taxRate: 10, taxAmount: 256.99, discount: 0, total: 2826.95, amountPaid: 2826.95, amountDue: 0, status: 'paid', dueDate: new Date(Date.now() + 30 * 86400000).toISOString(), createdAt: now },
-    ];
-
+    // Only seed users - admin account for initial setup
     const users: User[] = [
       { id: 'u1', name: 'Admin User', email: 'admin@tijara.app', passwordHash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', role: 'admin', active: true, createdAt: now },
-      { id: 'u2', name: 'Sales Manager', email: 'manager@tijara.app', passwordHash: '866485796cfa8d7c0cf7111640205b83076433547577511d81f8030ae99ecea5', role: 'manager', active: true, createdAt: now },
     ];
 
-    const seedJournalTemplates: import('@core/types').JournalTemplate[] = [
-      {
-        id: 'jt-payroll',
-        name: 'Monthly Salaries',
-        description: 'Monthly payroll entry',
-        lines: [
-          { accountId: 'acc-6000', accountCode: '6000', accountName: 'Salaries Expense', debit: 0, credit: 0 },
-          { accountId: 'acc-2100', accountCode: '2100', accountName: 'Accrued Liabilities', debit: 0, credit: 0 },
-        ],
-        createdAt: now,
-      },
-      {
-        id: 'jt-depreciation',
-        name: 'Monthly Depreciation',
-        description: 'Monthly depreciation entry',
-        lines: [
-          { accountId: 'acc-6400', accountCode: '6400', accountName: 'Depreciation Expense', debit: 0, credit: 0 },
-          { accountId: 'acc-1510', accountCode: '1510', accountName: 'Accumulated Depreciation', debit: 0, credit: 0 },
-        ],
-        createdAt: now,
-      },
-      {
-        id: 'jt-rent',
-        name: 'Monthly Rent',
-        description: 'Monthly rent payment',
-        lines: [
-          { accountId: 'acc-6100', accountCode: '6100', accountName: 'Rent Expense', debit: 0, credit: 0 },
-          { accountId: 'acc-1000', accountCode: '1000', accountName: 'Cash and Cash Equivalents', debit: 0, credit: 0 },
-        ],
-        createdAt: now,
-      },
-    ];
-
-    return { customers, products, sales, invoices, users, stockMovements: [], suppliers: [], purchases: [], returns: [], accounts, journalEntries, fiscalPeriods, costCenters: [], taxRates, journalTemplates: seedJournalTemplates };
+    return {
+      customers: [],
+      products: [],
+      sales: [],
+      invoices: [],
+      users,
+      stockMovements: [],
+      suppliers: [],
+      purchases: [],
+      returns: [],
+      accounts: [],
+      journalEntries: [],
+      fiscalPeriods: [],
+      costCenters: [],
+      taxRates: [],
+      journalTemplates: [],
+    };
   }
 }
 
