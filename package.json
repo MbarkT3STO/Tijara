@@ -38,7 +38,7 @@
       "out/**/*"
     ],
     "win": {
-      "target": "nsis",
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
       "icon": "public/icon.ico"
     },
     "mac": {
