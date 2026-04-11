@@ -1,12 +1,12 @@
 /**
  * SVG icon library — refined stroke icons.
- * stroke-width 1.75 for a modern, balanced weight.
+ * stroke-width 2 for crisp rendering at small sizes in dark sidebars.
  * All icons are 20×20 by default, viewBox 0 0 24 24.
  */
 
 type IconSize = 12 | 14 | 16 | 18 | 20 | 22 | 24 | 32;
 
-function icon(path: string, size: IconSize = 20, sw = '1.75'): string {
+function icon(path: string, size: IconSize = 20, sw = '2'): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
 }
 
@@ -14,53 +14,53 @@ export const Icons = {
 
   // ── Navigation ────────────────────────────────────────────────────────────
 
-  /** Dashboard — four rounded tiles */
+  /** Dashboard — home with door */
   dashboard: (s: IconSize = 20) =>
-    icon('<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/>', s),
+    icon('<path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><path d="M9 21V12h6v9"/>', s),
 
-  /** Customers — person with subtle second silhouette */
+  /** Customers — single person */
   customers: (s: IconSize = 20) =>
-    icon('<circle cx="8" cy="7" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h0a6 6 0 0 1 6 6v1"/><path d="M19 8v6m-3-3h6" opacity=".5"/>', s),
+    icon('<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>', s),
 
-  /** Products — clean 3-D box */
+  /** Products — price tag */
   products: (s: IconSize = 20) =>
-    icon('<path d="M20.5 7.5 12 3 3.5 7.5v9L12 21l8.5-4.5v-9Z"/><path d="M12 3v18"/><path d="m3.5 7.5 8.5 5 8.5-5"/>', s),
+    icon('<path d="M12 2H2v10l9.29 9.29a1 1 0 0 0 1.41 0l7.3-7.3a1 1 0 0 0 0-1.41Z"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/>', s),
 
-  /** Sales — upward trend with dollar mark */
+  /** Sales — receipt */
   sales: (s: IconSize = 20) =>
-    icon('<path d="M3 17 9 11l4 4 8-8"/><path d="M17 9h4v4"/>', s),
+    icon('<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 10h8"/><path d="M8 14h6"/>', s),
 
-  /** Invoices — document with lines */
+  /** Invoices — document */
   invoices: (s: IconSize = 20) =>
-    icon('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="M8 13h8"/><path d="M8 17h5"/>', s),
+    icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h4"/>', s),
 
-  /** Inventory / package with shelf lines */
+  /** Inventory — warehouse shelves */
   package: (s: IconSize = 20) =>
-    icon('<path d="M11 21H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/><path d="M22 13V5a2 2 0 0 0-2-2h-5"/><path d="M14 2h-4v6l2-1.5L14 8V2Z"/><path d="M8 21h8"/><path d="M12 17v4"/>', s),
+    icon('<path d="M2 3h20v5H2z"/><path d="M2 8h20v5H2z"/><path d="M2 13h20v5H2z"/><path d="M5 3v15"/><path d="M19 3v15"/>', s),
 
-  /** Suppliers — truck side view */
+  /** Suppliers — factory building */
   truck: (s: IconSize = 20) =>
-    icon('<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.28a1 1 0 0 0-.684-.948l-1.923-.641a1 1 0 0 1-.578-.502l-1.539-3.076A1 1 0 0 0 16.382 8H14"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>', s),
+    icon('<path d="M2 20V8l6-6h8l6 6v12H2Z"/><path d="M2 10h20"/><path d="M9 20v-6h6v6"/><path d="M9 4v6"/><path d="M15 4v6"/>', s),
 
-  /** Purchases — shopping bag */
+  /** Purchases — clipboard with check */
   shoppingCart: (s: IconSize = 20) =>
-    icon('<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>', s),
+    icon('<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 12 2 2 4-4"/>', s),
 
-  /** Returns — rotate-left arrow */
+  /** Returns — undo arrow */
   refresh: (s: IconSize = 20) =>
-    icon('<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74"/><path d="M3 3v5h5"/>', s),
+    icon('<path d="M3 7h10a6 6 0 0 1 0 12H5"/><path d="m6 4-3 3 3 3"/>', s),
 
-  /** Reports — bar chart ascending */
+  /** Reports — bar chart */
   barChart: (s: IconSize = 20) =>
-    icon('<path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M11 16V9"/><path d="M15 16v-3"/><path d="M19 16V7"/>', s),
+    icon('<path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8" rx="1"/><rect x="13" y="6" width="3" height="12" rx="1"/><path d="m7 7 4-3 4 3 4-4" opacity=".5"/>', s),
 
   /** Users — two people */
   users: (s: IconSize = 20) =>
-    icon('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>', s),
+    icon('<circle cx="9" cy="7" r="3.5"/><path d="M2 21v-1a7 7 0 0 1 7-7v0a7 7 0 0 1 7 7v1"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M22 21v-1a4 4 0 0 0-3-3.87"/>', s),
 
-  /** Settings — sliders / tune */
+  /** Settings — gear */
   settings: (s: IconSize = 20) =>
-    icon('<path d="M20 7H4"/><path d="M20 12H4"/><path d="M20 17H4"/><circle cx="8" cy="7" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="8" cy="17" r="2" fill="currentColor" stroke="none"/>', s),
+    icon('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>', s),
 
   // ── Theme ─────────────────────────────────────────────────────────────────
 
@@ -191,43 +191,43 @@ export const Icons = {
 
   // ── Accounting ────────────────────────────────────────────────────────────
 
-  /** Accounting — landmark/columned building */
+  /** Accounting — coins with arrows */
   accounting: (s: IconSize = 20) =>
-    icon('<path d="M3 22h18"/><path d="M6 18V11"/><path d="M10 18V11"/><path d="M14 18V11"/><path d="M18 18V11"/><path d="M2 11l10-7 10 7"/>', s),
+    icon('<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>', s),
 
-  /** Chart of Accounts — list-tree */
+  /** Chart of Accounts — hierarchical list */
   chartOfAccounts: (s: IconSize = 20) =>
-    icon('<path d="M21 12H9"/><path d="M21 6H9"/><path d="M21 18H9"/><path d="M3 6v4c0 1.1.9 2 2 2h2"/><path d="M3 10v6c0 1.1.9 2 2 2h2"/>', s),
+    icon('<path d="M3 5h4"/><path d="M3 12h4"/><path d="M3 19h4"/><path d="M9 5h12"/><path d="M9 12h12"/><path d="M9 19h12"/><path d="M7 5v14"/>', s),
 
-  /** Journal — book-open */
+  /** Journal — document with pen */
   journal: (s: IconSize = 20) =>
-    icon('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>', s),
+    icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="m10.5 12.5 3 3-1.5.5-.5-1.5Z"/><path d="m13.5 12.5-1-1 1.5-1.5 1 1Z"/>', s),
 
-  /** Ledger — book */
+  /** Ledger — open book with spine */
   ledger: (s: IconSize = 20) =>
-    icon('<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>', s),
+    icon('<path d="M2 4a2 2 0 0 1 2-2h7v20H4a2 2 0 0 1-2-2Z"/><path d="M22 4a2 2 0 0 0-2-2h-7v20h7a2 2 0 0 0 2-2Z"/><path d="M11 2v20"/>', s),
 
-  /** Trial Balance — scale */
+  /** Trial Balance — balance scale */
   trialBalance: (s: IconSize = 20) =>
-    icon('<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>', s),
+    icon('<path d="M12 3v18"/><path d="M3 7h18"/><path d="M5 7 3 14c1 2 4 2 4 0L5 7Z"/><path d="M19 7l-2 7c1 2 4 2 4 0L19 7Z"/><path d="M8 21h8"/>', s),
 
-  /** Income Statement — trending-up */
+  /** Income Statement — dollar sign (P&L) */
   incomeStatement: (s: IconSize = 20) =>
-    icon('<path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>', s),
+    icon('<path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>', s),
 
-  /** Balance Sheet — layers */
+  /** Balance Sheet — two columns */
   balanceSheet: (s: IconSize = 20) =>
-    icon('<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>', s),
+    icon('<rect x="2" y="3" width="9" height="18" rx="1"/><rect x="13" y="3" width="9" height="18" rx="1"/><path d="M6 7h1"/><path d="M6 11h1"/><path d="M6 15h1"/><path d="M17 7h1"/><path d="M17 11h1"/><path d="M17 15h1"/>', s),
 
-  /** Cash Flow — arrow-left-right */
+  /** Cash Flow — wallet/card */
   cashFlow: (s: IconSize = 20) =>
-    icon('<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>', s),
+    icon('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h.01"/><path d="M10 15h4"/>', s),
 
-  /** Cost Center — git-branch */
+  /** Cost Center — org chart */
   costCenter: (s: IconSize = 20) =>
-    icon('<line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>', s),
+    icon('<rect x="9" y="2" width="6" height="4" rx="1"/><rect x="2" y="16" width="6" height="4" rx="1"/><rect x="16" y="16" width="6" height="4" rx="1"/><path d="M12 6v4"/><path d="M12 10H5v6"/><path d="M12 10h7v6"/>', s),
 
   /** Calendar */
   calendar: (s: IconSize = 20) =>
-    icon('<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>', s),
+    icon('<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>', s),
 };
