@@ -8,7 +8,8 @@ import { invoiceService } from '@services/invoiceService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatDate, formatCurrency, debounce, getInitials, escapeHtml } from '@shared/utils/helpers';
+import { formatDate, formatCurrency, debounce, getInitials, escapeHtml, exportReportPDF } from '@shared/utils/helpers';
+import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { Customer } from '@core/types';
@@ -493,12 +494,10 @@ function openCustomerStatementModal(customer: Customer): void {
       return d >= startDate && d <= endDate;
     });
 
-    // Build statement rows
     interface StatRow { date: string; doc: string; description: string; debit: number; credit: number; balance: number; }
     const rows: StatRow[] = [];
     let runningBalance = 0;
 
-    // Opening balance = sum of amountDue on invoices before startDate
     const openingBalance = allInvoices
       .filter((inv) => inv.createdAt.slice(0, 10) < startDate && inv.status !== 'cancelled')
       .reduce((s, inv) => s + inv.amountDue, 0);
@@ -506,10 +505,8 @@ function openCustomerStatementModal(customer: Customer): void {
 
     for (const inv of [...filtered].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
       if (inv.status === 'cancelled') continue;
-      // Invoice = debit (amount owed)
       runningBalance += inv.total;
       rows.push({ date: inv.createdAt, doc: inv.invoiceNumber, description: i18n.t('nav.invoices'), debit: inv.total, credit: 0, balance: runningBalance });
-      // Payment = credit
       if (inv.amountPaid > 0) {
         runningBalance -= inv.amountPaid;
         rows.push({ date: inv.createdAt, doc: inv.invoiceNumber, description: i18n.t('invoices.modals.recordPayment' as any), debit: 0, credit: inv.amountPaid, balance: runningBalance });
@@ -540,15 +537,15 @@ function openCustomerStatementModal(customer: Customer): void {
               <th>${i18n.t('common.date')}</th>
               <th>${i18n.t('common.description')}</th>
               <th>${i18n.t('invoices.invoiceNumber')}</th>
-              <th style="text-align:right;">${i18n.t('invoices.modals.amount' as any)}</th>
-              <th style="text-align:right;">${i18n.t('invoices.paid')}</th>
-              <th style="text-align:right;">${i18n.t('accounting.ledger.runningBalance' as any)}</th>
+              <th style="text-align:end;">${i18n.t('invoices.modals.amount' as any)}</th>
+              <th style="text-align:end;">${i18n.t('invoices.paid')}</th>
+              <th style="text-align:end;">${i18n.t('accounting.ledger.runningBalance' as any)}</th>
             </tr>
           </thead>
           <tbody>
             <tr style="background:var(--color-bg-secondary);font-style:italic;color:var(--color-text-secondary);">
               <td colspan="5">${i18n.t('accounting.ledger.openingBalance' as any)}</td>
-              <td style="text-align:right;font-weight:600;">${formatCurrency(openingBalance)}</td>
+              <td style="text-align:end;font-weight:600;">${formatCurrency(openingBalance)}</td>
             </tr>
             ${rows.length === 0
               ? `<tr><td colspan="6" style="text-align:center;padding:var(--space-6);color:var(--color-text-tertiary);">${i18n.t('common.noData')}</td></tr>`
@@ -557,33 +554,121 @@ function openCustomerStatementModal(customer: Customer): void {
                   <td style="color:var(--color-text-secondary);">${formatDate(r.date)}</td>
                   <td>${escapeHtml(r.description)}</td>
                   <td><span style="font-weight:600;color:var(--color-primary);">${escapeHtml(r.doc)}</span></td>
-                  <td style="text-align:right;">${r.debit > 0 ? formatCurrency(r.debit) : '—'}</td>
-                  <td style="text-align:right;color:var(--color-success);">${r.credit > 0 ? formatCurrency(r.credit) : '—'}</td>
-                  <td style="text-align:right;font-weight:600;color:${r.balance > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatCurrency(r.balance)}</td>
+                  <td style="text-align:end;">${r.debit > 0 ? formatCurrency(r.debit) : '—'}</td>
+                  <td style="text-align:end;color:var(--color-success);">${r.credit > 0 ? formatCurrency(r.credit) : '—'}</td>
+                  <td style="text-align:end;font-weight:600;color:${r.balance > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatCurrency(r.balance)}</td>
                 </tr>`).join('')
             }
             <tr style="background:var(--color-bg-secondary);font-weight:700;border-top:2px solid var(--color-border);">
               <td colspan="5">${i18n.t('accounting.ledger.closingBalance' as any)}</td>
-              <td style="text-align:right;color:${closingBalance > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatCurrency(closingBalance)}</td>
+              <td style="text-align:end;color:${closingBalance > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatCurrency(closingBalance)}</td>
             </tr>
           </tbody>
         </table>
       </div>
       <div style="display:flex;gap:var(--space-3);margin-top:var(--space-4);justify-content:flex-end;">
-        <button class="btn btn-secondary btn-sm" id="stmt-print-btn">${Icons.print ? Icons.print(16) : '🖨'} ${i18n.t('common.print')}</button>
+        <button class="btn btn-primary btn-sm" id="stmt-pdf-btn">
+          ${Icons.download(16)} ${i18n.t('common.exportPdf')}
+        </button>
       </div>
     `;
 
-    // Date range change handlers
     wrapper.querySelector<HTMLInputElement>('#stmt-start')?.addEventListener('change', (e) => {
-      renderStatement((e.target as HTMLInputElement).value, (wrapper.querySelector<HTMLInputElement>('#stmt-end')?.value ?? endDate));
+      renderStatement((e.target as HTMLInputElement).value, wrapper.querySelector<HTMLInputElement>('#stmt-end')?.value ?? endDate);
     });
     wrapper.querySelector<HTMLInputElement>('#stmt-end')?.addEventListener('change', (e) => {
-      renderStatement((wrapper.querySelector<HTMLInputElement>('#stmt-start')?.value ?? startDate), (e.target as HTMLInputElement).value);
+      renderStatement(wrapper.querySelector<HTMLInputElement>('#stmt-start')?.value ?? startDate, (e.target as HTMLInputElement).value);
     });
 
-    wrapper.querySelector('#stmt-print-btn')?.addEventListener('click', () => {
-      window.print();
+    wrapper.querySelector('#stmt-pdf-btn')?.addEventListener('click', async () => {
+      const btn = wrapper.querySelector<HTMLButtonElement>('#stmt-pdf-btn')!;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner" style="width:14px;height:14px;"></span>`;
+      try {
+        const profile = profileService.get();
+        const lang = (profile.defaultPdfLanguage || i18n.currentLanguage) as any;
+        const dir = i18n.getDirectionFor(lang);
+        const t = (key: any) => i18n.tFor(lang, key);
+        const fmt = (n: number) => formatCurrency(n, profile.currency || 'USD', lang);
+        const dfmt = (d: string) => formatDate(d, lang);
+
+        const rowsHtml = rows.length === 0
+          ? `<tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af;">${t('common.noData')}</td></tr>`
+          : rows.map((r) => `
+            <tr>
+              <td>${dfmt(r.date)}</td>
+              <td>${escapeHtml(r.description)}</td>
+              <td style="font-weight:600;color:#9929ea;">${escapeHtml(r.doc)}</td>
+              <td style="text-align:end;">${r.debit > 0 ? fmt(r.debit) : '—'}</td>
+              <td style="text-align:end;color:#22c55e;">${r.credit > 0 ? fmt(r.credit) : '—'}</td>
+              <td style="text-align:end;font-weight:600;color:${r.balance > 0 ? '#ef4444' : '#22c55e'};">${fmt(r.balance)}</td>
+            </tr>`).join('');
+
+        const html = `<!DOCTYPE html>
+<html lang="${lang}" dir="${dir}">
+<head>
+  <meta charset="UTF-8"/>
+  <title>${t('customers.statement' as any)} — ${escapeHtml(customer.name)}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:${dir === 'rtl' ? "'Cairo','Segoe UI',sans-serif" : "'Segoe UI',-apple-system,sans-serif"};font-size:13px;color:#111827;background:#fff;padding:40px;direction:${dir};}
+    h1{font-size:20px;font-weight:700;margin-bottom:4px;}
+    .sub{font-size:12px;color:#6b7280;margin-bottom:24px;}
+    .meta{display:flex;justify-content:space-between;margin-bottom:24px;font-size:12px;color:#6b7280;}
+    table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+    thead tr{background:#9929ea;color:#fff;}
+    th{padding:9px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:start;}
+    th.r{text-align:end;}
+    td{padding:9px 12px;border-bottom:1px solid #f3f4f6;font-size:13px;text-align:start;}
+    td.r{text-align:end;}
+    .opening,.closing{background:#f9fafb;font-style:italic;}
+    .closing{font-weight:700;border-top:2px solid #e5e7eb;}
+    .footer{text-align:center;font-size:11px;color:#9ca3af;padding-top:20px;border-top:1px solid #e5e7eb;margin-top:8px;}
+    @media print{body{padding:20px;}@page{margin:14mm;size:A4;}}
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(customer.name)}</h1>
+  <div class="sub">${escapeHtml(customer.email)}${customer.phone ? ' · ' + escapeHtml(customer.phone) : ''}</div>
+  <div class="meta">
+    <span>${t('customers.statement' as any)}</span>
+    <span>${dfmt(startDate)} — ${dfmt(endDate)}</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>${t('common.date')}</th>
+        <th>${t('common.description')}</th>
+        <th>${t('invoices.invoiceNumber')}</th>
+        <th class="r">${t('invoices.modals.amount' as any)}</th>
+        <th class="r">${t('invoices.paid')}</th>
+        <th class="r">${t('accounting.ledger.runningBalance' as any)}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="opening">
+        <td colspan="5">${t('accounting.ledger.openingBalance' as any)}</td>
+        <td class="r" style="font-weight:600;">${fmt(openingBalance)}</td>
+      </tr>
+      ${rowsHtml}
+      <tr class="closing">
+        <td colspan="5">${t('accounting.ledger.closingBalance' as any)}</td>
+        <td class="r" style="color:${closingBalance > 0 ? '#ef4444' : '#22c55e'};">${fmt(closingBalance)}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="footer">${t('common.generatedBy' as any)} · ${dfmt(new Date().toISOString())}</div>
+</body>
+</html>`;
+
+        const filename = `statement-${customer.name.replace(/\s+/g, '-')}-${startDate}-${endDate}.pdf`;
+        await exportReportPDF(html, filename);
+      } catch {
+        // silent — exportReportPDF handles its own errors
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `${Icons.download(16)} ${i18n.t('common.exportPdf')}`;
+      }
     });
   };
 
