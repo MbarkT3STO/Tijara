@@ -1,0 +1,126 @@
+{
+  "customers": [
+    { "id": "c1", "name": "Alice Martin", "email": "alice@example.com", "phone": "+1-555-0101", "address": "12 Oak Street", "city": "New York", "country": "USA", "createdAt": "2025-01-05T08:00:00.000Z", "notes": "VIP customer" },
+    { "id": "c2", "name": "Bob Hassan", "email": "bob.hassan@example.com", "phone": "+1-555-0102", "address": "45 Maple Ave", "city": "Chicago", "country": "USA", "createdAt": "2025-01-10T09:00:00.000Z" },
+    { "id": "c3", "name": "Clara Dupont", "email": "clara.dupont@example.com", "phone": "+33-6-1234-5678", "address": "8 Rue de la Paix", "city": "Paris", "country": "France", "createdAt": "2025-01-15T10:00:00.000Z" },
+    { "id": "c4", "name": "David Nguyen", "email": "david.n@example.com", "phone": "+1-555-0104", "address": "99 Pine Road", "city": "Houston", "country": "USA", "createdAt": "2025-02-01T08:30:00.000Z" },
+    { "id": "c5", "name": "Eva Schmidt", "email": "eva.schmidt@example.de", "phone": "+49-30-12345678", "address": "Berliner Str. 22", "city": "Berlin", "country": "Germany", "createdAt": "2025-02-10T11:00:00.000Z" }
+  ],
+  "suppliers": [
+    { "id": "s1", "name": "TechParts Inc.", "email": "orders@techparts.com", "phone": "+1-800-555-0201", "address": "500 Industrial Blvd", "city": "Detroit", "country": "USA", "contactPerson": "Mark Johnson", "taxId": "US-TAX-001", "website": "https://techparts.com", "createdAt": "2025-01-03T07:00:00.000Z" },
+    { "id": "s2", "name": "Global Supplies Co.", "email": "supply@globalsupplies.com", "phone": "+44-20-7946-0958", "address": "10 Commerce Lane", "city": "London", "country": "UK", "contactPerson": "Sarah Lee", "taxId": "GB-VAT-002", "website": "https://globalsupplies.com", "createdAt": "2025-01-08T08:00:00.000Z" },
+    { "id": "s3", "name": "Rapid Wholesale", "email": "info@rapidwholesale.com", "phone": "+1-555-0301", "address": "77 Warehouse Way", "city": "Dallas", "country": "USA", "contactPerson": "Tom Rivera", "createdAt": "2025-01-20T09:00:00.000Z" }
+  ],
+  "products": [
+    { "id": "p1", "name": "Wireless Keyboard", "sku": "WKB-001", "category": "Electronics", "price": 49.99, "cost": 22.00, "stock": 85, "unit": "pcs", "description": "Compact wireless keyboard with USB receiver", "reorderPoint": 10, "reorderQuantity": 50, "createdAt": "2025-01-04T08:00:00.000Z" },
+    { "id": "p2", "name": "USB-C Hub 7-in-1", "sku": "UCH-002", "category": "Electronics", "price": 34.99, "cost": 14.50, "stock": 60, "unit": "pcs", "description": "7-port USB-C hub with HDMI and SD card reader", "reorderPoint": 10, "reorderQuantity": 40, "createdAt": "2025-01-04T08:05:00.000Z" },
+    { "id": "p3", "name": "Ergonomic Mouse", "sku": "EMO-003", "category": "Electronics", "price": 39.99, "cost": 16.00, "stock": 5, "unit": "pcs", "description": "Vertical ergonomic wireless mouse", "reorderPoint": 10, "reorderQuantity": 30, "createdAt": "2025-01-04T08:10:00.000Z" },
+    { "id": "p4", "name": "Laptop Stand", "sku": "LST-004", "category": "Accessories", "price": 29.99, "cost": 10.00, "stock": 120, "unit": "pcs", "description": "Adjustable aluminium laptop stand", "reorderPoint": 15, "reorderQuantity": 60, "createdAt": "2025-01-05T08:00:00.000Z" },
+    { "id": "p5", "name": "Mechanical Keyboard", "sku": "MKB-005", "category": "Electronics", "price": 89.99, "cost": 42.00, "stock": 30, "unit": "pcs", "description": "TKL mechanical keyboard, blue switches", "reorderPoint": 8, "reorderQuantity": 25, "createdAt": "2025-01-06T08:00:00.000Z" },
+    { "id": "p6", "name": "Monitor Light Bar", "sku": "MLB-006", "category": "Accessories", "price": 44.99, "cost": 18.00, "stock": 45, "unit": "pcs", "description": "USB-powered monitor light bar with dimmer", "reorderPoint": 10, "reorderQuantity": 30, "createdAt": "2025-01-07T08:00:00.000Z" },
+    { "id": "p7", "name": "Webcam 1080p", "sku": "WCM-007", "category": "Electronics", "price": 59.99, "cost": 25.00, "stock": 3, "unit": "pcs", "description": "Full HD webcam with built-in microphone", "reorderPoint": 8, "reorderQuantity": 20, "createdAt": "2025-01-08T08:00:00.000Z" },
+    { "id": "p8", "name": "Desk Organizer", "sku": "DOR-008", "category": "Office", "price": 19.99, "cost": 7.00, "stock": 200, "unit": "pcs", "description": "Bamboo desk organizer with 5 compartments", "reorderPoint": 20, "reorderQuantity": 100, "createdAt": "2025-01-09T08:00:00.000Z" }
+  ],
+  "sales": [
+    { "id": "sl1", "orderNumber": "ORD-0001", "customerId": "c1", "customerName": "Alice Martin", "items": [{ "productId": "p1", "productName": "Wireless Keyboard", "quantity": 2, "unitPrice": 49.99, "discount": 0, "total": 99.98 }, { "productId": "p4", "productName": "Laptop Stand", "quantity": 1, "unitPrice": 29.99, "discount": 0, "total": 29.99 }], "subtotal": 129.97, "taxRate": 10, "taxAmount": 13.00, "discount": 0, "total": 142.97, "status": "delivered", "paymentStatus": "paid", "paymentMethod": "card", "createdAt": "2025-02-01T10:00:00.000Z", "updatedAt": "2025-02-03T14:00:00.000Z" },
+    { "id": "sl2", "orderNumber": "ORD-0002", "customerId": "c2", "customerName": "Bob Hassan", "items": [{ "productId": "p5", "productName": "Mechanical Keyboard", "quantity": 1, "unitPrice": 89.99, "discount": 5, "total": 85.49 }], "subtotal": 85.49, "taxRate": 10, "taxAmount": 8.55, "discount": 0, "total": 94.04, "status": "shipped", "paymentStatus": "paid", "paymentMethod": "transfer", "createdAt": "2025-02-05T11:00:00.000Z", "updatedAt": "2025-02-06T09:00:00.000Z" },
+    { "id": "sl3", "orderNumber": "ORD-0003", "customerId": "c3", "customerName": "Clara Dupont", "items": [{ "productId": "p2", "productName": "USB-C Hub 7-in-1", "quantity": 3, "unitPrice": 34.99, "discount": 0, "total": 104.97 }, { "productId": "p6", "productName": "Monitor Light Bar", "quantity": 2, "unitPrice": 44.99, "discount": 0, "total": 89.98 }], "subtotal": 194.95, "taxRate": 20, "taxAmount": 38.99, "discount": 10, "total": 223.94, "status": "confirmed", "paymentStatus": "partial", "paymentMethod": "card", "createdAt": "2025-02-10T14:00:00.000Z", "updatedAt": "2025-02-10T14:00:00.000Z" },
+    { "id": "sl4", "orderNumber": "ORD-0004", "customerId": "c4", "customerName": "David Nguyen", "items": [{ "productId": "p7", "productName": "Webcam 1080p", "quantity": 1, "unitPrice": 59.99, "discount": 0, "total": 59.99 }], "subtotal": 59.99, "taxRate": 10, "taxAmount": 6.00, "discount": 0, "total": 65.99, "status": "pending", "paymentStatus": "unpaid", "paymentMethod": "cash", "createdAt": "2025-03-01T09:00:00.000Z", "updatedAt": "2025-03-01T09:00:00.000Z" },
+    { "id": "sl5", "orderNumber": "ORD-0005", "customerId": "c5", "customerName": "Eva Schmidt", "items": [{ "productId": "p3", "productName": "Ergonomic Mouse", "quantity": 2, "unitPrice": 39.99, "discount": 10, "total": 71.98 }, { "productId": "p8", "productName": "Desk Organizer", "quantity": 4, "unitPrice": 19.99, "discount": 0, "total": 79.96 }], "subtotal": 151.94, "taxRate": 19, "taxAmount": 28.87, "discount": 0, "total": 180.81, "status": "delivered", "paymentStatus": "paid", "paymentMethod": "transfer", "createdAt": "2025-03-05T10:00:00.000Z", "updatedAt": "2025-03-07T16:00:00.000Z" }
+  ],
+  "invoices": [
+    { "id": "inv1", "invoiceNumber": "INV-0001", "saleId": "sl1", "customerId": "c1", "customerName": "Alice Martin", "items": [{ "productId": "p1", "productName": "Wireless Keyboard", "quantity": 2, "unitPrice": 49.99, "discount": 0, "total": 99.98 }, { "productId": "p4", "productName": "Laptop Stand", "quantity": 1, "unitPrice": 29.99, "discount": 0, "total": 29.99 }], "subtotal": 129.97, "taxRate": 10, "taxAmount": 13.00, "discount": 0, "total": 142.97, "amountPaid": 142.97, "amountDue": 0, "status": "paid", "dueDate": "2025-02-15T00:00:00.000Z", "createdAt": "2025-02-01T10:30:00.000Z" },
+    { "id": "inv2", "invoiceNumber": "INV-0002", "saleId": "sl2", "customerId": "c2", "customerName": "Bob Hassan", "items": [{ "productId": "p5", "productName": "Mechanical Keyboard", "quantity": 1, "unitPrice": 89.99, "discount": 5, "total": 85.49 }], "subtotal": 85.49, "taxRate": 10, "taxAmount": 8.55, "discount": 0, "total": 94.04, "amountPaid": 94.04, "amountDue": 0, "status": "paid", "dueDate": "2025-02-20T00:00:00.000Z", "createdAt": "2025-02-05T11:30:00.000Z" },
+    { "id": "inv3", "invoiceNumber": "INV-0003", "saleId": "sl3", "customerId": "c3", "customerName": "Clara Dupont", "items": [{ "productId": "p2", "productName": "USB-C Hub 7-in-1", "quantity": 3, "unitPrice": 34.99, "discount": 0, "total": 104.97 }, { "productId": "p6", "productName": "Monitor Light Bar", "quantity": 2, "unitPrice": 44.99, "discount": 0, "total": 89.98 }], "subtotal": 194.95, "taxRate": 20, "taxAmount": 38.99, "discount": 10, "total": 223.94, "amountPaid": 100.00, "amountDue": 123.94, "status": "sent", "dueDate": "2025-03-10T00:00:00.000Z", "createdAt": "2025-02-10T14:30:00.000Z" },
+    { "id": "inv4", "invoiceNumber": "INV-0004", "saleId": "sl4", "customerId": "c4", "customerName": "David Nguyen", "items": [{ "productId": "p7", "productName": "Webcam 1080p", "quantity": 1, "unitPrice": 59.99, "discount": 0, "total": 59.99 }], "subtotal": 59.99, "taxRate": 10, "taxAmount": 6.00, "discount": 0, "total": 65.99, "amountPaid": 0, "amountDue": 65.99, "status": "overdue", "dueDate": "2025-03-15T00:00:00.000Z", "createdAt": "2025-03-01T09:30:00.000Z" },
+    { "id": "inv5", "invoiceNumber": "INV-0005", "saleId": "sl5", "customerId": "c5", "customerName": "Eva Schmidt", "items": [{ "productId": "p3", "productName": "Ergonomic Mouse", "quantity": 2, "unitPrice": 39.99, "discount": 10, "total": 71.98 }, { "productId": "p8", "productName": "Desk Organizer", "quantity": 4, "unitPrice": 19.99, "discount": 0, "total": 79.96 }], "subtotal": 151.94, "taxRate": 19, "taxAmount": 28.87, "discount": 0, "total": 180.81, "amountPaid": 180.81, "amountDue": 0, "status": "paid", "dueDate": "2025-03-20T00:00:00.000Z", "createdAt": "2025-03-05T10:30:00.000Z" }
+  ],
+  "purchases": [
+    { "id": "po1", "poNumber": "PO-0001", "supplierId": "s1", "supplierName": "TechParts Inc.", "items": [{ "productId": "p1", "productName": "Wireless Keyboard", "quantity": 50, "unitCost": 22.00, "total": 1100.00 }, { "productId": "p3", "productName": "Ergonomic Mouse", "quantity": 30, "unitCost": 16.00, "total": 480.00 }], "subtotal": 1580.00, "taxRate": 10, "taxAmount": 158.00, "shippingCost": 45.00, "total": 1783.00, "amountPaid": 1783.00, "status": "received", "paymentStatus": "paid", "paymentMethod": "transfer", "expectedDate": "2025-01-20T00:00:00.000Z", "createdAt": "2025-01-10T08:00:00.000Z", "updatedAt": "2025-01-22T10:00:00.000Z" },
+    { "id": "po2", "poNumber": "PO-0002", "supplierId": "s2", "supplierName": "Global Supplies Co.", "items": [{ "productId": "p2", "productName": "USB-C Hub 7-in-1", "quantity": 40, "unitCost": 14.50, "total": 580.00 }, { "productId": "p6", "productName": "Monitor Light Bar", "quantity": 30, "unitCost": 18.00, "total": 540.00 }], "subtotal": 1120.00, "taxRate": 20, "taxAmount": 224.00, "shippingCost": 60.00, "total": 1404.00, "amountPaid": 700.00, "status": "ordered", "paymentStatus": "partial", "paymentMethod": "transfer", "expectedDate": "2025-03-25T00:00:00.000Z", "createdAt": "2025-03-01T09:00:00.000Z", "updatedAt": "2025-03-01T09:00:00.000Z" },
+    { "id": "po3", "poNumber": "PO-0003", "supplierId": "s3", "supplierName": "Rapid Wholesale", "items": [{ "productId": "p8", "productName": "Desk Organizer", "quantity": 100, "unitCost": 7.00, "total": 700.00 }], "subtotal": 700.00, "taxRate": 10, "taxAmount": 70.00, "shippingCost": 20.00, "total": 790.00, "amountPaid": 0, "status": "draft", "paymentStatus": "unpaid", "paymentMethod": "cash", "createdAt": "2025-03-10T11:00:00.000Z", "updatedAt": "2025-03-10T11:00:00.000Z" }
+  ],
+  "returns": [
+    { "id": "r1", "returnNumber": "RET-0001", "saleId": "sl1", "orderNumber": "ORD-0001", "customerId": "c1", "customerName": "Alice Martin", "items": [{ "productId": "p1", "productName": "Wireless Keyboard", "quantity": 1, "unitPrice": 49.99, "total": 49.99 }], "subtotal": 49.99, "taxRate": 10, "taxAmount": 5.00, "refundAmount": 54.99, "reason": "defective", "status": "refunded", "refundMethod": "card", "restockItems": false, "notes": "Key stopped working after 2 days", "createdAt": "2025-02-08T10:00:00.000Z", "updatedAt": "2025-02-09T14:00:00.000Z" },
+    { "id": "r2", "returnNumber": "RET-0002", "saleId": "sl5", "orderNumber": "ORD-0005", "customerId": "c5", "customerName": "Eva Schmidt", "items": [{ "productId": "p8", "productName": "Desk Organizer", "quantity": 1, "unitPrice": 19.99, "total": 19.99 }], "subtotal": 19.99, "taxRate": 19, "taxAmount": 3.80, "refundAmount": 23.79, "reason": "wrong_item", "status": "approved", "refundMethod": "transfer", "restockItems": true, "createdAt": "2025-03-09T09:00:00.000Z", "updatedAt": "2025-03-09T15:00:00.000Z" }
+  ],
+  "stockMovements": [
+    { "id": "sm1", "productId": "p1", "productName": "Wireless Keyboard", "type": "initial", "quantity": 100, "stockBefore": 0, "stockAfter": 100, "notes": "Initial stock", "createdAt": "2025-01-04T08:00:00.000Z" },
+    { "id": "sm2", "productId": "p1", "productName": "Wireless Keyboard", "type": "sale", "quantity": -2, "stockBefore": 100, "stockAfter": 98, "reference": "ORD-0001", "createdAt": "2025-02-01T10:00:00.000Z" },
+    { "id": "sm3", "productId": "p3", "productName": "Ergonomic Mouse", "type": "initial", "quantity": 50, "stockBefore": 0, "stockAfter": 50, "notes": "Initial stock", "createdAt": "2025-01-04T08:10:00.000Z" },
+    { "id": "sm4", "productId": "p3", "productName": "Ergonomic Mouse", "type": "sale", "quantity": -2, "stockBefore": 50, "stockAfter": 48, "reference": "ORD-0005", "createdAt": "2025-03-05T10:00:00.000Z" },
+    { "id": "sm5", "productId": "p7", "productName": "Webcam 1080p", "type": "initial", "quantity": 20, "stockBefore": 0, "stockAfter": 20, "notes": "Initial stock", "createdAt": "2025-01-08T08:00:00.000Z" },
+    { "id": "sm6", "productId": "p7", "productName": "Webcam 1080p", "type": "sale", "quantity": -1, "stockBefore": 20, "stockAfter": 19, "reference": "ORD-0004", "createdAt": "2025-03-01T09:00:00.000Z" },
+    { "id": "sm7", "productId": "p7", "productName": "Webcam 1080p", "type": "adjustment", "quantity": -16, "stockBefore": 19, "stockAfter": 3, "notes": "Inventory count correction", "createdAt": "2025-03-12T11:00:00.000Z" }
+  ],
+  "users": [
+    { "id": "u1", "name": "Admin User", "email": "admin@tijara.app", "passwordHash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", "role": "admin", "active": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "u2", "name": "Sara Manager", "email": "sara@tijara.app", "passwordHash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", "role": "manager", "active": true, "lastLogin": "2025-03-10T08:00:00.000Z", "createdAt": "2025-01-05T09:00:00.000Z" },
+    { "id": "u3", "name": "James Sales", "email": "james@tijara.app", "passwordHash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", "role": "sales", "active": true, "lastLogin": "2025-03-11T09:30:00.000Z", "createdAt": "2025-01-10T10:00:00.000Z" }
+  ],
+  "fiscalPeriods": [
+    { "id": "fp1", "name": "Q1 2025", "startDate": "2025-01-01", "endDate": "2025-03-31", "status": "open", "isCurrent": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "fp2", "name": "Q4 2024", "startDate": "2024-10-01", "endDate": "2024-12-31", "status": "closed", "isCurrent": false, "closedAt": "2025-01-05T00:00:00.000Z", "closedBy": "u1", "createdAt": "2024-10-01T00:00:00.000Z" }
+  ],
+  "costCenters": [
+    { "id": "cc1", "code": "CC-SALES", "name": "Sales", "description": "Sales department", "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "cc2", "code": "CC-OPS", "name": "Operations", "description": "Operations and logistics", "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "cc3", "code": "CC-ADMIN", "name": "Administration", "description": "General administration", "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" }
+  ],
+  "taxRates": [
+    { "id": "tr1", "name": "Standard VAT 10%", "code": "VAT10", "rate": 10, "accountId": "acc-tax", "isDefault": true, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "tr2", "name": "EU VAT 20%", "code": "VAT20", "rate": 20, "accountId": "acc-tax", "isDefault": false, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "tr3", "name": "Zero Rate", "code": "VAT0", "rate": 0, "accountId": "acc-tax", "isDefault": false, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" }
+  ],
+  "accounts": [
+    { "id": "acc1", "code": "1000", "name": "Cash", "type": "asset", "category": "current_asset", "normalBalance": "debit", "isSystem": true, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "acc2", "code": "1100", "name": "Accounts Receivable", "type": "asset", "category": "current_asset", "normalBalance": "debit", "isSystem": true, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "acc3", "code": "1500", "name": "Inventory", "type": "asset", "category": "current_asset", "normalBalance": "debit", "isSystem": true, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "acc4", "code": "2000", "name": "Accounts Payable", "type": "liability", "category": "current_liability", "normalBalance": "credit", "isSystem": true, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "acc5", "code": "2100", "name": "Tax Payable", "type": "liability", "category": "current_liability", "normalBalance": "credit", "isSystem": true, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "acc6", "code": "3000", "name": "Owner Equity", "type": "equity", "category": "owners_equity", "normalBalance": "credit", "isSystem": true, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "acc7", "code": "4000", "name": "Sales Revenue", "type": "revenue", "category": "operating_revenue", "normalBalance": "credit", "isSystem": true, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "acc8", "code": "5000", "name": "Cost of Goods Sold", "type": "expense", "category": "cost_of_goods_sold", "normalBalance": "debit", "isSystem": true, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" },
+    { "id": "acc9", "code": "6000", "name": "Operating Expenses", "type": "expense", "category": "operating_expense", "normalBalance": "debit", "isSystem": false, "isActive": true, "createdAt": "2025-01-01T00:00:00.000Z" }
+  ],
+  "journalEntries": [
+    {
+      "id": "je1", "entryNumber": "JE-0001", "date": "2025-02-01", "description": "Sale ORD-0001 - Alice Martin",
+      "reference": "ORD-0001", "sourceType": "sale", "sourceId": "sl1",
+      "lines": [
+        { "id": "jl1", "accountId": "acc2", "accountCode": "1100", "accountName": "Accounts Receivable", "debit": 142.97, "credit": 0 },
+        { "id": "jl2", "accountId": "acc7", "accountCode": "4000", "accountName": "Sales Revenue", "debit": 0, "credit": 129.97 },
+        { "id": "jl3", "accountId": "acc5", "accountCode": "2100", "accountName": "Tax Payable", "debit": 0, "credit": 13.00 }
+      ],
+      "totalDebit": 142.97, "totalCredit": 142.97, "status": "posted",
+      "fiscalPeriodId": "fp1", "createdAt": "2025-02-01T10:30:00.000Z", "updatedAt": "2025-02-01T10:30:00.000Z"
+    },
+    {
+      "id": "je2", "entryNumber": "JE-0002", "date": "2025-02-01", "description": "Payment received - INV-0001",
+      "reference": "INV-0001", "sourceType": "invoice_payment", "sourceId": "inv1",
+      "lines": [
+        { "id": "jl4", "accountId": "acc1", "accountCode": "1000", "accountName": "Cash", "debit": 142.97, "credit": 0 },
+        { "id": "jl5", "accountId": "acc2", "accountCode": "1100", "accountName": "Accounts Receivable", "debit": 0, "credit": 142.97 }
+      ],
+      "totalDebit": 142.97, "totalCredit": 142.97, "status": "posted",
+      "fiscalPeriodId": "fp1", "createdAt": "2025-02-03T14:00:00.000Z", "updatedAt": "2025-02-03T14:00:00.000Z"
+    },
+    {
+      "id": "je3", "entryNumber": "JE-0003", "date": "2025-03-05", "description": "Sale ORD-0005 - Eva Schmidt",
+      "reference": "ORD-0005", "sourceType": "sale", "sourceId": "sl5",
+      "lines": [
+        { "id": "jl6", "accountId": "acc2", "accountCode": "1100", "accountName": "Accounts Receivable", "debit": 180.81, "credit": 0 },
+        { "id": "jl7", "accountId": "acc7", "accountCode": "4000", "accountName": "Sales Revenue", "debit": 0, "credit": 151.94 },
+        { "id": "jl8", "accountId": "acc5", "accountCode": "2100", "accountName": "Tax Payable", "debit": 0, "credit": 28.87 }
+      ],
+      "totalDebit": 180.81, "totalCredit": 180.81, "status": "posted",
+      "fiscalPeriodId": "fp1", "createdAt": "2025-03-05T10:30:00.000Z", "updatedAt": "2025-03-05T10:30:00.000Z"
+    }
+  ],
+  "journalTemplates": [
+    { "id": "jt1", "name": "Monthly Rent", "description": "Monthly office rent expense", "lines": [{ "accountId": "acc9", "accountCode": "6000", "accountName": "Operating Expenses", "debit": 0, "credit": 0, "description": "Rent expense" }, { "accountId": "acc1", "accountCode": "1000", "accountName": "Cash", "debit": 0, "credit": 0, "description": "Cash payment" }], "createdAt": "2025-01-01T00:00:00.000Z" }
+  ],
+  "productCostHistory": [
+    { "id": "pch1", "productId": "p5", "productName": "Mechanical Keyboard", "oldCost": 38.00, "newCost": 42.00, "changedAt": "2025-02-15T10:00:00.000Z", "changedBy": "u1" }
+  ]
+}

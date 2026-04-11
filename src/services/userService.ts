@@ -5,6 +5,7 @@
 import { repository } from '@data/excelRepository';
 import type { User, UserRole } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
+import { i18n } from '@core/i18n';
 
 export const userService = {
   /** Get all users */
@@ -52,12 +53,6 @@ export const userService = {
 
   /** Get role display label */
   getRoleLabel(role: UserRole): string {
-    const labels: Record<UserRole, string> = {
-      admin: 'Administrator',
-      manager: 'Manager',
-      sales: 'Sales Rep',
-      viewer: 'Viewer',
-    };
-    return labels[role];
+    return i18n.t(`users.roles.${role}` as any);
   },
 };

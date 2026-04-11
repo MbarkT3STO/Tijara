@@ -11,7 +11,7 @@
  */
 
 import * as XLSX from 'xlsx-js-style';
-import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier, Purchase, Return, Account, JournalEntry, FiscalPeriod, CostCenter, TaxRate, JournalTemplate } from '@core/types';
+import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier, Purchase, Return, Account, JournalEntry, FiscalPeriod, CostCenter, TaxRate, JournalTemplate, ProductCostHistory } from '@core/types';
 import type { ElectronAPI } from '../../electron/preload';
 
 /** All data collections stored in the workbook */
@@ -31,6 +31,7 @@ export interface WorkbookData {
   costCenters: CostCenter[];
   taxRates: TaxRate[];
   journalTemplates: JournalTemplate[];
+  productCostHistory: ProductCostHistory[];
 }
 
 const SHEET_NAMES = {
@@ -49,6 +50,7 @@ const SHEET_NAMES = {
   costCenters: 'Cost Centers',
   taxRates: 'Tax Rates',
   journalTemplates: 'Journal Templates',
+  productCostHistory: 'Product Cost History',
 } as const;
 
 const STORAGE_KEY = 'tijara-data';
@@ -75,6 +77,7 @@ class ExcelRepository {
     costCenters: [],
     taxRates: [],
     journalTemplates: [],
+    productCostHistory: [],
   };
 
   private initialized = false;
@@ -92,21 +95,22 @@ class ExcelRepository {
         // Merge with defaults so any collection added after initial save
         // is always an array, never undefined (forward-compatibility guard).
         this.data = {
-          customers:        Array.isArray(parsed.customers)        ? parsed.customers        : [],
-          products:         Array.isArray(parsed.products)         ? parsed.products         : [],
-          sales:            Array.isArray(parsed.sales)            ? parsed.sales            : [],
-          invoices:         Array.isArray(parsed.invoices)         ? parsed.invoices         : [],
-          users:            Array.isArray(parsed.users)            ? parsed.users            : [],
-          stockMovements:   Array.isArray(parsed.stockMovements)   ? parsed.stockMovements   : [],
-          suppliers:        Array.isArray(parsed.suppliers)        ? parsed.suppliers        : [],
-          purchases:        Array.isArray(parsed.purchases)        ? parsed.purchases        : [],
-          returns:          Array.isArray(parsed.returns)          ? parsed.returns          : [],
-          accounts:         Array.isArray(parsed.accounts)         ? parsed.accounts         : [],
-          journalEntries:   Array.isArray(parsed.journalEntries)   ? parsed.journalEntries   : [],
-          fiscalPeriods:    Array.isArray(parsed.fiscalPeriods)    ? parsed.fiscalPeriods    : [],
-          costCenters:      Array.isArray(parsed.costCenters)      ? parsed.costCenters      : [],
-          taxRates:         Array.isArray(parsed.taxRates)         ? parsed.taxRates         : [],
-          journalTemplates: Array.isArray(parsed.journalTemplates) ? parsed.journalTemplates : [],
+          customers:          Array.isArray(parsed.customers)          ? parsed.customers          : [],
+          products:           Array.isArray(parsed.products)           ? parsed.products           : [],
+          sales:              Array.isArray(parsed.sales)              ? parsed.sales              : [],
+          invoices:           Array.isArray(parsed.invoices)           ? parsed.invoices           : [],
+          users:              Array.isArray(parsed.users)              ? parsed.users              : [],
+          stockMovements:     Array.isArray(parsed.stockMovements)     ? parsed.stockMovements     : [],
+          suppliers:          Array.isArray(parsed.suppliers)          ? parsed.suppliers          : [],
+          purchases:          Array.isArray(parsed.purchases)          ? parsed.purchases          : [],
+          returns:            Array.isArray(parsed.returns)            ? parsed.returns            : [],
+          accounts:           Array.isArray(parsed.accounts)           ? parsed.accounts           : [],
+          journalEntries:     Array.isArray(parsed.journalEntries)     ? parsed.journalEntries     : [],
+          fiscalPeriods:      Array.isArray(parsed.fiscalPeriods)      ? parsed.fiscalPeriods      : [],
+          costCenters:        Array.isArray(parsed.costCenters)        ? parsed.costCenters        : [],
+          taxRates:           Array.isArray(parsed.taxRates)           ? parsed.taxRates           : [],
+          journalTemplates:   Array.isArray(parsed.journalTemplates)   ? parsed.journalTemplates   : [],
+          productCostHistory: Array.isArray(parsed.productCostHistory) ? parsed.productCostHistory : [],
         };
 
         // Patch products that predate the reorderPoint/reorderQuantity fields
@@ -422,6 +426,16 @@ class ExcelRepository {
           { key: 'isDefault',     header: 'Default',       width: 10, type: 'text' },
           { key: 'isActive',      header: 'Active',        width: 10, type: 'text' },
           { key: 'createdAt',     header: 'Created',       width: 20, type: 'date' },
+        ],
+      },
+      productCostHistory: {
+        label: 'Product Cost History',
+        cols: [
+          { key: 'productName', header: 'Product',        width: 28, type: 'text' },
+          { key: 'oldCost',     header: 'Previous Cost',  width: 16, type: 'currency' },
+          { key: 'newCost',     header: 'New Cost',       width: 16, type: 'currency' },
+          { key: 'changedBy',   header: 'Changed By',     width: 22, type: 'text' },
+          { key: 'changedAt',   header: 'Changed At',     width: 20, type: 'date' },
         ],
       },
     };

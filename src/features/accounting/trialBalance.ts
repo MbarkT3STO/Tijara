@@ -5,8 +5,9 @@
 import { journalService } from '@services/journalService';
 import { fiscalPeriodService } from '@services/fiscalPeriodService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency } from '@shared/utils/helpers';
+import { formatCurrency, exportReportPDF } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { profileService } from '@services/profileService';
 import type { TrialBalance, AccountType } from '@core/types';
 
 interface State {
@@ -48,6 +49,14 @@ export function renderTrialBalance(): HTMLElement {
       state.showZero = (e.target as HTMLInputElement).checked;
       render();
     });
+
+    page.querySelector('#tb-export-pdf')?.addEventListener('click', () => {
+      if (!state.trialBalance) return;
+      const profile = profileService.getProfile();
+      const periodName = periods.find((p) => p.id === state.periodId)?.name ?? state.periodId;
+      const html = buildPrintHTML(state, periods, profile.name, periodName);
+      exportReportPDF(html, `trial-balance-${periodName}.pdf`).catch(console.error);
+    });
   }
 
   render();
@@ -78,6 +87,7 @@ function buildHTML(state: State, periods: ReturnType<typeof fiscalPeriodService.
           <input type="checkbox" id="tb-show-zero" ${state.showZero ? 'checked' : ''} />
           <span style="font-size:var(--font-size-sm);">${i18n.t('accounting.trialBalance.showZeroBalances' as any)}</span>
         </label>
+        ${tb ? `<button class="btn btn-secondary" id="tb-export-pdf">${Icons.fileText(14)} ${i18n.t('common.exportPdf' as any)}</button>` : ''}
       </div>
     </div>
 
@@ -135,4 +145,56 @@ function buildHTML(state: State, periods: ReturnType<typeof fiscalPeriodService.
       </div>
     </div>
   `;
+}
+
+function buildPrintHTML(
+  state: State,
+  periods: ReturnType<typeof fiscalPeriodService.getAll>,
+  companyName: string,
+  periodName: string
+): string {
+  const tb = state.trialBalance!;
+  const rows = state.showZero ? tb.rows : tb.rows.filter((r) => r.debitBalance > 0 || r.creditBalance > 0);
+  const typeOrder: AccountType[] = ['asset', 'liability', 'equity', 'revenue', 'expense'];
+
+  const rowsHtml = typeOrder.flatMap((type) => {
+    const typeRows = rows.filter((r) => r.accountType === type);
+    if (typeRows.length === 0) return [];
+    const subDebit = typeRows.reduce((s, r) => s + r.debitBalance, 0);
+    const subCredit = typeRows.reduce((s, r) => s + r.creditBalance, 0);
+    return [
+      `<tr style="background:#f8f8f8;font-weight:700;"><td colspan="4" style="padding:6px 8px;">${i18n.t(`accounting.accounts.types.${type}` as any)}</td></tr>`,
+      ...typeRows.map((r) => `<tr><td style="padding:4px 8px;font-family:monospace;">${r.accountCode}</td><td style="padding:4px 8px;">${r.accountName}</td><td style="text-align:right;padding:4px 8px;">${r.debitBalance > 0 ? formatCurrency(r.debitBalance) : '—'}</td><td style="text-align:right;padding:4px 8px;">${r.creditBalance > 0 ? formatCurrency(r.creditBalance) : '—'}</td></tr>`),
+      `<tr style="font-weight:600;border-top:1px solid #ccc;"><td colspan="2" style="text-align:right;padding:4px 8px;">${i18n.t(`accounting.accounts.types.${type}` as any)} ${i18n.t('common.total')}</td><td style="text-align:right;padding:4px 8px;">${subDebit > 0 ? formatCurrency(subDebit) : '—'}</td><td style="text-align:right;padding:4px 8px;">${subCredit > 0 ? formatCurrency(subCredit) : '—'}</td></tr>`,
+    ];
+  }).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Trial Balance</title>
+  <style>
+    body{font-family:Arial,sans-serif;color:#000;background:#fff;margin:0;padding:24px;}
+    h1{font-size:18px;margin:0 0 4px;}h2{font-size:14px;margin:0 0 16px;color:#555;}
+    table{width:100%;border-collapse:collapse;}
+    th{background:#f0f0f0;padding:6px 8px;text-align:left;font-size:12px;border-bottom:2px solid #ccc;}
+    td{font-size:12px;border-bottom:1px solid #eee;}
+    tfoot td{font-weight:700;border-top:2px solid #000;font-size:13px;padding:6px 8px;}
+    .footer{margin-top:24px;font-size:10px;color:#888;text-align:center;}
+  </style></head><body>
+  <h1>${companyName}</h1>
+  <h2>${i18n.t('accounting.trialBalance.title' as any)} — ${periodName}</h2>
+  <table>
+    <thead><tr>
+      <th>${i18n.t('accounting.accounts.code' as any)}</th>
+      <th>${i18n.t('accounting.accounts.name' as any)}</th>
+      <th style="text-align:right;">${i18n.t('accounting.trialBalance.debitBalance' as any)}</th>
+      <th style="text-align:right;">${i18n.t('accounting.trialBalance.creditBalance' as any)}</th>
+    </tr></thead>
+    <tbody>${rowsHtml}</tbody>
+    <tfoot><tr>
+      <td colspan="2" style="text-align:right;">${i18n.t('accounting.trialBalance.totalDebits' as any)} / ${i18n.t('accounting.trialBalance.totalCredits' as any)}</td>
+      <td style="text-align:right;">${formatCurrency(tb.totalDebits)}</td>
+      <td style="text-align:right;">${formatCurrency(tb.totalCredits)}</td>
+    </tr></tfoot>
+  </table>
+  <div class="footer">${i18n.t('common.generatedBy')} · ${new Date().toLocaleDateString()}</div>
+  </body></html>`;
 }

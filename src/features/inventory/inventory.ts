@@ -8,7 +8,7 @@ import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
 import { openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDateTime, debounce, resolveMovementNote } from '@shared/utils/helpers';
+import { formatCurrency, formatDateTime, debounce, resolveMovementNote, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
 import type { StockMovement, StockMovementType, Product } from '@core/types';
@@ -220,15 +220,15 @@ function buildHTML(state: State): string {
           <tbody>
             ${lowStock.map((p) => `
               <tr>
-                <td><span style="font-weight:500;">${p.name}</span></td>
-                <td><code style="font-size:var(--font-size-xs);background:var(--color-bg-secondary);padding:2px 6px;border-radius:var(--radius-xs);">${p.sku}</code></td>
+                <td><span style="font-weight:500;">${escapeHtml(p.name)}</span></td>
+                <td><code style="font-size:var(--font-size-xs);background:var(--color-bg-secondary);padding:2px 6px;border-radius:var(--radius-xs);">${escapeHtml(p.sku)}</code></td>
                 <td>
                   <span class="badge ${p.stock === 0 ? 'badge-error' : 'badge-warning'}">
-                    ${p.stock} ${p.unit}
+                    ${p.stock} ${escapeHtml(p.unit)}
                   </span>
                 </td>
-                <td style="color:var(--color-text-secondary);">${p.reorderPoint} ${p.unit}</td>
-                <td style="color:var(--color-text-secondary);">${p.reorderQuantity} ${p.unit}</td>
+                <td style="color:var(--color-text-secondary);">${p.reorderPoint} ${escapeHtml(p.unit)}</td>
+                <td style="color:var(--color-text-secondary);">${p.reorderQuantity} ${escapeHtml(p.unit)}</td>
                 <td>
                   <button class="btn btn-secondary btn-sm" data-quick-restock="${p.id}">
                     ${Icons.download(14)} ${i18n.t('inventory.restock')}
@@ -272,10 +272,10 @@ function buildHTML(state: State): string {
                   const statusLabel = isOut ? i18n.t('inventory.status.outOfStock') : isLow ? i18n.t('inventory.status.lowStock') : i18n.t('inventory.status.inStock');
                   return `
                     <tr>
-                      <td><span style="font-weight:500;">${p.name}</span></td>
-                      <td><code style="font-size:var(--font-size-xs);background:var(--color-bg-secondary);padding:2px 6px;border-radius:var(--radius-xs);">${p.sku}</code></td>
-                      <td><span class="badge badge-primary">${p.category}</span></td>
-                      <td><strong>${p.stock} ${p.unit}</strong></td>
+                      <td><span style="font-weight:500;">${escapeHtml(p.name)}</span></td>
+                      <td><code style="font-size:var(--font-size-xs);background:var(--color-bg-secondary);padding:2px 6px;border-radius:var(--radius-xs);">${escapeHtml(p.sku)}</code></td>
+                      <td><span class="badge badge-primary">${escapeHtml(p.category)}</span></td>
+                      <td><strong>${p.stock} ${escapeHtml(p.unit)}</strong></td>
                       <td style="color:var(--color-text-secondary);">${p.reorderPoint}</td>
                       <td style="color:var(--color-text-secondary);">${formatCurrency(costVal)}</td>
                       <td style="color:var(--color-text-secondary);">${formatCurrency(retailVal)}</td>
@@ -336,7 +336,7 @@ function buildHTML(state: State): string {
                   return `
                     <tr>
                       <td style="color:var(--color-text-secondary);white-space:nowrap;">${formatDateTime(m.createdAt)}</td>
-                      <td><span style="font-weight:500;">${m.productName}</span></td>
+                      <td><span style="font-weight:500;">${escapeHtml(m.productName)}</span></td>
                       <td><span class="badge ${MOVEMENT_BADGE[m.type]}">${MOVEMENT_LABEL()[m.type]}</span></td>
                       <td>
                         <span style="font-weight:600;color:${isIn ? 'var(--color-success)' : 'var(--color-error)}'};">
@@ -345,8 +345,8 @@ function buildHTML(state: State): string {
                       </td>
                       <td style="color:var(--color-text-secondary);">${m.stockBefore}</td>
                       <td style="font-weight:500;">${m.stockAfter}</td>
-                      <td style="color:var(--color-text-secondary);">${m.reference ? `<code style="font-size:var(--font-size-xs);background:var(--color-bg-secondary);padding:2px 6px;border-radius:var(--radius-xs);">${m.reference}</code>` : '—'}</td>
-                      <td style="color:var(--color-text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${resolveMovementNote(m.notes)}">${resolveMovementNote(m.notes)}</td>
+                      <td style="color:var(--color-text-secondary);">${m.reference ? `<code style="font-size:var(--font-size-xs);background:var(--color-bg-secondary);padding:2px 6px;border-radius:var(--radius-xs);">${escapeHtml(m.reference)}</code>` : '—'}</td>
+                      <td style="color:var(--color-text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(resolveMovementNote(m.notes))}">${escapeHtml(resolveMovementNote(m.notes))}</td>
                     </tr>`;
                 }).join('')
             }
@@ -384,7 +384,7 @@ function openAdjustModal(onSave: () => void): void {
       <label class="form-label required" for="adj-product">${i18n.t('products.modals.name')}</label>
       <select id="adj-product" class="form-control">
         <option value="">${i18n.t('inventory.modals.selectProduct')}</option>
-        ${products.map((p) => `<option value="${p.id}" data-stock="${p.stock}">${p.name} (${p.sku}) — ${p.stock} ${p.unit}</option>`).join('')}
+        ${products.map((p) => `<option value="${p.id}" data-stock="${p.stock}">${escapeHtml(p.name)} (${escapeHtml(p.sku)}) — ${p.stock} ${escapeHtml(p.unit)}</option>`).join('')}
       </select>
     </div>
     <div class="form-row">
@@ -445,7 +445,7 @@ function openAdjustModal(onSave: () => void): void {
           qty,
           notes || undefined
         ).catch(console.error);
-        notifications.success(`${i18n.t('inventory.type.adjustment')}: ${product.name} → ${result.stockAfter} ${product.unit}`);
+        notifications.success(`${i18n.t('inventory.type.adjustment')}: ${escapeHtml(product.name)} → ${result.stockAfter} ${escapeHtml(product.unit)}`);
         onSave();
       } else {
         showModalError(form, i18n.t('inventory.modals.adjustFailed'));
@@ -464,7 +464,7 @@ function openRestockModal(onSave: () => void, preselected?: Product): void {
       <label class="form-label required" for="rs-product">${i18n.t('products.modals.name')}</label>
       <select id="rs-product" class="form-control">
         <option value="">${i18n.t('inventory.modals.selectProduct')}</option>
-        ${products.map((p) => `<option value="${p.id}" data-reorder="${p.reorderQuantity}" ${preselected?.id === p.id ? 'selected' : ''}>${p.name} (${p.sku}) — ${p.stock} ${p.unit}</option>`).join('')}
+        ${products.map((p) => `<option value="${p.id}" data-reorder="${p.reorderQuantity}" ${preselected?.id === p.id ? 'selected' : ''}>${escapeHtml(p.name)} (${escapeHtml(p.sku)}) — ${p.stock} ${escapeHtml(p.unit)}</option>`).join('')}
       </select>
     </div>
     <div class="form-row">
@@ -510,7 +510,7 @@ function openRestockModal(onSave: () => void, preselected?: Product): void {
       const result = inventoryService.restock(productId, qty, ref || undefined, notes || undefined);
       if (result) {
         const product = productService.getById(productId)!;
-        notifications.success(`${i18n.t('inventory.restock')}: ${product.name} +${qty} → ${result.stockAfter} ${product.unit}`);
+        notifications.success(`${i18n.t('inventory.restock')}: ${escapeHtml(product.name)} +${qty} → ${result.stockAfter} ${escapeHtml(product.unit)}`);
         onSave();
       } else {
         showModalError(form, i18n.t('inventory.modals.restockFailed'));
@@ -532,8 +532,8 @@ function openReorderSettingsModal(onSave: () => void): void {
       ${products.map((p) => `
         <div style="display:grid;grid-template-columns:1fr 100px 100px;gap:var(--space-3);align-items:center;padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);">
           <div>
-            <div style="font-weight:500;font-size:var(--font-size-sm);">${p.name}</div>
-            <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${p.sku} · ${p.stock} ${p.unit} ${i18n.t('inventory.status.inStock').toLowerCase()}</div>
+            <div style="font-weight:500;font-size:var(--font-size-sm);">${escapeHtml(p.name)}</div>
+            <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${escapeHtml(p.sku)} · ${p.stock} ${escapeHtml(p.unit)} ${i18n.t('inventory.status.inStock').toLowerCase()}</div>
           </div>
           <div>
             <label style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);display:block;margin-bottom:2px;">${i18n.t('inventory.reorderSettings').split(' ')[0]}</label>

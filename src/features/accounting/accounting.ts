@@ -6,7 +6,7 @@ import { journalService } from '@services/journalService';
 import { fiscalPeriodService } from '@services/fiscalPeriodService';
 import { accountService } from '@services/accountService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 
 export function renderAccounting(): HTMLElement {
@@ -90,9 +90,9 @@ export function renderAccounting(): HTMLElement {
                 ? `<tr><td colspan="5" style="text-align:center;padding:var(--space-8);color:var(--color-text-tertiary);">${i18n.t('common.noData')}</td></tr>`
                 : recentEntries.map((e) => `
                   <tr>
-                    <td><span style="font-weight:600;color:var(--color-primary);">${e.entryNumber}</span></td>
+                    <td><span style="font-weight:600;color:var(--color-primary);">${escapeHtml(e.entryNumber)}</span></td>
                     <td style="color:var(--color-text-secondary);">${formatDate(e.date)}</td>
-                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.description}</td>
+                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(e.description)}</td>
                     <td><strong>${formatCurrency(e.totalDebit)}</strong></td>
                     <td><span class="badge ${STATUS_BADGE[e.status] ?? 'badge-neutral'}">${i18n.t(`accounting.journal.statuses.${e.status}` as any)}</span></td>
                   </tr>`).join('')
@@ -114,7 +114,7 @@ export function renderAccounting(): HTMLElement {
             : topAccounts.map((a) => `
               <div style="display:flex;justify-content:space-between;align-items:center;padding:var(--space-2) 0;border-bottom:1px solid var(--color-border-subtle);">
                 <div>
-                  <div style="font-size:var(--font-size-sm);font-weight:500;">${a.code} · ${a.name}</div>
+                  <div style="font-size:var(--font-size-sm);font-weight:500;">${escapeHtml(a.code)} · ${escapeHtml(a.name)}</div>
                   <span class="badge badge-${a.type}" style="font-size:10px;">${i18n.t(`accounting.accounts.types.${a.type}` as any)}</span>
                 </div>
                 <div style="font-weight:600;font-size:var(--font-size-sm);color:${a.balance >= 0 ? 'var(--color-success)' : 'var(--color-error)'};">${formatCurrency(a.balance)}</div>

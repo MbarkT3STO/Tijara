@@ -42,6 +42,7 @@
     "search": "Rechercher...",
     "filter": "Filtrer",
     "export": "Exporter",
+    "exportPdf": "Exporter PDF",
     "print": "Imprimer",
     "close": "Fermer",
     "confirm": "Confirmer",
@@ -366,6 +367,10 @@
     "unit": "Unité",
     "margin": "Marge",
     "allCategories": "Toutes les catégories",
+    "costHistory": "Historique du coût",
+    "costOld": "Ancien coût",
+    "costNew": "Nouveau coût",
+    "changedBy": "Modifié par",
     "modals": {
       "addTitle": "Ajouter un produit",
       "editTitle": "Modifier le produit",
@@ -587,6 +592,15 @@
     "agingBucket2": "31–60 jours",
     "agingBucket3": "61–90 jours",
     "agingBucket4": "90+ jours",
+    "apAgingDetail": {
+      "title": "Ancienneté des comptes fournisseurs",
+      "supplier": "Fournisseur",
+      "current": "En cours",
+      "days1_30": "1–30 jours",
+      "days31_60": "31–60 jours",
+      "days61_90": "61–90 jours",
+      "days90plus": "90+ jours"
+    },
     "kpis": {
       "totalRevenue": "Chiffre d'affaires total",
       "totalProfit": "Bénéfice total",
@@ -963,7 +977,13 @@
       "taxAmount": "Montant TVA",
       "totalTaxable": "Total Ventes Imposables",
       "totalTax": "Total TVA Collectée",
-      "taxPayable": "TVA à Payer"
+      "taxPayable": "TVA à Payer",
+      "declarationTitle": "Récapitulatif déclaration TVA",
+      "declarationSubtitle": "Référence déclaration mensuelle TVA (format marocain)",
+      "tvaCollectee": "TVA Collectée",
+      "tvaDeductible": "TVA Déductible",
+      "tvaAPayer": "TVA à Payer",
+      "tvaCredit": "Crédit de TVA — à reporter"
     },
     "costCenters": {
       "title": "Centres de Coût",

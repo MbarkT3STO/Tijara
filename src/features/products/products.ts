@@ -6,9 +6,10 @@ import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, debounce } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
+import { repository } from '@data/excelRepository';
 import type { Product } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -200,15 +201,15 @@ function buildHTML(state: State): string {
                 <tr>
                   <td>
                     <div>
-                      <div style="font-weight: 500;">${p.name}</div>
-                      ${p.description ? `<div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary);">${p.description}</div>` : ''}
+                      <div style="font-weight: 500;">${escapeHtml(p.name)}</div>
+                      ${p.description ? `<div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary);">${escapeHtml(p.description)}</div>` : ''}
                     </div>
                   </td>
-                  <td><code style="font-size: var(--font-size-xs); background: var(--color-bg-secondary); padding: 2px 6px; border-radius: var(--radius-xs);">${p.sku}</code></td>
-                  <td><span class="badge badge-primary">${p.category}</span></td>
+                  <td><code style="font-size: var(--font-size-xs); background: var(--color-bg-secondary); padding: 2px 6px; border-radius: var(--radius-xs);">${escapeHtml(p.sku)}</code></td>
+                  <td><span class="badge badge-primary">${escapeHtml(p.category)}</span></td>
                   <td><strong>${formatCurrency(p.price)}</strong></td>
                   <td style="color: var(--color-text-secondary);">${formatCurrency(p.cost)}</td>
-                  <td><span class="badge ${stockClass}">${p.stock} ${p.unit}</span></td>
+                  <td><span class="badge ${stockClass}">${p.stock} ${escapeHtml(p.unit)}</span></td>
                   <td style="color: ${margin >= 30 ? 'var(--color-success)' : margin >= 15 ? 'var(--color-warning)' : 'var(--color-error)'}; font-weight: 500;">${margin.toFixed(1)}%</td>
                   <td>
                     <div class="table-actions">
@@ -410,4 +411,42 @@ function openProductModal(product: Product | null, onSave: () => void): void {
       onSave();
     },
   });
+
+  // Show cost history for existing products
+  if (isEdit && product) {
+    const costHistory = repository.getAll('productCostHistory')
+      .filter((h) => h.productId === product.id)
+      .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime())
+      .slice(0, 10);
+
+    if (costHistory.length > 0) {
+      const histSection = document.createElement('div');
+      histSection.style.cssText = 'margin-top:var(--space-4);border-top:1px solid var(--color-border-subtle);padding-top:var(--space-4);';
+      histSection.innerHTML = `
+        <div style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:var(--space-3);">
+          ${i18n.t('products.costHistory' as any)}
+        </div>
+        <table style="width:100%;font-size:var(--font-size-xs);border-collapse:collapse;">
+          <thead>
+            <tr style="color:var(--color-text-tertiary);">
+              <th style="text-align:left;padding:4px 8px;">${i18n.t('common.date')}</th>
+              <th style="text-align:right;padding:4px 8px;">${i18n.t('products.costOld' as any)}</th>
+              <th style="text-align:right;padding:4px 8px;">${i18n.t('products.costNew' as any)}</th>
+              <th style="text-align:left;padding:4px 8px;">${i18n.t('products.changedBy' as any)}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${costHistory.map((h) => `
+              <tr style="border-top:1px solid var(--color-border-subtle);">
+                <td style="padding:4px 8px;color:var(--color-text-secondary);">${formatDate(h.changedAt)}</td>
+                <td style="padding:4px 8px;text-align:right;color:var(--color-error);">${formatCurrency(h.oldCost)}</td>
+                <td style="padding:4px 8px;text-align:right;color:var(--color-success);">${formatCurrency(h.newCost)}</td>
+                <td style="padding:4px 8px;color:var(--color-text-tertiary);">${h.changedBy ? escapeHtml(h.changedBy) : '—'}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      `;
+      form.appendChild(histSection);
+    }
+  }
 }

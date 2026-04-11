@@ -8,7 +8,7 @@ import { saleService } from '@services/saleService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
 import type { Return, ReturnItem, ReturnReason, Sale } from '@core/types';
@@ -249,9 +249,9 @@ function buildHTML(state: State): string {
                 </td></tr>`
               : pageData.map((r) => `
                 <tr>
-                  <td><span style="font-weight:600;color:var(--color-primary);">${r.returnNumber}</span></td>
-                  <td style="color:var(--color-text-secondary);">${r.orderNumber}</td>
-                  <td>${r.customerName}</td>
+                  <td><span style="font-weight:600;color:var(--color-primary);">${escapeHtml(r.returnNumber)}</span></td>
+                  <td style="color:var(--color-text-secondary);">${escapeHtml(r.orderNumber)}</td>
+                  <td>${escapeHtml(r.customerName)}</td>
                   <td style="color:var(--color-text-secondary);">${i18n.t('common.itemsCount', { count: r.items.length })}</td>
                   <td><strong style="color:var(--color-error);">${formatCurrency(r.refundAmount)}</strong></td>
                   <td style="color:var(--color-text-secondary);font-size:var(--font-size-xs);">${i18n.t(`returns.reasons.${r.reason.toLowerCase()}` as any)}</td>
@@ -299,11 +299,11 @@ function openReturnDetailModal(ret: Return, onUpdate: () => void): void {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('returns.customer')}</div>
-        <div style="font-weight:500;">${ret.customerName}</div>
+        <div style="font-weight:500;">${escapeHtml(ret.customerName)}</div>
       </div>
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('returns.orderNumber')}</div>
-        <div style="font-weight:500;color:var(--color-primary);">${ret.orderNumber}</div>
+        <div style="font-weight:500;color:var(--color-primary);">${escapeHtml(ret.orderNumber)}</div>
       </div>
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('purchases.status')}</div>
@@ -329,7 +329,7 @@ function openReturnDetailModal(ret: Return, onUpdate: () => void): void {
         <tbody>
           ${ret.items.map((item) => `
             <tr>
-              <td>${item.productName}</td>
+              <td>${escapeHtml(item.productName)}</td>
               <td>${item.quantity}</td>
               <td>${formatCurrency(item.unitPrice)}</td>
               <td><strong>${formatCurrency(item.total)}</strong></td>
@@ -346,7 +346,7 @@ function openReturnDetailModal(ret: Return, onUpdate: () => void): void {
       </div>
     </div>
 
-    ${ret.notes ? `<div style="padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-4);">${ret.notes}</div>` : ''}
+    ${ret.notes ? `<div style="padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-4);">${escapeHtml(ret.notes)}</div>` : ''}
 
     ${ret.status === 'pending' ? `
     <div style="display:flex;gap:var(--space-3);">
@@ -360,7 +360,7 @@ function openReturnDetailModal(ret: Return, onUpdate: () => void): void {
     </div>` : ''}
   `;
 
-  const close = openModal({ title: `${i18n.t('returns.modals.detailTitle')} ${ret.returnNumber}`, content, size: 'lg', hideFooter: true });
+  const close = openModal({ title: `${i18n.t('returns.modals.detailTitle')} ${escapeHtml(ret.returnNumber)}`, content, size: 'lg', hideFooter: true });
 
   content.querySelector('#detail-approve-btn')?.addEventListener('click', () => {
     confirmDialog(

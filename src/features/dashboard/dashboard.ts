@@ -6,7 +6,7 @@ import { dashboardService } from '@services/dashboardService';
 import { journalService } from '@services/journalService';
 import { fiscalPeriodService } from '@services/fiscalPeriodService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, formatPercent } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, formatPercent, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { router } from '@core/router';
 import type { DashboardStats } from '@core/types';
@@ -103,8 +103,8 @@ function buildDashboardHTML(stats: DashboardStats, accountingStats: ReturnType<t
                     </td></tr>`
                   : stats.recentSales.map((sale) => `
                       <tr>
-                        <td><span style="font-weight:600;color:var(--color-primary);">${sale.orderNumber}</span></td>
-                        <td>${sale.customerName}</td>
+                        <td><span style="font-weight:600;color:var(--color-primary);">${escapeHtml(sale.orderNumber)}</span></td>
+                        <td>${escapeHtml(sale.customerName)}</td>
                         <td class="col-hide-mobile" style="color:var(--color-text-secondary);">${formatDate(sale.createdAt)}</td>
                         <td><strong>${formatCurrency(sale.total)}</strong></td>
                         <td>${buildStatusBadge(sale.status)}</td>
@@ -135,7 +135,7 @@ function buildDashboardHTML(stats: DashboardStats, accountingStats: ReturnType<t
                   <div class="top-product-item">
                     <div class="top-product-rank">${i + 1}</div>
                     <div class="top-product-info">
-                      <div class="top-product-name">${p.name}</div>
+                      <div class="top-product-name">${escapeHtml(p.name)}</div>
                       <div class="top-product-qty">${i18n.t('dashboard.unitsSold', { count: p.quantity })}</div>
                     </div>
                     <div class="top-product-revenue">${formatCurrency(p.revenue)}</div>

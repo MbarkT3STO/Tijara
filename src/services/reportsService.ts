@@ -49,6 +49,17 @@ export interface ReportSummary {
   totalPurchaseSpend: number;
 }
 
+export interface SupplierAgingRow {
+  supplierId: string;
+  supplierName: string;
+  current: number;
+  days1_30: number;
+  days31_60: number;
+  days61_90: number;
+  days90plus: number;
+  total: number;
+}
+
 export const reportsService = {
   /** Revenue by month for the last N months */
   getMonthlyRevenue(months = 12): MonthlyRevenue[] {
@@ -192,6 +203,42 @@ export const reportsService = {
     return Array.from(map.values())
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, limit);
+  },
+
+  /** AP Aging — outstanding purchase orders bucketed by overdue days */
+  getSupplierAging(): SupplierAgingRow[] {
+    const today = new Date();
+    const purchases = repository.getAll('purchases').filter(
+      (p) => p.status === 'received' && p.paymentStatus !== 'paid'
+    );
+
+    const map = new Map<string, SupplierAgingRow>();
+
+    purchases.forEach((p) => {
+      if (!map.has(p.supplierId)) {
+        map.set(p.supplierId, {
+          supplierId: p.supplierId,
+          supplierName: p.supplierName,
+          current: 0, days1_30: 0, days31_60: 0, days61_90: 0, days90plus: 0, total: 0,
+        });
+      }
+      const row = map.get(p.supplierId)!;
+      const dueDate = p.expectedDate
+        ? new Date(p.expectedDate)
+        : new Date(new Date(p.createdAt).getTime() + 30 * 86400000);
+      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / 86400000);
+      const outstanding = p.total - (p.amountPaid ?? 0);
+
+      if (daysOverdue <= 0)       row.current   += outstanding;
+      else if (daysOverdue <= 30) row.days1_30  += outstanding;
+      else if (daysOverdue <= 60) row.days31_60 += outstanding;
+      else if (daysOverdue <= 90) row.days61_90 += outstanding;
+      else                        row.days90plus += outstanding;
+
+      row.total += outstanding;
+    });
+
+    return [...map.values()].sort((a, b) => b.total - a.total);
   },
 
   /** Summary stats for a date range (null = all time) */

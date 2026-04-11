@@ -119,5 +119,51 @@ function buildHTML(state: State): string {
         </table>
       </div>
     </div>
+
+    ${r && r.lines.length > 0 ? buildTvaDeclaration(r) : ''}
   `;
+}
+
+function buildTvaDeclaration(r: TaxReport): string {
+  // TVA collectée: accounts >= 4440 (output VAT) or lines tagged 'collect'
+  const tvaCollectee = r.lines
+    .filter((l) => l.taxCode.toLowerCase().includes('collect') || parseFloat(l.taxCode) >= 4440)
+    .reduce((s, l) => s + l.taxAmount, 0);
+
+  // TVA déductible: accounts >= 3450 (input VAT) or lines tagged 'recup'
+  const tvaDeductible = r.lines
+    .filter((l) => l.taxCode.toLowerCase().includes('recup') || (parseFloat(l.taxCode) >= 3450 && parseFloat(l.taxCode) < 4440))
+    .reduce((s, l) => s + l.taxAmount, 0);
+
+  // Fallback: if no lines match the filter, use totals directly
+  const effectiveCollectee = tvaCollectee > 0 ? tvaCollectee : r.totalTaxAmount;
+  const effectiveDeductible = tvaDeductible;
+  const tvaAPayer = effectiveCollectee - effectiveDeductible;
+
+  return `
+    <div class="card" style="margin-top:var(--space-5);">
+      <div class="card-header">
+        <h3 class="card-title">${i18n.t('accounting.taxReport.declarationTitle' as any)}</h3>
+        <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">
+          ${i18n.t('accounting.taxReport.declarationSubtitle' as any)}
+        </span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-4);padding:var(--space-4);">
+        <div class="card stat-card">
+          <div class="stat-card-label">${i18n.t('accounting.taxReport.tvaCollectee' as any)}</div>
+          <div class="stat-card-value">${formatCurrency(effectiveCollectee)}</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-card-label">${i18n.t('accounting.taxReport.tvaDeductible' as any)}</div>
+          <div class="stat-card-value">${formatCurrency(effectiveDeductible)}</div>
+        </div>
+        <div class="card stat-card" style="border-color:${tvaAPayer > 0 ? 'var(--color-error)' : 'var(--color-success)'};">
+          <div class="stat-card-label">${i18n.t('accounting.taxReport.tvaAPayer' as any)}</div>
+          <div class="stat-card-value" style="color:${tvaAPayer > 0 ? 'var(--color-error)' : 'var(--color-success)'};">
+            ${formatCurrency(Math.abs(tvaAPayer))}
+          </div>
+          ${tvaAPayer < 0 ? `<div style="font-size:var(--font-size-xs);color:var(--color-success);">${i18n.t('accounting.taxReport.tvaCredit' as any)}</div>` : ''}
+        </div>
+      </div>
+    </div>`;
 }

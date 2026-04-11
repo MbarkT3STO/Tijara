@@ -4,7 +4,8 @@
 
 import { repository } from '@data/excelRepository';
 import { inventoryService } from './inventoryService';
-import type { Product } from '@core/types';
+import { authService } from './authService';
+import type { Product, ProductCostHistory } from '@core/types';
 import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';
 
 export const productService = {
@@ -47,6 +48,22 @@ export const productService = {
   },
 
   update(id: string, data: Partial<Omit<Product, 'id' | 'createdAt'>>): boolean {
+    // If cost is changing, record the history
+    if (data.cost !== undefined) {
+      const existing = repository.getById('products', id);
+      if (existing && existing.cost !== data.cost) {
+        const history: ProductCostHistory = {
+          id: generateId(),
+          productId: id,
+          productName: existing.name,
+          oldCost: existing.cost,
+          newCost: data.cost,
+          changedAt: getCurrentISODate(),
+          changedBy: authService.getUser()?.name,
+        };
+        repository.insert('productCostHistory', history);
+      }
+    }
     return repository.update('products', id, data);
   },
 

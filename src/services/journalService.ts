@@ -38,13 +38,14 @@ class JournalService {
 
   nextEntryNumber(): string {
     const year = new Date().getFullYear();
-    const entries = this.getAll();
-    const yearEntries = entries.filter((e) => e.entryNumber.startsWith(`JE-${year}-`));
-    const maxNum = yearEntries.reduce((max, e) => {
-      const num = parseInt(e.entryNumber.split('-')[2] ?? '0', 10);
-      return num > max ? num : max;
-    }, 0);
-    return `JE-${year}-${String(maxNum + 1).padStart(4, '0')}`;
+    const prefix = `JE-${year}-`;
+    const max = this.getAll()
+      .filter((e) => e.entryNumber.startsWith(prefix))
+      .reduce((m, e) => {
+        const n = parseInt(e.entryNumber.slice(prefix.length), 10);
+        return isNaN(n) ? m : Math.max(m, n);
+      }, 0);
+    return `${prefix}${String(max + 1).padStart(4, '0')}`;
   }
 
   async createEntry(data: Omit<JournalEntry, 'id' | 'entryNumber' | 'createdAt' | 'updatedAt'>): Promise<JournalEntry> {

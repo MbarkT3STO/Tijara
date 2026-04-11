@@ -9,7 +9,7 @@ import { fiscalPeriodService } from '@services/fiscalPeriodService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce, generateId } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, generateId, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { JournalEntry, JournalEntryStatus, JournalLine } from '@core/types';
 
@@ -219,9 +219,9 @@ function buildHTML(state: State): string {
                   const rows = [`
                     <tr data-expand="${e.id}" style="cursor:pointer;">
                       <td style="color:var(--color-text-tertiary);">${isExpanded ? Icons.chevronDown(14) : Icons.chevronRight(14)}</td>
-                      <td><span style="font-weight:600;color:var(--color-primary);">${e.entryNumber}</span></td>
+                      <td><span style="font-weight:600;color:var(--color-primary);">${escapeHtml(e.entryNumber)}</span></td>
                       <td style="color:var(--color-text-secondary);">${formatDate(e.date)}</td>
-                      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.description}</td>
+                      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(e.description)}</td>
                       <td style="color:var(--color-text-secondary);font-size:var(--font-size-xs);">${i18n.t(`accounting.journal.sources.${e.sourceType}` as any)}</td>
                       <td><strong>${formatCurrency(e.totalDebit)}</strong></td>
                       <td><strong>${formatCurrency(e.totalCredit)}</strong></td>
@@ -255,8 +255,8 @@ function buildHTML(state: State): string {
                               <tbody>
                                 ${e.lines.map((l) => `
                                   <tr>
-                                    <td><span style="font-family:monospace;color:var(--color-primary);">${l.accountCode}</span> · ${l.accountName}</td>
-                                    <td style="color:var(--color-text-secondary);">${l.description ?? '—'}</td>
+                                    <td><span style="font-family:monospace;color:var(--color-primary);">${escapeHtml(l.accountCode)}</span> · ${escapeHtml(l.accountName)}</td>
+                                    <td style="color:var(--color-text-secondary);">${l.description ? escapeHtml(l.description) : '—'}</td>
                                     <td style="text-align:right;">${l.debit > 0 ? formatCurrency(l.debit) : '—'}</td>
                                     <td style="text-align:right;">${l.credit > 0 ? formatCurrency(l.credit) : '—'}</td>
                                   </tr>`).join('')}
@@ -334,7 +334,7 @@ function openJournalModal(entry: JournalEntry | null, onSave: () => void): void 
               <td>
                 <select class="form-control je-line-account" data-idx="${idx}" style="height:32px;font-size:var(--font-size-xs);">
                   <option value="">— ${i18n.t('accounting.journal.account' as any)} —</option>
-                  ${accounts.map((a) => `<option value="${a.id}" data-code="${a.code}" data-name="${a.name}" ${l.accountId === a.id ? 'selected' : ''}>${a.code} · ${a.name}</option>`).join('')}
+                  ${accounts.map((a) => `<option value="${a.id}" data-code="${escapeHtml(a.code)}" data-name="${escapeHtml(a.name)}" ${l.accountId === a.id ? 'selected' : ''}>${escapeHtml(a.code)} · ${escapeHtml(a.name)}</option>`).join('')}
                 </select>
               </td>
               <td><input type="text" class="form-control je-line-desc" data-idx="${idx}" value="${l.description ?? ''}" style="height:32px;font-size:var(--font-size-xs);" /></td>
@@ -423,7 +423,7 @@ function openJournalModal(entry: JournalEntry | null, onSave: () => void): void 
       <div class="form-group">
         <label class="form-label" for="je-period">${i18n.t('nav.fiscal-periods' as any)}</label>
         <select id="je-period" class="form-control">
-          ${openPeriods.map((p) => `<option value="${p.id}" ${entry?.fiscalPeriodId === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+          ${openPeriods.map((p) => `<option value="${p.id}" ${entry?.fiscalPeriodId === p.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}
         </select>
       </div>
     </div>
@@ -459,7 +459,7 @@ function openJournalModal(entry: JournalEntry | null, onSave: () => void): void 
         <label class="form-label">${i18n.t('accounting.journal.templates' as any)}</label>
         <select id="tpl-select" class="form-control">
           <option value="">— ${i18n.t('accounting.journal.templates' as any)} —</option>
-          ${templates.map((t) => `<option value="${t.id}">${t.name}</option>`).join('')}
+          ${templates.map((t) => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('')}
         </select>
       </div>
     `;

@@ -42,6 +42,7 @@
     "search": "Search...",
     "filter": "Filter",
     "export": "Export",
+    "exportPdf": "Export PDF",
     "print": "Print",
     "close": "Close",
     "confirm": "Confirm",
@@ -363,6 +364,10 @@
     "unit": "Unit",
     "margin": "Margin",
     "allCategories": "All Categories",
+    "costHistory": "Cost History",
+    "costOld": "Previous Cost",
+    "costNew": "New Cost",
+    "changedBy": "Changed By",
     "modals": {
       "addTitle": "Add Product",
       "editTitle": "Edit Product",
@@ -584,6 +589,15 @@
     "agingBucket2": "31–60 days",
     "agingBucket3": "61–90 days",
     "agingBucket4": "90+ days",
+    "apAgingDetail": {
+      "title": "Accounts Payable Aging",
+      "supplier": "Supplier",
+      "current": "Current",
+      "days1_30": "1–30 Days",
+      "days31_60": "31–60 Days",
+      "days61_90": "61–90 Days",
+      "days90plus": "90+ Days"
+    },
     "kpis": {
       "totalRevenue": "Total Revenue",
       "totalProfit": "Total Profit",
@@ -967,7 +981,13 @@
       "taxAmount": "Tax Amount",
       "totalTaxable": "Total Taxable Sales",
       "totalTax": "Total Tax Collected",
-      "taxPayable": "Tax Payable"
+      "taxPayable": "Tax Payable",
+      "declarationTitle": "TVA Declaration Summary",
+      "declarationSubtitle": "Monthly VAT declaration reference (Moroccan format)",
+      "tvaCollectee": "TVA Collectée (Output VAT)",
+      "tvaDeductible": "TVA Déductible (Input VAT)",
+      "tvaAPayer": "TVA à Payer (Net Payable)",
+      "tvaCredit": "Credit — carry forward"
     },
     "costCenters": {
       "title": "Cost Centers",

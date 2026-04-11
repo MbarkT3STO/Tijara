@@ -6,6 +6,7 @@
 import { eventBus, Events } from '@core/eventBus';
 import type { AppNotification } from '@core/types';
 import { Icons } from './icons';
+import { escapeHtml } from '@shared/utils/helpers';
 
 const TOAST_ICONS: Record<AppNotification['type'], string> = {
   success: Icons.check(18),
@@ -145,7 +146,7 @@ function showToast(container: HTMLElement, notification: AppNotification): void 
     <div class="toast-accent" style="background:${accentColor};"></div>
     <span class="toast-icon">${TOAST_ICONS[notification.type]}</span>
     <div class="toast-content">
-      <p class="toast-message">${notification.message}</p>
+      <p class="toast-message">${escapeHtml(notification.message)}</p>
     </div>
     <button class="toast-close" aria-label="Dismiss notification">
       ${Icons.close(14)}

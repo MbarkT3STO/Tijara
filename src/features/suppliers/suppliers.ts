@@ -6,7 +6,7 @@ import { supplierService } from '@services/supplierService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatDate, debounce, getInitials } from '@shared/utils/helpers';
+import { formatDate, debounce, getInitials, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { Supplier } from '@core/types';
 
@@ -162,16 +162,16 @@ function buildHTML(state: State): string {
                     <div style="display:flex;align-items:center;gap:var(--space-3);">
                       <div class="avatar avatar-sm">${getInitials(s.name)}</div>
                       <div>
-                        <div style="font-weight:500;">${s.name}</div>
-                        ${s.taxId ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('suppliers.modals.taxId')}: ${s.taxId}</div>` : ''}
+                        <div style="font-weight:500;">${escapeHtml(s.name)}</div>
+                        ${s.taxId ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('suppliers.modals.taxId')}: ${escapeHtml(s.taxId)}</div>` : ''}
                       </div>
                     </div>
                   </td>
-                  <td style="color:var(--color-text-secondary);">${s.contactPerson || '—'}</td>
-                  <td style="color:var(--color-text-secondary);">${s.email || '—'}</td>
-                  <td style="color:var(--color-text-secondary);"><span class="force-ltr">${s.phone || '—'}</span></td>
-                  <td>${s.city || '—'}</td>
-                  <td>${s.country || '—'}</td>
+                  <td style="color:var(--color-text-secondary);">${escapeHtml(s.contactPerson) || '—'}</td>
+                  <td style="color:var(--color-text-secondary);">${escapeHtml(s.email) || '—'}</td>
+                  <td style="color:var(--color-text-secondary);"><span class="force-ltr">${escapeHtml(s.phone) || '—'}</span></td>
+                  <td>${escapeHtml(s.city) || '—'}</td>
+                  <td>${escapeHtml(s.country) || '—'}</td>
                   <td style="color:var(--color-text-secondary);">${formatDate(s.createdAt)}</td>
                   <td>
                     <div class="table-actions">
@@ -210,40 +210,44 @@ function openSupplierDetailModal(supplier: Supplier, onEdit: () => void): void {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.contactPerson')}</div>
-        <div style="font-weight:500;">${supplier.contactPerson || '—'}</div>
+        <div style="font-weight:500;">${escapeHtml(supplier.contactPerson) || '—'}</div>
       </div>
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.email')}</div>
-        <div>${supplier.email || '—'}</div>
+        <div>${escapeHtml(supplier.email) || '—'}</div>
       </div>
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.phone')}</div>
-        <div><span class="force-ltr">${supplier.phone || '—'}</span></div>
+        <div><span class="force-ltr">${escapeHtml(supplier.phone) || '—'}</span></div>
       </div>
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.modals.website')}</div>
-        <div>${supplier.website ? `<a href="${supplier.website}" target="_blank" style="color:var(--color-primary);">${supplier.website}</a>` : '—'}</div>
+        <div>${supplier.website
+          ? (supplier.website.startsWith('http://') || supplier.website.startsWith('https://')
+            ? `<a href="${escapeHtml(supplier.website)}" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary);">${escapeHtml(supplier.website)}</a>`
+            : escapeHtml(supplier.website))
+          : '—'}</div>
       </div>
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.modals.address')}</div>
-        <div>${[supplier.address, supplier.city, supplier.country].filter(Boolean).join(', ') || '—'}</div>
+        <div>${[supplier.address, supplier.city, supplier.country].filter(Boolean).map(escapeHtml).join(', ') || '—'}</div>
       </div>
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('suppliers.modals.taxId')}</div>
-        <div>${supplier.taxId || '—'}</div>
+        <div>${escapeHtml(supplier.taxId) || '—'}</div>
       </div>
     </div>
     ${supplier.notes ? `
     <div style="padding:var(--space-3) var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">
       <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('common.notes')}</div>
-      ${supplier.notes}
+      ${escapeHtml(supplier.notes)}
     </div>` : ''}
     <div style="margin-top:var(--space-5);">
       <button class="btn btn-secondary" id="detail-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>
     </div>
   `;
 
-  const close = openModal({ title: supplier.name, content, size: 'lg', hideFooter: true });
+  const close = openModal({ title: escapeHtml(supplier.name), content, size: 'lg', hideFooter: true });
   content.querySelector('#detail-edit-btn')?.addEventListener('click', () => {
     close();
     openSupplierModal(supplier, onEdit);

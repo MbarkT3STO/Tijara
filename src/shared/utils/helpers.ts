@@ -200,6 +200,24 @@ export function formatPercent(value: number, decimals = 1, showSign = true, lang
   return `${sign}${formatted}%`;
 }
 
+/**
+ * Export a report HTML string as PDF via Electron, or print via browser fallback.
+ */
+export async function exportReportPDF(html: string, filename: string): Promise<void> {
+  const electron = (window as any).electron;
+  if (electron?.exportReportPDF) {
+    const ok = await electron.exportReportPDF(html, filename);
+    if (!ok) throw new Error('PDF export cancelled or failed');
+  } else {
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.print();
+    }
+  }
+}
+
 const AUTO_NOTE_PREFIX = '__auto__:';
 
 /**

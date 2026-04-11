@@ -15,6 +15,7 @@ import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
 import type { Sale, OrderItem, Product } from '@core/types';
+import { escapeHtml } from '@shared/utils/helpers';
 
 const PAGE_SIZE = 10;
 
@@ -185,8 +186,8 @@ function buildHTML(state: State): string {
                  </div></td></tr>`
               : pageData.map((s) => `
                 <tr>
-                  <td><span style="font-weight:600;color:var(--color-primary);">${s.orderNumber}</span></td>
-                  <td>${s.customerName}</td>
+                  <td><span style="font-weight:600;color:var(--color-primary);">${escapeHtml(s.orderNumber)}</span></td>
+                  <td>${escapeHtml(s.customerName)}</td>
                   <td style="color:var(--color-text-secondary);">${s.items.length}</td>
                   <td><strong>${formatCurrency(s.total)}</strong></td>
                   <td><span class="badge ${STATUS_BADGE[s.status] ?? 'badge-neutral'}">${getStatusLabel(s.status)}</span></td>
@@ -379,7 +380,7 @@ function openSaleDetailModal(sale: Sale): void {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('sales.customer')}</div>
-        <div style="font-weight:500;">${sale.customerName}</div>
+        <div style="font-weight:500;">${escapeHtml(sale.customerName)}</div>
       </div>
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('common.date')}</div>
@@ -400,7 +401,7 @@ function openSaleDetailModal(sale: Sale): void {
         <tbody>
           ${sale.items.map((item) => `
             <tr>
-              <td>${item.productName}</td>
+              <td>${escapeHtml(item.productName)}</td>
               <td>${item.quantity}</td>
               <td>${formatCurrency(item.unitPrice)}</td>
               <td>${item.discount}%</td>
@@ -417,7 +418,7 @@ function openSaleDetailModal(sale: Sale): void {
         <span>${i18n.t('common.total')}</span><span style="color:var(--color-primary);">${formatCurrency(sale.total)}</span>
       </div>
     </div>
-    ${sale.notes ? `<div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">${sale.notes}</div>` : ''}
+    ${sale.notes ? `<div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">${escapeHtml(sale.notes)}</div>` : ''}
   `;
 
   // Add "Create Invoice" button for delivered sales with no existing invoice
@@ -433,7 +434,7 @@ function openSaleDetailModal(sale: Sale): void {
     });
   }
 
-  openModal({ title: `${i18n.t('dashboard.order')} ${sale.orderNumber}`, content, size: 'lg', hideFooter: true });
+  openModal({ title: `${i18n.t('dashboard.order')} ${escapeHtml(sale.orderNumber)}`, content, size: 'lg', hideFooter: true });
 }
 
 // ── Add Sale modal ────────────────────────────────────────────────────────────
@@ -667,7 +668,7 @@ function openSaleEditModal(sale: Sale, onSave: () => void): void {
   renderItems(); updateTotals();
 
   openModal({
-    title: `${i18n.t('sales.modals.editTitle')} ${sale.orderNumber}`,
+    title: `${i18n.t('sales.modals.editTitle')} ${escapeHtml(sale.orderNumber)}`,
     content: form,
     size: 'lg',
     confirmText: i18n.t('common.save'),

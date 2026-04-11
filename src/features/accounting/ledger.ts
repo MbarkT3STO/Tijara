@@ -6,7 +6,7 @@ import { journalService } from '@services/journalService';
 import { accountService } from '@services/accountService';
 import { fiscalPeriodService } from '@services/fiscalPeriodService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { Account, AccountType } from '@core/types';
 
@@ -118,8 +118,8 @@ function buildHTML(state: State): string {
               <button data-account="${a.id}" class="btn btn-ghost" style="width:100%;text-align:start;border-radius:0;padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--color-border-subtle);${isSelected ? 'background:var(--color-primary-subtle);color:var(--color-primary);' : ''}">
                 <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
                   <div>
-                    <div style="font-size:var(--font-size-xs);font-weight:600;font-family:monospace;">${a.code}</div>
-                    <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">${a.name}</div>
+                    <div style="font-size:var(--font-size-xs);font-weight:600;font-family:monospace;">${escapeHtml(a.code)}</div>
+                    <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">${escapeHtml(a.name)}</div>
                   </div>
                   <div style="font-size:var(--font-size-xs);font-weight:600;color:${balance >= 0 ? 'var(--color-success)' : 'var(--color-error)'};">${formatCurrency(balance)}</div>
                 </div>
@@ -141,7 +141,7 @@ function buildHTML(state: State): string {
                   <span class="badge badge-${selectedAccount.type}">${i18n.t(`accounting.accounts.types.${selectedAccount.type}` as any)}</span>
                   <span class="badge ${selectedAccount.normalBalance === 'debit' ? 'badge-info' : 'badge-primary'}">${i18n.t(`accounting.accounts.normalBalances.${selectedAccount.normalBalance}` as any)}</span>
                 </div>
-                <div style="font-size:var(--font-size-lg);font-weight:600;margin-top:var(--space-1);">${selectedAccount.name}</div>
+                <div style="font-size:var(--font-size-lg);font-weight:600;margin-top:var(--space-1);">${escapeHtml(selectedAccount.name)}</div>
               </div>
               <div style="text-align:right;">
                 <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('accounting.ledger.runningBalance' as any)}</div>
@@ -184,8 +184,8 @@ function buildHTML(state: State): string {
                     : ledgerEntries.map((e) => `
                       <tr>
                         <td style="color:var(--color-text-secondary);">${formatDate(e.date)}</td>
-                        <td><span style="font-weight:600;color:var(--color-primary);">${e.entryNumber}</span></td>
-                        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.description}</td>
+                        <td><span style="font-weight:600;color:var(--color-primary);">${escapeHtml(e.entryNumber)}</span></td>
+                        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(e.description)}</td>
                         <td style="text-align:right;">${e.debit > 0 ? formatCurrency(e.debit) : '—'}</td>
                         <td style="text-align:right;">${e.credit > 0 ? formatCurrency(e.credit) : '—'}</td>
                         <td style="text-align:right;font-weight:600;color:${e.balance >= 0 ? 'var(--color-success)' : 'var(--color-error)'};">${formatCurrency(e.balance)}</td>

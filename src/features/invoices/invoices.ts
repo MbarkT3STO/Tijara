@@ -7,7 +7,7 @@ import { saleService } from '@services/saleService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/helpers';
 import { printInvoice, exportInvoicePDF } from '@shared/utils/invoicePdf';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
@@ -341,8 +341,8 @@ function buildHTML(state: State): string {
                     .map(
                       (inv) => `
               <tr>
-                <td><span style="font-weight: 600; color: var(--color-primary);">${inv.invoiceNumber}</span></td>
-                <td>${inv.customerName}</td>
+                <td><span style="font-weight: 600; color: var(--color-primary);">${escapeHtml(inv.invoiceNumber)}</span></td>
+                <td>${escapeHtml(inv.customerName)}</td>
                 <td><strong>${formatCurrency(inv.total)}</strong></td>
                 <td style="color: var(--color-success);">${formatCurrency(inv.amountPaid)}</td>
                 <td style="color: ${inv.amountDue > 0 ? 'var(--color-error)' : 'var(--color-text-secondary)'}; font-weight: ${inv.amountDue > 0 ? '600' : '400'};">${formatCurrency(inv.amountDue)}</td>
@@ -421,8 +421,8 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
           style="max-height:52px;max-width:140px;object-fit:contain;display:block;" />
         ${profile.name ? `
         <div>
-          <div style="font-size:var(--font-size-xl);font-weight:700;color:var(--color-primary);letter-spacing:-0.02em;">${profile.name}</div>
-          ${profile.tagline ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;">${profile.tagline}</div>` : ''}
+          <div style="font-size:var(--font-size-xl);font-weight:700;color:var(--color-primary);letter-spacing:-0.02em;">${escapeHtml(profile.name)}</div>
+          ${profile.tagline ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;">${escapeHtml(profile.tagline)}</div>` : ''}
         </div>` : ''}
       </div>`;
   } else if (profile.name) {
@@ -436,8 +436,8 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
           </svg>
         </div>
         <div>
-          <div style="font-size:var(--font-size-xl);font-weight:700;color:var(--color-primary);letter-spacing:-0.02em;">${profile.name}</div>
-          ${profile.tagline ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;">${profile.tagline}</div>` : ''}
+          <div style="font-size:var(--font-size-xl);font-weight:700;color:var(--color-primary);letter-spacing:-0.02em;">${escapeHtml(profile.name)}</div>
+          ${profile.tagline ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;">${escapeHtml(profile.tagline)}</div>` : ''}
         </div>
       </div>`;
   } else {
@@ -460,12 +460,12 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
   // ── From block ───────────────────────────────────────────────────────────
   let fromHTML = '';
   if (profile.name) {
-    fromHTML += `<div style="font-weight:600;color:var(--color-text-primary);margin-bottom:2px;">${profile.name}</div>`;
-    if (profile.address) fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.address}${profile.city ? ', ' + profile.city : ''}${profile.country ? ', ' + profile.country : ''}</div>`;
-    if (profile.email)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.email}</div>`;
-    if (profile.phone)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);"><span class="force-ltr">${profile.phone}</span></div>`;
-    if (profile.website) fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${profile.website}</div>`;
-    if (profile.taxId)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${i18n.t('settings.taxId')}: ${profile.taxId}</div>`;
+    fromHTML += `<div style="font-weight:600;color:var(--color-text-primary);margin-bottom:2px;">${escapeHtml(profile.name)}</div>`;
+    if (profile.address) fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${escapeHtml(profile.address)}${profile.city ? ', ' + escapeHtml(profile.city) : ''}${profile.country ? ', ' + escapeHtml(profile.country) : ''}</div>`;
+    if (profile.email)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${escapeHtml(profile.email)}</div>`;
+    if (profile.phone)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);"><span class="force-ltr">${escapeHtml(profile.phone)}</span></div>`;
+    if (profile.website) fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${escapeHtml(profile.website)}</div>`;
+    if (profile.taxId)   fromHTML += `<div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${i18n.t('settings.taxId')}: ${escapeHtml(profile.taxId)}</div>`;
   } else {
     fromHTML = `<div style="font-weight:600;color:var(--color-text-primary);">Tijara Inc.</div><div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">billing@tijara.app</div>`;
   }
@@ -473,7 +473,7 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
   // ── Item rows ────────────────────────────────────────────────────────────
   const itemRows = invoice.items.map((item, i) => `
     <tr style="background:${i % 2 === 0 ? 'transparent' : 'var(--color-primary-subtle)'};">
-      <td style="padding:var(--space-2) var(--space-3);">${item.productName}</td>
+      <td style="padding:var(--space-2) var(--space-3);">${escapeHtml(item.productName)}</td>
       <td style="padding:var(--space-2) var(--space-3);text-align:center;">${item.quantity}</td>
       <td style="padding:var(--space-2) var(--space-3);text-align:right;">${formatCurrency(item.unitPrice)}</td>
       <td style="padding:var(--space-2) var(--space-3);text-align:center;">${item.discount > 0 ? item.discount + '%' : '—'}</td>
@@ -489,7 +489,7 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:var(--space-6);border-bottom:2px solid var(--color-primary);gap:var(--space-4);">
         ${brandHTML}
         <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:var(--font-size-2xl);font-weight:700;color:var(--color-text-primary);">${invoice.invoiceNumber}</div>
+          <div style="font-size:var(--font-size-2xl);font-weight:700;color:var(--color-text-primary);">${escapeHtml(invoice.invoiceNumber)}</div>
           <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-top:2px;">${i18n.t('invoices.modals.issued')}: ${formatDate(invoice.createdAt)}</div>
           <div style="display:inline-block;margin-top:var(--space-2);padding:2px 10px;border-radius:var(--radius-full);font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:${accentColor}1a;color:${accentColor};border:1px solid ${accentColor}44;">
             ${getStatusLabel(invoice.status)}
@@ -505,7 +505,7 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
         </div>
         <div>
           <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:var(--space-2);">${i18n.t('invoices.modals.billTo')}</div>
-          <div style="font-weight:600;color:var(--color-text-primary);margin-bottom:2px;">${invoice.customerName}</div>
+          <div style="font-weight:600;color:var(--color-text-primary);margin-bottom:2px;">${escapeHtml(invoice.customerName)}</div>
         </div>
       </div>
 
@@ -571,7 +571,7 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
       <!-- Notes -->
       <div style="margin:0 var(--space-6) var(--space-5);padding:var(--space-3) var(--space-4);background:var(--color-bg-secondary);border-left:3px solid var(--color-primary);border-radius:0 var(--radius-sm) var(--radius-sm) 0;">
         <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('common.notes')}</div>
-        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${invoice.notes}</div>
+        <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${escapeHtml(invoice.notes)}</div>
       </div>` : ''}
 
     </div>
@@ -595,7 +595,7 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
   `;
 
   const close = openModal({
-    title: `${i18n.t('invoices.invoiceNumber')} ${invoice.invoiceNumber}`,
+    title: `${i18n.t('invoices.invoiceNumber')} ${escapeHtml(invoice.invoiceNumber)}`,
     content,
     size: 'lg',
     hideFooter: true,
@@ -643,7 +643,7 @@ function openCreateInvoiceModal(onSave: () => void): void {
       <label class="form-label required" for="inv-sale">${i18n.t('invoices.modals.selectOrder')}</label>
       <select id="inv-sale" class="form-control" required>
         <option value="">${i18n.t('invoices.modals.chooseOrder')}</option>
-        ${sales.map((s) => `<option value="${s.id}">${s.orderNumber} – ${s.customerName} (${formatCurrency(s.total)})</option>`).join('')}
+        ${sales.map((s) => `<option value="${s.id}">${escapeHtml(s.orderNumber)} – ${escapeHtml(s.customerName)} (${formatCurrency(s.total)})</option>`).join('')}
       </select>
     </div>
     <div class="form-group">
@@ -709,7 +709,7 @@ function openInvoiceEditModal(invoice: Invoice, onSave: () => void): void {
           <tbody>
             ${invoice.items.map((item) => `
               <tr>
-                <td>${item.productName}</td>
+                <td>${escapeHtml(item.productName)}</td>
                 <td>${item.quantity}</td>
                 <td>${formatCurrency(item.unitPrice)}</td>
                 <td><strong>${formatCurrency(item.total)}</strong></td>

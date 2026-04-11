@@ -9,7 +9,7 @@ import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
@@ -236,8 +236,8 @@ function buildHTML(state: State): string {
                 </td></tr>`
               : pageData.map((po) => `
                 <tr>
-                  <td><span style="font-weight:600;color:var(--color-primary);">${po.poNumber}</span></td>
-                  <td>${po.supplierName}</td>
+                  <td><span style="font-weight:600;color:var(--color-primary);">${escapeHtml(po.poNumber)}</span></td>
+                  <td>${escapeHtml(po.supplierName)}</td>
                   <td style="color:var(--color-text-secondary);">${i18n.t('common.itemsCount', { count: po.items.length })}</td>
                   <td><strong>${formatCurrency(po.total)}</strong></td>
                   <td><span class="badge ${STATUS_BADGE[po.status.toLowerCase()] ?? 'badge-neutral'}">${i18n.t(`purchases.statuses.${po.status.toLowerCase()}` as any)}</span></td>
@@ -285,7 +285,7 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('purchases.supplier')}</div>
-        <div style="font-weight:500;">${po.supplierName}</div>
+        <div style="font-weight:500;">${escapeHtml(po.supplierName)}</div>
       </div>
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('common.date')}</div>
@@ -312,7 +312,7 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
         <tbody>
           ${po.items.map((item) => `
             <tr>
-              <td>${item.productName}</td>
+              <td>${escapeHtml(item.productName)}</td>
               <td>${item.quantity}</td>
               <td>${formatCurrency(item.unitCost)}</td>
               <td><strong>${formatCurrency(item.total)}</strong></td>
@@ -337,7 +337,7 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
       </div>` : ''}
     </div>
 
-    ${po.notes ? `<div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">${po.notes}</div>` : ''}
+    ${po.notes ? `<div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">${escapeHtml(po.notes)}</div>` : ''}
 
     ${po.status === 'received' && po.paymentStatus !== 'paid' ? `
     <div style="margin-top:var(--space-5);padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);border:1px solid var(--color-border);">
@@ -372,7 +372,7 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
     </div>` : ''}
   `;
 
-  const close = openModal({ title: `${i18n.t('purchases.poNumber')} ${po.poNumber}`, content, size: 'lg', hideFooter: true });
+  const close = openModal({ title: `${i18n.t('purchases.poNumber')} ${escapeHtml(po.poNumber)}`, content, size: 'lg', hideFooter: true });
 
   content.querySelector('#po-record-payment-btn')?.addEventListener('click', () => {
     const amount = parseFloat((content.querySelector('#po-payment-amount') as HTMLInputElement).value);
@@ -433,7 +433,7 @@ function buildItemRow(item: PurchaseItem, idx: number, products: Product[], pref
     <div style="display:grid;grid-template-columns:1fr 90px 130px auto;gap:var(--space-2);align-items:start;margin-bottom:var(--space-3);">
       <div class="form-group" style="margin:0;">
         <select class="form-control ${prefix}-item-product" data-idx="${idx}">
-          ${products.map((p) => `<option value="${p.id}" data-cost="${p.cost}" data-name="${p.name}" ${p.id === item.productId ? 'selected' : ''}>${p.name} (${p.sku})</option>`).join('')}
+          ${products.map((p) => `<option value="${p.id}" data-cost="${p.cost}" data-name="${escapeHtml(p.name)}" ${p.id === item.productId ? 'selected' : ''}>${escapeHtml(p.name)} (${escapeHtml(p.sku)})</option>`).join('')}
         </select>
       </div>
       <div class="form-group" style="margin:0;">
@@ -515,7 +515,7 @@ function openPurchaseModal(po: Purchase | null, onSave: () => void): void {
         <label class="form-label required" for="po-supplier">${i18n.t('purchases.supplier')}</label>
         <select id="po-supplier" class="form-control" ${isEdit ? 'disabled' : ''}>
           <option value="">${i18n.t('purchases.modals.selectSupplier')}</option>
-          ${suppliers.map((s) => `<option value="${s.id}" ${po?.supplierId === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
+          ${suppliers.map((s) => `<option value="${s.id}" ${po?.supplierId === s.id ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
         </select>
         ${suppliers.length === 0
           ? `<span class="form-hint" style="color:var(--color-warning);">No suppliers yet — <a href="#/suppliers" style="color:var(--color-primary);">add one first</a></span>`

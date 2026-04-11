@@ -7,7 +7,7 @@ import { journalService } from '@services/journalService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { debounce } from '@shared/utils/helpers';
+import { debounce, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { router } from '@core/router';
 import type { Account, AccountType, AccountCategory } from '@core/types';
@@ -191,10 +191,10 @@ function buildHTML(state: State): string {
                   const subName = lang === 'ar' ? (a.nameFr || a.name) : (a.nameAr || '');
                   return `
                 <tr>
-                  <td><span style="font-weight:600;color:var(--color-primary);font-family:monospace;">${a.code}</span></td>
+                  <td><span style="font-weight:600;color:var(--color-primary);font-family:monospace;">${escapeHtml(a.code)}</span></td>
                   <td>
-                    <div style="font-weight:500;">${displayName}</div>
-                    ${subName ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);direction:${lang === 'ar' ? 'ltr' : 'rtl'};text-align:start;">${subName}</div>` : ''}
+                    <div style="font-weight:500;">${escapeHtml(displayName)}</div>
+                    ${subName ? `<div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);direction:${lang === 'ar' ? 'ltr' : 'rtl'};text-align:start;">${escapeHtml(subName)}</div>` : ''}
                     ${a.isSystem ? `<span style="font-size:10px;color:var(--color-text-tertiary);">${i18n.t('accounting.accounts.isSystem' as any)}</span>` : ''}
                   </td>
                   <td><span class="badge ${TYPE_BADGE[a.type]}">${i18n.t(`accounting.accounts.types.${a.type}` as any)}</span></td>
@@ -287,7 +287,7 @@ function openAccountModal(account: Account | null, onSave: () => void): void {
         <select id="a-parent" class="form-control">
           <option value="">— ${i18n.t('common.all')} —</option>
           ${allAccounts.filter((a) => a.id !== account?.id).map((a) =>
-            `<option value="${a.id}" ${account?.parentId === a.id ? 'selected' : ''}>${a.code} · ${a.name}</option>`
+            `<option value="${a.id}" ${account?.parentId === a.id ? 'selected' : ''}>${escapeHtml(a.code)} · ${escapeHtml(a.name)}</option>`
           ).join('')}
         </select>
       </div>

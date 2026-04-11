@@ -7,7 +7,7 @@ import { reportsService } from '@services/reportsService';
 import { invoiceService } from '@services/invoiceService';
 import { purchaseService } from '@services/purchaseService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, formatPercent } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, formatPercent, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { router } from '@core/router';
 
@@ -139,7 +139,7 @@ function buildHTML(monthRange: number): string {
                         ${i + 1}
                       </div>
                     </td>
-                    <td><span style="font-weight:500;">${c.customerName}</span></td>
+                    <td><span style="font-weight:500;">${escapeHtml(c.customerName)}</span></td>
                     <td style="color:var(--color-text-secondary);">${c.orderCount}</td>
                     <td><strong style="color:var(--color-primary);">${formatCurrency(c.totalSpent)}</strong></td>
                     <td style="color:var(--color-text-secondary);">${formatDate(c.lastOrderDate)}</td>
@@ -180,8 +180,8 @@ function buildHTML(monthRange: number): string {
                       </div>
                     </td>
                     <td>
-                      <div style="font-weight:500;">${p.productName}</div>
-                      <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${p.category}</div>
+                      <div style="font-weight:500;">${escapeHtml(p.productName)}</div>
+                      <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${escapeHtml(p.category)}</div>
                     </td>
                     <td style="color:var(--color-text-secondary);">${p.quantity}</td>
                     <td><strong>${formatCurrency(p.revenue)}</strong></td>
@@ -369,7 +369,7 @@ function buildAgingSection(): string {
                 : rows.map((r) => {
                     const rowTotal = r.buckets.reduce((s, v) => s + v, 0);
                     return `<tr>
-                      <td style="font-weight:500;">${r.name}</td>
+                      <td style="font-weight:500;">${escapeHtml(r.name)}</td>
                       ${r.buckets.map((v, i) => `<td style="text-align:right;color:${i >= 2 ? 'var(--color-error)' : i === 1 ? 'var(--color-warning)' : 'var(--color-text-primary)'};">${v > 0 ? formatCurrency(v) : '—'}</td>`).join('')}
                       <td style="text-align:right;font-weight:600;">${formatCurrency(rowTotal)}</td>
                     </tr>`;

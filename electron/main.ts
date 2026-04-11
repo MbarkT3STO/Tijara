@@ -284,6 +284,39 @@ ipcMain.handle('invoice:exportPDF', async (_event, html: string, invoiceNumber: 
   }
 });
 
+/** Export a report as PDF – renders HTML in a hidden window, saves via dialog */
+ipcMain.handle('report:exportPDF', async (_event, html: string, filename: string): Promise<boolean> => {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (!win) return false;
+  const pdfWin = new BrowserWindow({
+    show: false,
+    webPreferences: { nodeIntegration: false, contextIsolation: true },
+  });
+  try {
+    await pdfWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    const pdf = await pdfWin.webContents.printToPDF({
+      pageSize: 'A4',
+      printBackground: true,
+      landscape: false,
+      margins: { marginType: 'custom', top: 0.5, bottom: 0.5, left: 0.5, right: 0.5 },
+    });
+    const { filePath, canceled } = await dialog.showSaveDialog(win, {
+      title: 'Export PDF',
+      defaultPath: join(app.getPath('documents'), filename),
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    });
+    if (canceled || !filePath) return false;
+    writeFileSync(filePath, pdf);
+    shell.openPath(filePath);
+    return true;
+  } catch (err) {
+    console.error('[main] report:exportPDF error', err);
+    return false;
+  } finally {
+    pdfWin.destroy();
+  }
+});
+
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {

@@ -4,8 +4,9 @@
 
 import { journalService } from '@services/journalService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency } from '@shared/utils/helpers';
+import { formatCurrency, exportReportPDF } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { profileService } from '@services/profileService';
 import type { BalanceSheet } from '@core/types';
 
 interface State {
@@ -35,6 +36,12 @@ export function renderBalanceSheet(): HTMLElement {
   function attachEvents() {
     page.querySelector<HTMLInputElement>('#bs-asof')?.addEventListener('change', (e) => { state.asOf = (e.target as HTMLInputElement).value; });
     page.querySelector('#bs-generate')?.addEventListener('click', generate);
+    page.querySelector('#bs-export-pdf')?.addEventListener('click', () => {
+      if (!state.sheet) return;
+      const profile = profileService.getProfile();
+      const html = buildPrintHTML(state, profile.name);
+      exportReportPDF(html, `balance-sheet-${state.asOf}.pdf`).catch(console.error);
+    });
   }
 
   generate();
@@ -66,6 +73,7 @@ function buildHTML(state: State): string {
         <label style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${i18n.t('accounting.balanceSheet.asOf' as any)}</label>
         <input type="date" id="bs-asof" class="form-control" value="${state.asOf}" style="width:auto;" />
         <button class="btn btn-primary" id="bs-generate">${Icons.balanceSheet(14)} ${i18n.t('common.filter')}</button>
+        ${s ? `<button class="btn btn-secondary" id="bs-export-pdf">${Icons.fileText(14)} ${i18n.t('common.exportPdf' as any)}</button>` : ''}
       </div>
     </div>
 
@@ -140,4 +148,59 @@ function buildHTML(state: State): string {
       </div>
     </div>`}
   `;
+}
+
+function buildPrintHTML(state: State, companyName: string): string {
+  const s = state.sheet!;
+  const buildRows = (rows: { accountCode: string; accountName: string; amount: number }[]) =>
+    rows.map((r) => `<tr><td style="padding:4px 8px;">${r.accountCode} · ${r.accountName}</td><td style="text-align:right;padding:4px 8px;">${formatCurrency(r.amount)}</td></tr>`).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Balance Sheet</title>
+  <style>
+    body{font-family:Arial,sans-serif;color:#000;background:#fff;margin:0;padding:24px;}
+    h1{font-size:18px;margin:0 0 4px;}h2{font-size:14px;margin:0 0 16px;color:#555;}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+    th{background:#f0f0f0;padding:6px 8px;text-align:left;font-size:12px;border-bottom:2px solid #ccc;}
+    td{font-size:12px;border-bottom:1px solid #eee;}
+    .section-header td{background:#f8f8f8;font-weight:700;padding:6px 8px;}
+    .subtotal td{font-weight:600;border-top:1px solid #ccc;}
+    .total td{font-weight:700;border-top:2px solid #000;font-size:13px;}
+    .footer{margin-top:24px;font-size:10px;color:#888;text-align:center;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  </style></head><body>
+  <h1>${companyName}</h1>
+  <h2>${i18n.t('accounting.balanceSheet.title' as any)} — ${i18n.t('accounting.balanceSheet.asOf' as any)} ${state.asOf}</h2>
+  <div class="grid">
+    <div>
+      <table>
+        <thead><tr><th colspan="2">${i18n.t('accounting.balanceSheet.assets' as any)}</th></tr></thead>
+        <tbody>
+          <tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.currentAssets' as any)}</td></tr>
+          ${buildRows(s.currentAssets)}
+          <tr class="subtotal"><td>${i18n.t('accounting.balanceSheet.currentAssets' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalCurrentAssets)}</td></tr>
+          ${s.fixedAssets.length > 0 ? `<tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.fixedAssets' as any)}</td></tr>${buildRows(s.fixedAssets)}<tr class="subtotal"><td>${i18n.t('accounting.balanceSheet.fixedAssets' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalFixedAssets)}</td></tr>` : ''}
+          ${s.otherAssets.length > 0 ? `<tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.otherAssets' as any)}</td></tr>${buildRows(s.otherAssets)}` : ''}
+          <tr class="total"><td>${i18n.t('accounting.balanceSheet.totalAssets' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalAssets)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <table>
+        <thead><tr><th colspan="2">${i18n.t('accounting.balanceSheet.liabilities' as any)} &amp; ${i18n.t('accounting.balanceSheet.equity' as any)}</th></tr></thead>
+        <tbody>
+          <tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.currentLiabilities' as any)}</td></tr>
+          ${buildRows(s.currentLiabilities)}
+          <tr class="subtotal"><td>${i18n.t('accounting.balanceSheet.currentLiabilities' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalCurrentLiabilities)}</td></tr>
+          ${s.longTermLiabilities.length > 0 ? `<tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.longTermLiabilities' as any)}</td></tr>${buildRows(s.longTermLiabilities)}` : ''}
+          <tr class="subtotal"><td>${i18n.t('accounting.balanceSheet.totalLiabilities' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalLiabilities)}</td></tr>
+          <tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.equity' as any)}</td></tr>
+          ${buildRows(s.equity)}
+          <tr class="subtotal"><td>${i18n.t('accounting.balanceSheet.totalEquity' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalEquity)}</td></tr>
+          <tr class="total"><td>${i18n.t('accounting.balanceSheet.totalLiabilitiesAndEquity' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalLiabilitiesAndEquity)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="footer">${i18n.t('common.generatedBy')} · ${new Date().toLocaleDateString()}</div>
+  </body></html>`;
 }

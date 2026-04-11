@@ -6,7 +6,7 @@ import { costCenterService } from '@services/costCenterService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { debounce } from '@shared/utils/helpers';
+import { debounce, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { CostCenter } from '@core/types';
 
@@ -131,10 +131,10 @@ function buildHTML(state: State): string {
                   const parent = c.parentId ? allCenters.find((p) => p.id === c.parentId) : null;
                   return `
                     <tr>
-                      <td><span style="font-weight:600;color:var(--color-primary);font-family:monospace;">${c.code}</span></td>
-                      <td style="font-weight:500;">${c.name}</td>
-                      <td style="color:var(--color-text-secondary);">${parent ? `${parent.code} · ${parent.name}` : '—'}</td>
-                      <td style="color:var(--color-text-secondary);font-size:var(--font-size-xs);">${c.description ?? '—'}</td>
+                      <td><span style="font-weight:600;color:var(--color-primary);font-family:monospace;">${escapeHtml(c.code)}</span></td>
+                      <td style="font-weight:500;">${escapeHtml(c.name)}</td>
+                      <td style="color:var(--color-text-secondary);">${parent ? `${escapeHtml(parent.code)} · ${escapeHtml(parent.name)}` : '—'}</td>
+                      <td style="color:var(--color-text-secondary);font-size:var(--font-size-xs);">${c.description ? escapeHtml(c.description) : '—'}</td>
                       <td><span class="badge ${c.isActive ? 'badge-success' : 'badge-neutral'}">${c.isActive ? i18n.t('accounting.costCenters.isActive' as any) : i18n.t('common.no')}</span></td>
                       <td>
                         <div class="table-actions">
@@ -187,7 +187,7 @@ function openCostCenterModal(cc: CostCenter | null, onSave: () => void): void {
       <label class="form-label" for="cc-parent">${i18n.t('accounting.costCenters.parent' as any)}</label>
       <select id="cc-parent" class="form-control">
         <option value="">— ${i18n.t('common.all')} —</option>
-        ${allCenters.map((c) => `<option value="${c.id}" ${cc?.parentId === c.id ? 'selected' : ''}>${c.code} · ${c.name}</option>`).join('')}
+        ${allCenters.map((c) => `<option value="${c.id}" ${cc?.parentId === c.id ? 'selected' : ''}>${escapeHtml(c.code)} · ${escapeHtml(c.name)}</option>`).join('')}
       </select>
     </div>
     <div class="form-group">

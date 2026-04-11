@@ -543,3 +543,14 @@ export interface JournalTemplate {
   lines: Omit<JournalLine, 'id'>[];  // template lines (amount 0 = fill at use time)
   createdAt: string;
 }
+
+/** Product cost change history — recorded whenever a product's cost field is updated */
+export interface ProductCostHistory {
+  id: string;
+  productId: string;
+  productName: string;
+  oldCost: number;
+  newCost: number;
+  changedAt: string;  // ISO date
+  changedBy?: string; // user name or id
+}

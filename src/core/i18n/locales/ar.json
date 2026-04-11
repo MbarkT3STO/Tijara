@@ -42,6 +42,7 @@
     "search": "بحث...",
     "filter": "تصفية",
     "export": "تصدير",
+    "exportPdf": "تصدير PDF",
     "print": "طباعة",
     "close": "إغلاق",
     "confirm": "تأكيد",
@@ -364,6 +365,10 @@
     "unit": "الوحدة",
     "margin": "الهامش",
     "allCategories": "جميع الفئات",
+    "costHistory": "سجل التكلفة",
+    "costOld": "التكلفة السابقة",
+    "costNew": "التكلفة الجديدة",
+    "changedBy": "عدّل بواسطة",
     "modals": {
       "addTitle": "إضافة منتج",
       "editTitle": "تعديل المنتج",
@@ -586,6 +591,15 @@
     "agingBucket2": "31–60 يوم",
     "agingBucket3": "61–90 يوم",
     "agingBucket4": "أكثر من 90 يوم",
+    "apAgingDetail": {
+      "title": "تقادم الحسابات الدائنة",
+      "supplier": "المورد",
+      "current": "جارية",
+      "days1_30": "1–30 يوم",
+      "days31_60": "31–60 يوم",
+      "days61_90": "61–90 يوم",
+      "days90plus": "أكثر من 90 يوم"
+    },
     "kpis": {
       "totalRevenue": "إجمالي الإيرادات",
       "totalProfit": "إجمالي الربح",
@@ -962,7 +976,13 @@
       "taxAmount": "مبلغ الضريبة",
       "totalTaxable": "إجمالي المبيعات الخاضعة للضريبة",
       "totalTax": "إجمالي الضريبة المحصّلة",
-      "taxPayable": "الضريبة المستحقة"
+      "taxPayable": "الضريبة المستحقة",
+      "declarationTitle": "ملخص التصريح بالضريبة على القيمة المضافة",
+      "declarationSubtitle": "مرجع التصريح الشهري بالضريبة على القيمة المضافة",
+      "tvaCollectee": "TVA المحصلة",
+      "tvaDeductible": "TVA القابلة للخصم",
+      "tvaAPayer": "TVA الواجبة الأداء",
+      "tvaCredit": "رصيد دائن — يُرحل"
     },
     "costCenters": {
       "title": "مراكز التكلفة",

@@ -7,7 +7,7 @@ import { authService } from '@services/authService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatDate, formatDateTime, getInitials, debounce } from '@shared/utils/helpers';
+import { formatDate, formatDateTime, getInitials, debounce, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { resolveAuthError } from '@features/auth/auth';
 import type { User, UserRole } from '@core/types';
@@ -185,10 +185,10 @@ function buildHTML(state: State): string {
                 <td>
                   <div style="display: flex; align-items: center; gap: var(--space-3);">
                     <div class="avatar avatar-sm" style="${!u.active ? 'opacity: 0.5;' : ''}">${getInitials(u.name)}</div>
-                    <span style="font-weight: 500; ${!u.active ? 'color: var(--color-text-tertiary);' : ''}">${u.name}</span>
+                    <span style="font-weight: 500; ${!u.active ? 'color: var(--color-text-tertiary);' : ''}">${escapeHtml(u.name)}</span>
                   </div>
                 </td>
-                <td style="color: var(--color-text-secondary);">${u.email}</td>
+                <td style="color: var(--color-text-secondary);">${escapeHtml(u.email)}</td>
                 <td><span class="badge ${ROLE_BADGE[u.role]}">${i18n.t(`users.roles.${u.role}` as any)}</span></td>
                 <td>
                   <span class="badge ${u.active ? 'badge-success' : 'badge-neutral'}">

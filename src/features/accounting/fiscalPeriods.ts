@@ -7,7 +7,7 @@ import { journalService } from '@services/journalService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatDate } from '@shared/utils/helpers';
+import { formatDate, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { FiscalPeriod, FiscalPeriodStatus } from '@core/types';
 
@@ -125,7 +125,7 @@ function buildHTML(): string {
               ? `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">${Icons.calendar(32)}</div><p class="empty-state-title">${i18n.t('common.noData')}</p></div></td></tr>`
               : periods.map((p) => `
                 <tr>
-                  <td style="font-weight:500;">${p.name}</td>
+                  <td style="font-weight:500;">${escapeHtml(p.name)}</td>
                   <td style="color:var(--color-text-secondary);">${formatDate(p.startDate)}</td>
                   <td style="color:var(--color-text-secondary);">${formatDate(p.endDate)}</td>
                   <td><span class="badge ${STATUS_BADGE[p.status]}">${i18n.t(`accounting.fiscalPeriods.statuses.${p.status}` as any)}</span></td>
@@ -188,7 +188,7 @@ function openPeriodModal(period: FiscalPeriod | null, onSave: () => void): void 
   `;
 
   openModal({
-    title: isEdit ? `${i18n.t('common.edit')} ${period!.name}` : i18n.t('accounting.fiscalPeriods.addPeriod' as any),
+    title: isEdit ? `${i18n.t('common.edit')} ${escapeHtml(period!.name)}` : i18n.t('accounting.fiscalPeriods.addPeriod' as any),
     content: form,
     confirmText: i18n.t('common.save'),
     onConfirm: async () => {
