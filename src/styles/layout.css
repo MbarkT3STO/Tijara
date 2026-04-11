@@ -129,8 +129,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: var(--space-2) var(--space-3);
-  height: 40px;
+  padding: 0 var(--space-3);
+  height: 44px;
+  min-height: 44px;
   border-radius: var(--radius-sm);
   color: var(--color-sidebar-text);
   cursor: pointer;
@@ -467,8 +468,9 @@ body[data-layout='modern'] .sidebar-nav {
 }
 
 body[data-layout='modern'] .nav-item {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
   padding: 0;
   justify-content: center;
   border-radius: var(--radius-sm);
@@ -550,8 +552,9 @@ body[data-layout='modern'] .rail-footer {
 
 /* The theme toggle in the rail footer matches nav-item sizing */
 body[data-layout='modern'] .rail-footer .rail-theme-btn {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
   padding: 0;
   justify-content: center;
   border-radius: var(--radius-sm);
@@ -628,8 +631,9 @@ body[data-layout='modern'] .topbar-breadcrumb {
 
   body[data-layout='modern'] .sidebar.mobile-open .nav-item {
     width: 100%;
-    height: 40px;
-    padding: var(--space-2) var(--space-3);
+    height: 44px;
+    min-height: 44px;
+    padding: 0 var(--space-3);
     justify-content: flex-start;
     border-radius: var(--radius-sm);
   }
@@ -748,8 +752,9 @@ body[data-layout='floating'] .sidebar.float-collapsed .sidebar-nav {
 }
 
 body[data-layout='floating'] .sidebar.float-collapsed .nav-item {
-  width: 36px !important;
-  height: 36px;
+  width: 44px !important;
+  height: 44px;
+  min-height: 44px;
   padding: 0;
   justify-content: center;
   align-items: center;
@@ -874,8 +879,9 @@ body[data-layout='floating'] .sidebar-logo {
   }
 
   body[data-layout='floating'] .sidebar:not(.float-expanded-override) .nav-item {
-    width: 36px !important;
-    height: 36px;
+    width: 44px !important;
+    height: 44px;
+    min-height: 44px;
     padding: 0;
     gap: 0;
     justify-content: center;
@@ -921,8 +927,9 @@ body[data-layout='floating'] .sidebar-logo {
 
   body[data-layout='floating'] .sidebar.mobile-open .nav-item {
     width: 100%;
-    height: 40px;
-    padding: var(--space-2) var(--space-3);
+    height: 44px;
+    min-height: 44px;
+    padding: 0 var(--space-3);
     justify-content: flex-start;
   }
 
