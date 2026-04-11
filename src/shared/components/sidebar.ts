@@ -168,6 +168,9 @@ export function createSidebar(currentUser?: User): HTMLElement {
   sidebar.appendChild(railFooter);
   sidebar.appendChild(floatFooter);
 
+  // ── Drag-to-scroll on sidebar nav ─────────────────────────────────────────
+  applyDragScroll(nav);
+
   // ── Classic collapse toggle (persisted) ──────────────────────────────────
   let classicCollapsed = localStorage.getItem(CLASSIC_COLLAPSED_KEY) === 'true';
   const classicToggleBtn = footer.querySelector<HTMLButtonElement>('#sidebar-toggle')!;
@@ -263,4 +266,58 @@ export function createSidebar(currentUser?: User): HTMLElement {
   });
 
   return sidebar;
+}
+
+// ── Drag-to-scroll helper ─────────────────────────────────────────────────────
+
+/**
+ * Enables click-and-drag scrolling on any scrollable element.
+ * Distinguishes a drag from a regular click by movement threshold —
+ * so nav item clicks still fire normally when the mouse barely moves.
+ */
+function applyDragScroll(el: HTMLElement): void {
+  let isDragging = false;
+  let startY = 0;
+  let startScrollTop = 0;
+  let moved = false;
+  const THRESHOLD = 4; // px before we commit to a drag
+
+  el.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+
+    isDragging = true;
+    moved = false;
+    startY = e.clientY;
+    startScrollTop = el.scrollTop;
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const delta = e.clientY - startY;
+
+    if (!moved && Math.abs(delta) < THRESHOLD) return;
+
+    // Commit to drag mode
+    moved = true;
+    el.style.cursor = 'grabbing';
+    el.style.userSelect = 'none';
+    el.scrollTop = startScrollTop - delta;
+    e.preventDefault();
+  });
+
+  // If the mouse is released without meaningful movement, treat as a normal click
+  // by letting the event bubble. If it was a drag, suppress the click.
+  el.addEventListener('click', (e) => {
+    if (moved) e.stopPropagation();
+  }, true);
+
+  const stopDrag = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    el.style.cursor = '';
+    el.style.userSelect = '';
+  };
+
+  document.addEventListener('mouseup', stopDrag);
+  document.addEventListener('mouseleave', stopDrag);
 }
