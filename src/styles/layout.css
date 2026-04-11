@@ -63,7 +63,18 @@
   height: 100%;
   object-fit: contain;
   border-radius: var(--radius-sm);
+  filter: var(--logo-filter, none);
+  transition: filter 300ms ease;
 }
+
+/* Hue-rotate the logo PNG to match each color theme.
+   Base logo is violet (hue 262°). Deltas computed from each theme's primary hue.
+   ocean=192°, forest=142°, copper=17°, slate=215° */
+[data-color-theme='violet'] { --logo-filter: none; }
+[data-color-theme='ocean']  { --logo-filter: hue-rotate(-70deg) saturate(1.1) brightness(1.1); }
+[data-color-theme='forest'] { --logo-filter: hue-rotate(-120deg) saturate(0.95) brightness(1.05); }
+[data-color-theme='copper'] { --logo-filter: hue-rotate(115deg) saturate(1.05) brightness(1.05); }
+[data-color-theme='slate']  { --logo-filter: hue-rotate(-47deg) saturate(0.25) brightness(0.85); }
 
 .sidebar-logo-text {
   font-family: var(--font-display);

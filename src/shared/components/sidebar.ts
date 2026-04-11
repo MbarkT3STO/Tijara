@@ -62,6 +62,8 @@ export function createSidebar(currentUser?: User): HTMLElement {
     <span class="sidebar-logo-text">Ti<span>jara</span></span>
   `;
 
+  // The SVG logo mark uses var(--color-primary) directly — no repaint hack needed.
+
   // ── Nav ───────────────────────────────────────────────────────────────────
   const nav = document.createElement('nav');
   nav.className = 'sidebar-nav';
