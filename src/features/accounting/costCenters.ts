@@ -8,6 +8,7 @@ import { confirmDialog, openModal, showModalError } from '@shared/components/mod
 import { Icons } from '@shared/components/icons';
 import { debounce, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { CostCenter } from '@core/types';
 
 const PAGE_SIZE = 15;
@@ -59,24 +60,24 @@ export function renderCostCenters(): HTMLElement {
       openCostCenterModal(null, () => { state.centers = costCenterService.getAll(); applyFilters(); render(); });
     });
 
-    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const cc = costCenterService.getById(btn.getAttribute('data-edit')!);
-        if (cc) openCostCenterModal(cc, () => { state.centers = costCenterService.getAll(); applyFilters(); render(); });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const cc = costCenterService.getById(btn.getAttribute('data-delete')!);
+    attachMenuTriggers(
+      page,
+      () => [
+        { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
+        { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+      ],
+      (action, id) => {
+        const cc = costCenterService.getById(id);
         if (!cc) return;
-        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${cc.name}"?`, async () => {
+        const refresh = () => { state.centers = costCenterService.getAll(); applyFilters(); render(); };
+        if (action === 'edit')        openCostCenterModal(cc, refresh);
+        else if (action === 'delete') confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${cc.name}"?`, async () => {
           await costCenterService.delete(cc.id);
           notifications.success(i18n.t('common.save'));
-          state.centers = costCenterService.getAll(); applyFilters(); render();
+          refresh();
         });
-      });
-    });
+      }
+    );
 
     page.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -138,8 +139,7 @@ function buildHTML(state: State): string {
                       <td><span class="badge ${c.isActive ? 'badge-success' : 'badge-neutral'}">${c.isActive ? i18n.t('accounting.costCenters.isActive' as any) : i18n.t('common.no')}</span></td>
                       <td>
                         <div class="table-actions">
-                          <button class="btn btn-ghost btn-icon btn-sm" data-edit="${c.id}" data-tooltip="${i18n.t('common.edit')}">${Icons.edit(16)}</button>
-                          <button class="btn btn-ghost btn-icon btn-sm" data-delete="${c.id}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>
+                          ${menuTriggerHTML(c.id)}
                         </div>
                       </td>
                     </tr>`;

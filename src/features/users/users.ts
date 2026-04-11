@@ -10,6 +10,7 @@ import { Icons } from '@shared/components/icons';
 import { formatDate, formatDateTime, getInitials, debounce, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { resolveAuthError } from '@features/auth/auth';
+import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { User, UserRole } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -71,49 +72,41 @@ export function renderUsers(): HTMLElement {
       });
     });
 
-    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-edit')!;
+    attachMenuTriggers(
+      page,
+      (id) => {
+        const u = userService.getById(id);
+        return [
+          { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
+          { action: 'toggle', icon: u?.active ? Icons.close(16) : Icons.check(16),
+            label: u?.active ? i18n.t('users.inactive') : i18n.t('users.active') },
+          { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+        ];
+      },
+      (action, id) => {
         const user = userService.getById(id);
         if (!user) return;
-        openUserModal(user, () => {
+        const refresh = () => {
           state.users = userService.getAll();
           state.filtered = state.search
-            ? state.users.filter(
-                (u) =>
-                  u.name.toLowerCase().includes(state.search.toLowerCase()) ||
-                  u.email.toLowerCase().includes(state.search.toLowerCase())
-              )
+            ? state.users.filter((u) => u.name.toLowerCase().includes(state.search.toLowerCase()) || u.email.toLowerCase().includes(state.search.toLowerCase()))
             : [...state.users];
           render();
-        });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-toggle]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-toggle')!;
-        userService.toggleActive(id);
-        state.users = userService.getAll();
-        state.filtered = [...state.users];
-        render();
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-delete')!;
-        const user = userService.getById(id);
-        if (!user) return;
-        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${user.name}"?`, () => {
-          userService.delete(id);
-          notifications.success(i18n.t('common.save'));
-          state.users = userService.getAll();
-          state.filtered = [...state.users];
-          render();
-        });
-      });
-    });
+        };
+        if (action === 'edit') {
+          openUserModal(user, refresh);
+        } else if (action === 'toggle') {
+          userService.toggleActive(id);
+          refresh();
+        } else if (action === 'delete') {
+          confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${user.name}"?`, () => {
+            userService.delete(id);
+            notifications.success(i18n.t('common.save'));
+            refresh();
+          });
+        }
+      }
+    );
 
     page.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -199,15 +192,7 @@ function buildHTML(state: State): string {
                 <td style="color: var(--color-text-secondary);">${formatDate(u.createdAt)}</td>
                 <td>
                     <div class="table-actions">
-                      <button class="btn btn-ghost btn-icon btn-sm" data-edit="${u.id}" aria-label="${i18n.t('common.edit')}" data-tooltip="${i18n.t('common.edit')}">
-                        ${Icons.edit(16)}
-                      </button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-toggle="${u.id}" aria-label="${u.active ? i18n.t('common.cancel' as any) : i18n.t('common.confirm')}" data-tooltip="${u.active ? i18n.t('common.cancel' as any) : i18n.t('common.confirm')}" style="color: ${u.active ? 'var(--color-warning)' : 'var(--color-success)'};">
-                        ${u.active ? Icons.close(16) : Icons.check(16)}
-                      </button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${u.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color: var(--color-error);">
-                        ${Icons.trash(16)}
-                      </button>
+                      ${menuTriggerHTML(u.id)}
                     </div>
                 </td>
               </tr>

@@ -9,6 +9,7 @@ import { confirmDialog, openModal, showModalError } from '@shared/components/mod
 import { Icons } from '@shared/components/icons';
 import { formatDate, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { FiscalPeriod, FiscalPeriodStatus } from '@core/types';
 
 const STATUS_BADGE: Record<FiscalPeriodStatus, string> = {
@@ -29,68 +30,53 @@ export function renderFiscalPeriods(): HTMLElement {
       openPeriodModal(null, render);
     });
 
-    page.querySelectorAll<HTMLButtonElement>('[data-set-current]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-set-current')!;
-        // Unset all current
-        for (const p of fiscalPeriodService.getAll()) {
-          if (p.isCurrent) await fiscalPeriodService.update(p.id, { isCurrent: false });
-        }
-        await fiscalPeriodService.update(id, { isCurrent: true });
-        notifications.success(i18n.t('common.save'));
-        render();
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-close]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const period = fiscalPeriodService.getById(btn.getAttribute('data-close')!);
+    attachMenuTriggers(
+      page,
+      (id) => {
+        const p = fiscalPeriodService.getById(id);
+        if (!p || p.status === 'locked') return [];
+        return [
+          ...(p.status === 'open' && !p.isCurrent ? [{ action: 'set-current', icon: Icons.check(16), label: i18n.t('accounting.fiscalPeriods.setAsCurrent' as any) }] : []),
+          ...(p.status === 'open' ? [{ action: 'close', icon: Icons.close(16), label: i18n.t('accounting.fiscalPeriods.closePeriod' as any) }] : []),
+          ...(p.status === 'closed' ? [{ action: 'lock', icon: Icons.shield(16), label: i18n.t('accounting.fiscalPeriods.lockPeriod' as any), danger: true }] : []),
+          { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+        ];
+      },
+      async (action, id) => {
+        const period = fiscalPeriodService.getById(id);
         if (!period) return;
-
-        const draftCount = journalService.getByPeriod(period.id).filter((e) => e.status === 'draft').length;
-        if (draftCount > 0) {
-          notifications.error(i18n.t('accounting.fiscalPeriods.draftEntriesBlock' as any, { count: draftCount }));
-          return;
-        }
-
-        confirmDialog(
-          i18n.t('accounting.fiscalPeriods.closePeriod' as any),
-          i18n.t('accounting.fiscalPeriods.closeWarning' as any),
-          async () => {
-            try {
-              await fiscalPeriodService.closePeriod(period.id, 'admin');
-              notifications.success(i18n.t('common.save'));
-              render();
-            } catch (err) {
-              notifications.error(err instanceof Error ? err.message : String(err));
-            }
-          },
-          i18n.t('accounting.fiscalPeriods.closePeriod' as any),
-          'btn-danger'
-        );
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-lock]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-lock')!;
-        await fiscalPeriodService.update(id, { status: 'locked' });
-        notifications.success(i18n.t('common.save'));
-        render();
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const period = fiscalPeriodService.getById(btn.getAttribute('data-delete')!);
-        if (!period) return;
-        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${period.name}"?`, async () => {
-          await fiscalPeriodService.delete(period.id);
+        if (action === 'set-current') {
+          for (const p of fiscalPeriodService.getAll()) {
+            if (p.isCurrent) await fiscalPeriodService.update(p.id, { isCurrent: false });
+          }
+          await fiscalPeriodService.update(id, { isCurrent: true });
           notifications.success(i18n.t('common.save'));
           render();
-        });
-      });
-    });
+        } else if (action === 'close') {
+          const draftCount = journalService.getByPeriod(period.id).filter((e) => e.status === 'draft').length;
+          if (draftCount > 0) { notifications.error(i18n.t('accounting.fiscalPeriods.draftEntriesBlock' as any, { count: draftCount })); return; }
+          confirmDialog(
+            i18n.t('accounting.fiscalPeriods.closePeriod' as any),
+            i18n.t('accounting.fiscalPeriods.closeWarning' as any),
+            async () => {
+              try { await fiscalPeriodService.closePeriod(period.id, 'admin'); notifications.success(i18n.t('common.save')); render(); }
+              catch (err) { notifications.error(err instanceof Error ? err.message : String(err)); }
+            },
+            i18n.t('accounting.fiscalPeriods.closePeriod' as any), 'btn-danger'
+          );
+        } else if (action === 'lock') {
+          await fiscalPeriodService.update(id, { status: 'locked' });
+          notifications.success(i18n.t('common.save'));
+          render();
+        } else if (action === 'delete') {
+          confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${period.name}"?`, async () => {
+            await fiscalPeriodService.delete(period.id);
+            notifications.success(i18n.t('common.save'));
+            render();
+          });
+        }
+      }
+    );
   }
 
   render();
@@ -132,14 +118,7 @@ function buildHTML(): string {
                   <td>${p.isCurrent ? `<span class="badge badge-primary">${i18n.t('accounting.fiscalPeriods.isCurrent' as any)}</span>` : '—'}</td>
                   <td>
                     <div class="table-actions">
-                      ${p.status === 'open' ? `
-                        ${!p.isCurrent ? `<button class="btn btn-ghost btn-icon btn-sm" data-set-current="${p.id}" data-tooltip="${i18n.t('accounting.fiscalPeriods.setAsCurrent' as any)}" style="color:var(--color-primary);">${Icons.check(16)}</button>` : ''}
-                        <button class="btn btn-ghost btn-icon btn-sm" data-close="${p.id}" data-tooltip="${i18n.t('accounting.fiscalPeriods.closePeriod' as any)}" style="color:var(--color-warning);">${Icons.close(16)}</button>
-                      ` : ''}
-                      ${p.status === 'closed' ? `
-                        <button class="btn btn-ghost btn-icon btn-sm" data-lock="${p.id}" data-tooltip="${i18n.t('accounting.fiscalPeriods.lockPeriod' as any)}" style="color:var(--color-error);">${Icons.shield(16)}</button>
-                      ` : ''}
-                      ${p.status !== 'locked' ? `<button class="btn btn-ghost btn-icon btn-sm" data-delete="${p.id}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>` : ''}
+                      ${p.status !== 'locked' ? menuTriggerHTML(p.id) : '—'}
                     </div>
                   </td>
                 </tr>`).join('')

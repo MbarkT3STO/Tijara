@@ -11,6 +11,7 @@ import { confirmDialog, openModal, showModalError } from '@shared/components/mod
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce, generateId, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { JournalEntry, JournalEntryStatus, JournalLine } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -110,52 +111,46 @@ export function renderJournal(): HTMLElement {
       });
     });
 
-    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const entry = journalService.getById(btn.getAttribute('data-edit')!);
-        if (entry) openJournalModal(entry, () => { state.entries = journalService.getAll(); applyFilters(); render(); });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-post]').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        try {
-          await journalService.postEntry(btn.getAttribute('data-post')!);
-          notifications.success(i18n.t('accounting.journal.postEntry' as any));
-          state.entries = journalService.getAll(); applyFilters(); render();
-        } catch (err) {
-          notifications.error(translateJournalError(err));
-        }
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const entry = journalService.getById(btn.getAttribute('data-delete')!);
+    attachMenuTriggers(
+      page,
+      (id) => {
+        const entry = journalService.getById(id);
+        if (!entry) return [];
+        if (entry.status === 'draft') return [
+          { action: 'edit',   icon: Icons.edit(16),    label: i18n.t('common.edit') },
+          { action: 'post',   icon: Icons.check(16),   label: i18n.t('accounting.journal.postEntry' as any) },
+          { action: 'delete', icon: Icons.trash(16),   label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+        ];
+        if (entry.status === 'posted') return [
+          { action: 'reverse', icon: Icons.refresh(16), label: i18n.t('accounting.journal.reverseEntry' as any) },
+        ];
+        return [];
+      },
+      async (action, id) => {
+        const entry = journalService.getById(id);
         if (!entry) return;
-        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${entry.entryNumber}"?`, async () => {
+        const refresh = () => { state.entries = journalService.getAll(); applyFilters(); render(); };
+        if (action === 'edit') {
+          openJournalModal(entry, refresh);
+        } else if (action === 'post') {
           try {
-            await journalService.deleteDraft(entry.id);
-            notifications.success(i18n.t('common.save'));
-            state.entries = journalService.getAll(); applyFilters(); render();
-          } catch (err) {
-            notifications.error(translateJournalError(err));
-          }
-        });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-reverse]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const entry = journalService.getById(btn.getAttribute('data-reverse')!);
-        if (!entry) return;
-        openReversalModal(entry, () => { state.entries = journalService.getAll(); applyFilters(); render(); });
-      });
-    });
+            await journalService.postEntry(id);
+            notifications.success(i18n.t('accounting.journal.postEntry' as any));
+            refresh();
+          } catch (err) { notifications.error(translateJournalError(err)); }
+        } else if (action === 'delete') {
+          confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${entry.entryNumber}"?`, async () => {
+            try {
+              await journalService.deleteDraft(entry.id);
+              notifications.success(i18n.t('common.save'));
+              refresh();
+            } catch (err) { notifications.error(translateJournalError(err)); }
+          });
+        } else if (action === 'reverse') {
+          openReversalModal(entry, refresh);
+        }
+      }
+    );
 
     page.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -228,14 +223,7 @@ function buildHTML(state: State): string {
                       <td><span class="badge ${STATUS_BADGE[e.status]}">${i18n.t(`accounting.journal.statuses.${e.status}` as any)}</span></td>
                       <td>
                         <div class="table-actions">
-                          ${e.status === 'draft' ? `
-                            <button class="btn btn-ghost btn-icon btn-sm" data-edit="${e.id}" data-tooltip="${i18n.t('common.edit')}">${Icons.edit(16)}</button>
-                            <button class="btn btn-ghost btn-icon btn-sm" data-post="${e.id}" data-tooltip="${i18n.t('accounting.journal.postEntry' as any)}" style="color:var(--color-success);">${Icons.check(16)}</button>
-                            <button class="btn btn-ghost btn-icon btn-sm" data-delete="${e.id}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>
-                          ` : ''}
-                          ${e.status === 'posted' ? `
-                            <button class="btn btn-ghost btn-icon btn-sm" data-reverse="${e.id}" data-tooltip="${i18n.t('accounting.journal.reverseEntry' as any)}" style="color:var(--color-warning);">${Icons.refresh(16)}</button>
-                          ` : ''}
+                          ${menuTriggerHTML(e.id)}
                         </div>
                       </td>
                     </tr>`];

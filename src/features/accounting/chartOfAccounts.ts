@@ -10,6 +10,7 @@ import { Icons } from '@shared/components/icons';
 import { debounce, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { router } from '@core/router';
+import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { Account, AccountType, AccountCategory } from '@core/types';
 
 const PAGE_SIZE = 15;
@@ -82,37 +83,40 @@ export function renderChartOfAccounts(): HTMLElement {
       openAccountModal(null, () => { state.accounts = accountService.getAll(); applyFilters(); render(); });
     });
 
-    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const acc = accountService.getById(btn.getAttribute('data-edit')!);
-        if (acc) openAccountModal(acc, () => { state.accounts = accountService.getAll(); applyFilters(); render(); });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-toggle]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const acc = accountService.getById(btn.getAttribute('data-toggle')!);
+    attachMenuTriggers(
+      page,
+      (id) => {
+        const acc = accountService.getById(id);
+        return [
+          { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
+          { action: 'toggle', icon: acc?.isActive ? Icons.close(16) : Icons.check(16),
+            label: acc?.isActive ? i18n.t('common.no') : i18n.t('common.yes') },
+          ...(!acc?.isSystem ? [{ action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true }] : []),
+        ];
+      },
+      (action, id) => {
+        const acc = accountService.getById(id);
         if (!acc) return;
-        await accountService.update(acc.id, { isActive: !acc.isActive });
-        notifications.success(i18n.t('common.save'));
-        state.accounts = accountService.getAll(); applyFilters(); render();
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const acc = accountService.getById(btn.getAttribute('data-delete')!);
-        if (!acc) return;
-        if (acc.isSystem) { notifications.error(i18n.t('accounting.accounts.errors.cannotDeleteSystem' as any)); return; }
-        const hasEntries = journalService.getAll().some((e) => e.lines.some((l) => l.accountId === acc.id));
-        if (hasEntries) { notifications.error(i18n.t('accounting.accounts.errors.cannotDeleteWithEntries' as any)); return; }
-        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${acc.name}"?`, async () => {
-          await accountService.delete(acc.id);
-          notifications.success(i18n.t('common.save'));
-          state.accounts = accountService.getAll(); applyFilters(); render();
-        });
-      });
-    });
+        const refresh = () => { state.accounts = accountService.getAll(); applyFilters(); render(); };
+        if (action === 'edit') {
+          openAccountModal(acc, refresh);
+        } else if (action === 'toggle') {
+          accountService.update(acc.id, { isActive: !acc.isActive }).then(() => {
+            notifications.success(i18n.t('common.save'));
+            refresh();
+          });
+        } else if (action === 'delete') {
+          if (acc.isSystem) { notifications.error(i18n.t('accounting.accounts.errors.cannotDeleteSystem' as any)); return; }
+          const hasEntries = journalService.getAll().some((e) => e.lines.some((l) => l.accountId === acc.id));
+          if (hasEntries) { notifications.error(i18n.t('accounting.accounts.errors.cannotDeleteWithEntries' as any)); return; }
+          confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${acc.name}"?`, async () => {
+            await accountService.delete(acc.id);
+            notifications.success(i18n.t('common.save'));
+            refresh();
+          });
+        }
+      }
+    );
 
     page.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -203,9 +207,7 @@ function buildHTML(state: State): string {
                   <td><span class="badge ${a.isActive ? 'badge-success' : 'badge-neutral'}">${a.isActive ? i18n.t('accounting.accounts.isActive' as any) : i18n.t('common.no')}</span></td>
                   <td>
                     <div class="table-actions">
-                      <button class="btn btn-ghost btn-icon btn-sm" data-edit="${a.id}" data-tooltip="${i18n.t('common.edit')}">${Icons.edit(16)}</button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-toggle="${a.id}" data-tooltip="${a.isActive ? i18n.t('common.no') : i18n.t('common.yes')}" style="color:${a.isActive ? 'var(--color-warning)' : 'var(--color-success)'};">${a.isActive ? Icons.close(16) : Icons.check(16)}</button>
-                      ${!a.isSystem ? `<button class="btn btn-ghost btn-icon btn-sm" data-delete="${a.id}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>` : ''}
+                      ${menuTriggerHTML(a.id)}
                     </div>
                   </td>
                 </tr>`;
