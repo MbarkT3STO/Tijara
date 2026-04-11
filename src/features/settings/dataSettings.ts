@@ -6,6 +6,8 @@ import { Icons } from '@shared/components/icons';
 import { i18n } from '@core/i18n';
 import { notifications } from '@core/notifications';
 import { repository } from '@data/excelRepository';
+import { storageFormatService } from '@core/storageFormat';
+import type { StorageFormat } from '@core/storageFormat';
 import type { ElectronAPI } from '../../../electron/preload';
 
 function getElectron(): ElectronAPI | null {
@@ -13,6 +15,30 @@ function getElectron(): ElectronAPI | null {
 }
 
 const isElectron = !!getElectron();
+
+function buildStorageFormatCard(format: 'json' | 'excel', active: boolean): string {
+  const border = active ? 'var(--color-primary)' : 'var(--color-border)';
+  const bg = active ? 'var(--color-primary-subtle)' : 'transparent';
+  const iconEl = format === 'json' ? Icons.fileJson(24) : Icons.fileSpreadsheet(24);
+  const titleKey = format === 'json' ? 'settings.storageJson' : 'settings.storageExcel';
+  const descKey = format === 'json' ? 'settings.storageJsonDesc' : 'settings.storageExcelDesc';
+  const checkmark = active ? `<span style="color:var(--color-primary);font-size:16px;">✓</span>` : '';
+
+  return `
+    <div id="storage-format-${format}"
+      style="cursor:pointer;border:2px solid ${border};background:${bg};
+        border-radius:var(--radius-md);padding:var(--space-4);
+        transition:border-color 0.2s,background 0.2s;
+        display:flex;flex-direction:column;gap:var(--space-2);"
+      role="button" aria-pressed="${active}">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="color:${active ? 'var(--color-primary)' : 'var(--color-text-secondary)'};">${iconEl}</div>
+        ${checkmark}
+      </div>
+      <div style="font-weight:600;font-size:var(--font-size-sm);">${i18n.t(titleKey as any)}</div>
+      <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);line-height:1.4;">${i18n.t(descKey as any)}</div>
+    </div>`;
+}
 
 export function buildDataHTML(): string {
   return `
@@ -24,6 +50,35 @@ export function buildDataHTML(): string {
         </div>
       </div>
       <div class="card-body">
+        ${isElectron ? `
+        <div style="margin-bottom:var(--space-6);">
+          <div style="font-weight:600;font-size:var(--font-size-sm);margin-bottom:var(--space-2);">
+            ${i18n.t('settings.storageFormat' as any)}
+          </div>
+          <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);margin-bottom:var(--space-4);">
+            ${i18n.t('settings.storageFormatSubtitle' as any)}
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-bottom:var(--space-4);" id="storage-format-cards">
+            ${buildStorageFormatCard('json', storageFormatService.current === 'json')}
+            ${buildStorageFormatCard('excel', storageFormatService.current === 'excel')}
+          </div>
+          <div id="storage-format-info" style="
+            padding:var(--space-3) var(--space-4);
+            background:var(--color-bg-secondary);
+            border:1px solid var(--color-border-subtle);
+            border-radius:var(--radius-sm);
+            font-size:var(--font-size-xs);
+            color:var(--color-text-secondary);
+            display:flex;align-items:center;gap:var(--space-2);
+          ">
+            ${storageFormatService.current === 'excel' && storageFormatService.resolveExcelPath()
+              ? `${Icons.fileSpreadsheet(14)} ${i18n.t('settings.storageExcelPath' as any)}: <code style="color:var(--color-text-primary);font-family:var(--font-mono);word-break:break-all;">${storageFormatService.resolveExcelPath()}</code>`
+              : `${Icons.fileJson(14)} ${i18n.t('settings.storageJsonPath' as any)}`
+            }
+          </div>
+        </div>
+        <div class="divider" style="margin-bottom:var(--space-6);"></div>
+        ` : ''}
         ${isElectron ? `
         <div style="padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);margin-bottom:var(--space-6);border:1px solid var(--color-border);">
           <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-2);">
@@ -83,6 +138,14 @@ export function attachDataEvents(page: HTMLElement): void {
       const el = page.querySelector('#data-path');
       if (el) el.textContent = path;
     });
+
+    // Storage format card clicks
+    (['json', 'excel'] as StorageFormat[]).forEach((format) => {
+      page.querySelector(`#storage-format-${format}`)?.addEventListener('click', async () => {
+        if (format === storageFormatService.current) return;
+        await handleStorageFormatChange(format, page, electron);
+      });
+    });
   }
 
   page.querySelector('#export-btn')?.addEventListener('click', async () => {
@@ -137,4 +200,63 @@ export function attachDataEvents(page: HTMLElement): void {
       });
     });
   });
+}
+
+async function handleStorageFormatChange(
+  newFormat: StorageFormat,
+  page: HTMLElement,
+  electron: ElectronAPI
+): Promise<void> {
+  if (newFormat === 'excel') {
+    const filePath = await electron.chooseExcelStorageFile();
+    if (!filePath) return; // user cancelled
+
+    notifications.info(i18n.t('settings.storageMigrating' as any));
+
+    const ok = await repository.migrateToExcel(filePath);
+    if (!ok) {
+      notifications.error(i18n.t('settings.storageMigrationFailed' as any));
+      return;
+    }
+
+    storageFormatService.excelFilePath = filePath;
+    storageFormatService.set('excel');
+    notifications.success(i18n.t('settings.storageSwitchedExcel' as any));
+  } else {
+    notifications.info(i18n.t('settings.storageMigrating' as any));
+
+    const ok = await repository.migrateToJson();
+    if (!ok) {
+      notifications.error(i18n.t('settings.storageMigrationFailed' as any));
+      return;
+    }
+
+    storageFormatService.excelFilePath = null;
+    storageFormatService.set('json');
+    notifications.success(i18n.t('settings.storageSwitchedJson' as any));
+  }
+
+  // Re-render the format cards and info row to reflect the new state
+  const cardsContainer = page.querySelector('#storage-format-cards');
+  if (cardsContainer) {
+    cardsContainer.innerHTML =
+      buildStorageFormatCard('json', storageFormatService.current === 'json') +
+      buildStorageFormatCard('excel', storageFormatService.current === 'excel');
+
+    // Re-attach click handlers on the new card elements
+    (['json', 'excel'] as StorageFormat[]).forEach((format) => {
+      cardsContainer.querySelector(`#storage-format-${format}`)?.addEventListener('click', async () => {
+        if (format === storageFormatService.current) return;
+        await handleStorageFormatChange(format, page, electron);
+      });
+    });
+  }
+
+  const infoEl = page.querySelector('#storage-format-info');
+  if (infoEl) {
+    infoEl.innerHTML =
+      storageFormatService.current === 'excel' && storageFormatService.resolveExcelPath()
+        ? `${Icons.fileSpreadsheet(14)} ${i18n.t('settings.storageExcelPath' as any)}: <code style="color:var(--color-text-primary);font-family:var(--font-mono);word-break:break-all;">${storageFormatService.resolveExcelPath()}</code>`
+        : `${Icons.fileJson(14)} ${i18n.t('settings.storageJsonPath' as any)}`;
+  }
 }

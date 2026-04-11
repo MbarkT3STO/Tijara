@@ -13,6 +13,7 @@
 import * as XLSX from 'xlsx-js-style';
 import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier, Purchase, Return, Account, JournalEntry, FiscalPeriod, CostCenter, TaxRate, JournalTemplate, ProductCostHistory } from '@core/types';
 import type { ElectronAPI } from '../../electron/preload';
+import { storageFormatService } from '@core/storageFormat';
 
 /** All data collections stored in the workbook */
 export interface WorkbookData {
@@ -54,6 +55,36 @@ const SHEET_NAMES = {
 } as const;
 
 const STORAGE_KEY = 'tijara-data';
+
+/**
+ * Restore a cell value read from SheetJS back to its original type.
+ * _serializeToExcel stores every value as a JSON string, so we always
+ * attempt JSON.parse here. Non-JSON strings (from importFromExcel of
+ * user-created files) are returned as-is.
+ */
+function restoreCellValue(v: unknown): unknown {
+  if (typeof v === 'string') {
+    try { return JSON.parse(v); } catch { return v; }
+  }
+  return v;
+}
+
+/**
+ * Restore a cell value from the styled export format (importFromExcel).
+ * Only parses strings that look like JSON objects or arrays — leaves
+ * plain strings (including numeric strings like "1111") untouched so
+ * Account.code and similar fields stay as strings.
+ */
+function restoreExportCellValue(v: unknown): unknown {
+  if (typeof v === 'string') {
+    const t = v.trimStart();
+    if (t.startsWith('{') || t.startsWith('[')) {
+      try { return JSON.parse(v); } catch { /* fall through */ }
+    }
+    return v;
+  }
+  return v;
+}
 
 /** Safely access the Electron bridge exposed by the preload script */
 function getElectron(): ElectronAPI | null {
@@ -119,6 +150,23 @@ class ExcelRepository {
           reorderPoint:    p.reorderPoint    ?? 0,
           reorderQuantity: p.reorderQuantity ?? 0,
         }));
+
+        // Patch accounts/journal entries where code fields may have been
+        // corrupted to numbers by a previous importFromExcel bug.
+        this.data.accounts = this.data.accounts.map((a) => ({
+          ...a,
+          code: String(a.code),
+        }));
+        this.data.journalEntries = this.data.journalEntries.map((e) => ({
+          ...e,
+          lines: Array.isArray(e.lines)
+            ? e.lines.map((l) => ({ ...l, accountCode: String(l.accountCode) }))
+            : e.lines,
+        }));
+        this.data.costCenters = this.data.costCenters.map((c) => ({
+          ...c,
+          code: String(c.code),
+        }));
       } catch {
         this.data = this.getSeedData();
         await this.persist();
@@ -133,22 +181,54 @@ class ExcelRepository {
 
   /** Read raw JSON string from the best available storage */
   private async loadRaw(): Promise<string | null> {
+    const format = storageFormatService.current;
     const electron = getElectron();
-    if (electron) {
-      return electron.readData();
+
+    if (format === 'excel') {
+      const path = storageFormatService.resolveExcelPath();
+      if (!path || !electron) return null;
+      const buf = await electron.readExcelStorage(path);
+      if (!buf) return null;
+      return this._parseExcelToJson(buf);
     }
+
+    // JSON storage (default)
+    if (electron) return electron.readData();
     return localStorage.getItem(STORAGE_KEY);
   }
 
-  /** Write current data to the best available storage */
+  /** Write current data to the current storage format */
+  private _persistTimer: ReturnType<typeof setTimeout> | null = null;
+
   private async persist(): Promise<void> {
-    const json = JSON.stringify(this.data);
-    const electron = getElectron();
-    if (electron) {
-      await electron.writeData(json);
-    } else {
-      localStorage.setItem(STORAGE_KEY, json);
+    if (storageFormatService.current === 'excel') {
+      // Debounce Excel writes — batch rapid successive saves
+      if (this._persistTimer) clearTimeout(this._persistTimer);
+      this._persistTimer = setTimeout(() => {
+        this._persistTimer = null;
+        void this._persistNow();
+      }, 500);
+      return;
     }
+    await this._persistNow();
+  }
+
+  private async _persistNow(): Promise<void> {
+    const format = storageFormatService.current;
+    const electron = getElectron();
+
+    if (format === 'excel') {
+      const path = storageFormatService.resolveExcelPath();
+      if (!path || !electron) return;
+      const buf = this._serializeToExcel();
+      await electron.writeExcelStorage(buf, path);
+      return;
+    }
+
+    // JSON storage (default)
+    const json = JSON.stringify(this.data);
+    if (electron) await electron.writeData(json);
+    else localStorage.setItem(STORAGE_KEY, json);
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
@@ -753,11 +833,7 @@ class ExcelRepository {
       const parsed = rows.map((row) => {
         const result: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(row)) {
-          if (typeof v === 'string') {
-            try { result[k] = JSON.parse(v); } catch { result[k] = v; }
-          } else {
-            result[k] = v;
-          }
+          result[k] = restoreExportCellValue(v);
         }
         return result;
       });
@@ -766,6 +842,100 @@ class ExcelRepository {
     }
 
     await this.persist();
+  }
+
+  // ── Excel storage serialization ───────────────────────────────────────────
+
+  /**
+   * Serialize WorkbookData to a .xlsx ArrayBuffer for use as live storage.
+   * Each collection becomes one worksheet. Complex values are JSON-encoded.
+   */
+  private _serializeToExcel(): ArrayBuffer {
+    const wb = XLSX.utils.book_new();
+
+    for (const [key, sheetName] of Object.entries(SHEET_NAMES)) {
+      const collection = this.data[key as keyof WorkbookData];
+      if (!Array.isArray(collection) || collection.length === 0) {
+        const ws = XLSX.utils.aoa_to_sheet([['__empty']]);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName as string);
+        continue;
+      }
+
+      const rows = collection.map((item) => {
+        const flat: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(item as Record<string, unknown>)) {
+          // Serialize everything as a JSON string so SheetJS round-trips
+          // values faithfully (prevents numeric strings like "1000" from
+          // being read back as the number 1000).
+          flat[k] = JSON.stringify(v ?? null);
+        }
+        return flat;
+      });
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, sheetName as string);
+    }
+
+    return XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
+  }
+
+  /**
+   * Parse a .xlsx ArrayBuffer back to a JSON string of WorkbookData.
+   * Reverses the flattening done in _serializeToExcel.
+   */
+  private _parseExcelToJson(buf: ArrayBuffer): string {
+    const wb = XLSX.read(buf, { type: 'array' });
+    const result: Partial<WorkbookData> = {};
+
+    for (const [key, sheetName] of Object.entries(SHEET_NAMES)) {
+      const ws = wb.Sheets[sheetName as string];
+      if (!ws) continue;
+
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
+      const validRows = rows.filter((r) => !('__empty' in r));
+
+      const parsed = validRows.map((row) => {
+        const item: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(row)) {
+          item[k] = restoreCellValue(v);
+        }
+        return item;
+      });
+
+      (result as Record<string, unknown>)[key] = parsed;
+    }
+
+    return JSON.stringify(result);
+  }
+
+  /**
+   * Migrate current in-memory data to Excel format at the given path.
+   * Returns true on success. Call BEFORE storageFormatService.set('excel').
+   */
+  async migrateToExcel(filePath: string): Promise<boolean> {
+    const electron = getElectron();
+    if (!electron) return false;
+    try {
+      const buf = this._serializeToExcel();
+      return await electron.writeExcelStorage(buf, filePath);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Migrate current in-memory data back to JSON format.
+   * Returns true on success. Call BEFORE storageFormatService.set('json').
+   */
+  async migrateToJson(): Promise<boolean> {
+    const electron = getElectron();
+    if (!electron) return false;
+    try {
+      const json = JSON.stringify(this.data);
+      return await electron.writeData(json);
+    } catch {
+      return false;
+    }
   }
 
   /** Register menu-driven export/import listeners (Electron only) */

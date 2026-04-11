@@ -20,6 +20,7 @@ import { i18n } from '@core/i18n';
 import { initShortcuts } from '@shared/utils/shortcuts';
 import { consumePendingNavAction } from '@core/pendingNavAction';
 import '@core/sidebarTheme'; // side-effect: sets data-sidebar on body on import
+import '@core/storageFormat'; // side-effect: initializes storage format singleton before repository.init()
 import type { Route, User } from './types';
 
 /** Lazy-loaded page renderers */

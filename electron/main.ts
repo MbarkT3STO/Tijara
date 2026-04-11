@@ -234,6 +234,47 @@ ipcMain.handle('excel:import', async (): Promise<ArrayBuffer | null> => {
 /** Get the path to the data file (for display in settings) */
 ipcMain.handle('app:dataPath', (): string => DATA_FILE);
 
+// ── Excel storage IPC ────────────────────────────────────────────────────────
+
+/** Let user choose WHERE to save the Excel storage file (first-time setup) */
+ipcMain.handle('storage:chooseExcelFile', async (): Promise<string | null> => {
+  const { filePath, canceled } = await dialog.showSaveDialog(mainWindow!, {
+    title: 'Choose Storage File Location',
+    defaultPath: join(app.getPath('documents'), 'tijara-data.xlsx'),
+    filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }],
+  });
+  return canceled || !filePath ? null : filePath;
+});
+
+/** Read the Excel storage file and return raw bytes */
+ipcMain.handle('storage:readExcel', async (_event, filePath: string): Promise<ArrayBuffer | null> => {
+  try {
+    if (!existsSync(filePath)) return null;
+    const buf = readFileSync(filePath);
+    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  } catch (err) {
+    console.error('[main] storage:readExcel error', err);
+    return null;
+  }
+});
+
+/** Write the Excel storage file (atomic: write to .tmp then rename) */
+ipcMain.handle('storage:writeExcel', async (_event, buffer: ArrayBuffer, filePath: string): Promise<boolean> => {
+  try {
+    const { dirname, } = require('path') as typeof import('path');
+    const { renameSync } = require('fs') as typeof import('fs');
+    const dir = dirname(filePath);
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+    const tmpPath = filePath + '.tmp';
+    writeFileSync(tmpPath, Buffer.from(buffer));
+    renameSync(tmpPath, filePath);
+    return true;
+  } catch (err) {
+    console.error('[main] storage:writeExcel error', err);
+    return false;
+  }
+});
+
 /** Clear all data - delete the data file */
 ipcMain.handle('data:clear', (): boolean => {
   try {

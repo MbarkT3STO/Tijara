@@ -30,6 +30,12 @@ export interface ElectronAPI {
   onMenuExport: (callback: () => void) => () => void;
   /** Listen for menu-triggered import */
   onMenuImport: (callback: () => void) => () => void;
+  /** Choose where to save the Excel storage file */
+  chooseExcelStorageFile: () => Promise<string | null>;
+  /** Read the Excel storage file as raw bytes */
+  readExcelStorage: (filePath: string) => Promise<ArrayBuffer | null>;
+  /** Write the Excel storage file from raw bytes */
+  writeExcelStorage: (buffer: ArrayBuffer, filePath: string) => Promise<boolean>;
 }
 
 const api: ElectronAPI = {
@@ -54,6 +60,10 @@ const api: ElectronAPI = {
     ipcRenderer.on('menu:import', handler);
     return () => ipcRenderer.removeListener('menu:import', handler);
   },
+
+  chooseExcelStorageFile: () => ipcRenderer.invoke('storage:chooseExcelFile'),
+  readExcelStorage: (filePath) => ipcRenderer.invoke('storage:readExcel', filePath),
+  writeExcelStorage: (buffer, filePath) => ipcRenderer.invoke('storage:writeExcel', buffer, filePath),
 };
 
 contextBridge.exposeInMainWorld('electron', api);
