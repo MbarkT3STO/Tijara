@@ -145,6 +145,16 @@ export function renderReturns(): HTMLElement {
   }
 
   render();
+
+  // Handle open-item event dispatched by app.ts after search navigation
+  page.addEventListener('open-item', (e: Event) => {
+    const { id } = (e as CustomEvent).detail;
+    const ret = returnService.getById(id);
+    if (!ret) return;
+    const refresh = () => { state.returns = returnService.getAll(); applyFilters(); render(); };
+    openReturnDetailModal(ret, refresh);
+  });
+
   return page;
 }
 
@@ -211,6 +221,7 @@ function buildHTML(state: State): string {
       </div>
 
       <div class="table-container" style="border:none;border-radius:0;">
+        <div class="table-scroll">
         <table class="data-table" aria-label="Returns list">
           <thead>
             <tr>
@@ -253,6 +264,7 @@ function buildHTML(state: State): string {
             }
           </tbody>
         </table>
+        </div>
       </div>
       ${buildPagination(state.page, totalPages, total, start, pageData.length)}
     </div>

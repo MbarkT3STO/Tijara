@@ -160,6 +160,7 @@ function buildHTML(state: State): string {
       </div>
 
       <div class="table-container" style="border: none; border-radius: 0;">
+        <div class="table-scroll">
         <table class="data-table" aria-label="Customers list">
           <thead>
             <tr>
@@ -214,6 +215,7 @@ function buildHTML(state: State): string {
             }
           </tbody>
         </table>
+        </div>
       </div>
 
       ${buildPagination(state.page, totalPages, total, start, pageData.length)}

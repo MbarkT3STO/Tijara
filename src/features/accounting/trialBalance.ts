@@ -144,6 +144,7 @@ function buildHTML(state: State, periods: ReturnType<typeof fiscalPeriodService.
             </tr>
           </tfoot>` : ''}
         </table>
+        </div>
       </div>
     </div>
   `;

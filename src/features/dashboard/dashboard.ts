@@ -6,6 +6,7 @@ import { dashboardService } from '@services/dashboardService';
 import { journalService } from '@services/journalService';
 import { fiscalPeriodService } from '@services/fiscalPeriodService';
 import { inventoryService } from '@services/inventoryService';
+import { reportsService } from '@services/reportsService';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, formatPercent, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
@@ -128,6 +129,7 @@ function buildDashboardHTML(
             ${i18n.t('dashboard.viewAll')} ${Icons.chevronRight(14)}
           </button>
         </div>
+        ${buildMiniBarChart(reportsService.getMonthlyRevenue(6))}
         <div class="table-container" style="border:none;border-radius:0;">
           <table class="data-table">
             <thead>
@@ -341,4 +343,31 @@ if (!document.getElementById('dashboard-styles')) {
   style.id = 'dashboard-styles';
   style.textContent = dashboardStyles;
   document.head.appendChild(style);
+}
+
+function buildMiniBarChart(monthly: ReturnType<typeof reportsService.getMonthlyRevenue>): string {
+  const last6 = monthly.slice(-6);
+  if (last6.length === 0 || last6.every((m) => m.revenue === 0)) return '';
+  const maxRevenue = Math.max(...last6.map((m) => m.revenue), 1);
+  return `
+    <div style="display:flex;align-items:flex-end;gap:6px;height:80px;padding:var(--space-3) var(--space-4) 0;">
+      ${last6.map((m) => {
+        const pct = Math.round((m.revenue / maxRevenue) * 100);
+        return `
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;">
+            <div style="flex:1;width:100%;display:flex;align-items:flex-end;">
+              <div style="
+                width:100%;height:${pct}%;min-height:4px;
+                background:var(--gradient-primary,var(--color-primary));
+                border-radius:var(--radius-xs) var(--radius-xs) 0 0;
+                opacity:0.85;
+                transition:opacity 0.2s;
+              " title="${formatCurrency(m.revenue)}"></div>
+            </div>
+            <span style="font-size:9px;color:var(--color-text-tertiary);white-space:nowrap;">
+              ${m.month.split(' ')[0]}
+            </span>
+          </div>`;
+      }).join('')}
+    </div>`;
 }

@@ -125,6 +125,7 @@ function buildHTML(): string {
             }
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   `;

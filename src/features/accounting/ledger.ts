@@ -163,6 +163,7 @@ function buildHTML(state: State): string {
 
             <!-- Ledger Table -->
             <div class="table-container">
+              <div class="table-scroll">
               <table class="data-table">
                 <thead><tr>
                   <th>${i18n.t('accounting.journal.date' as any)}</th>
@@ -200,6 +201,7 @@ function buildHTML(state: State): string {
                   </tr>
                 </tbody>
               </table>
+              </div>
             </div>
 
             <!-- Footer Totals -->

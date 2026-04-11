@@ -9,7 +9,7 @@ import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, escapeHtml, exportReportPDF } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
@@ -138,6 +138,16 @@ export function renderPurchases(): HTMLElement {
   }
 
   render();
+
+  // Handle open-item event dispatched by app.ts after search navigation
+  page.addEventListener('open-item', (e: Event) => {
+    const { id } = (e as CustomEvent).detail;
+    const po = purchaseService.getById(id);
+    if (!po) return;
+    const refresh = () => { state.purchases = purchaseService.getAll(); applyFilters(); render(); };
+    openPurchaseDetailModal(po, refresh);
+  });
+
   return page;
 }
 
@@ -206,6 +216,7 @@ function buildHTML(state: State): string {
       </div>
 
       <div class="table-container" style="border:none;border-radius:0;">
+        <div class="table-scroll">
         <table class="data-table" aria-label="Purchase orders list">
           <thead>
             <tr>
@@ -246,6 +257,7 @@ function buildHTML(state: State): string {
             }
           </tbody>
         </table>
+        </div>
       </div>
       ${buildPagination(state.page, totalPages, total, start, pageData.length)}
     </div>
@@ -270,7 +282,15 @@ function buildPagination(page: number, totalPages: number, total: number, start:
 
 function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
   const content = document.createElement('div');
-  content.innerHTML = `
+
+  // PDF export button row
+  const printRow = document.createElement('div');
+  printRow.style.cssText = 'display:flex;justify-content:flex-end;margin-bottom:var(--space-3);';
+  printRow.innerHTML = `<button class="btn btn-secondary btn-sm" id="po-pdf-btn">${Icons.download(14)} ${i18n.t('common.exportPdf' as any)}</button>`;
+  content.appendChild(printRow);
+
+  const details = document.createElement('div');
+  details.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
       <div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('purchases.supplier')}</div>
@@ -360,6 +380,18 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
       <button class="btn btn-secondary" id="detail-cancel-po" style="color:var(--color-error);border-color:var(--color-error);">${i18n.t('purchases.modals.cancelPurchase' as any)}</button>
     </div>` : ''}
   `;
+  content.appendChild(details);
+  printRow.querySelector('#po-pdf-btn')?.addEventListener('click', async () => {
+    const btn = printRow.querySelector<HTMLButtonElement>('#po-pdf-btn')!;
+    btn.disabled = true;
+    btn.innerHTML = `${Icons.download(14)} ${i18n.t('common.exportPdf' as any)}…`;
+    try {
+      await openPurchasePdfExport(po);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `${Icons.download(14)} ${i18n.t('common.exportPdf' as any)}`;
+    }
+  });
 
   const close = openModal({ title: `${i18n.t('purchases.poNumber')} ${escapeHtml(po.poNumber)}`, content, size: 'lg', hideFooter: true });
 
@@ -413,6 +445,104 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
       'btn-secondary'
     );
   });
+}
+
+function openPurchasePdfExport(po: Purchase): Promise<void> {
+  const profile = profileService.get();
+  const pdfLang = (profile.defaultPdfLanguage || 'en') as any;
+  const dir = i18n.getDirectionFor(pdfLang);
+  const t = (key: any, vars?: any) => i18n.tFor(pdfLang, key, vars);
+  const fmt = (n: number) => formatCurrency(n, profile.currency || 'USD', pdfLang);
+  const dfmt = (d: string) => formatDate(d, pdfLang);
+  const fontFamily = dir === 'rtl' ? "'Cairo','Segoe UI',sans-serif" : "'Segoe UI',-apple-system,sans-serif";
+
+  const html = `<!DOCTYPE html>
+<html lang="${pdfLang}" dir="${dir}">
+<head>
+  <meta charset="utf-8">
+  <title>${t('purchases.poNumber')} ${escapeHtml(po.poNumber)}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:${fontFamily};font-size:13px;color:#111827;background:#fff;padding:40px;line-height:1.6;direction:${dir};}
+    h1{font-size:20px;font-weight:700;color:#9929ea;margin-bottom:2px;}
+    .meta{font-size:12px;color:#6b7280;margin-bottom:24px;}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;background:#f9fafb;border-radius:8px;padding:16px;}
+    .info-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:3px;}
+    .info-value{font-size:13px;font-weight:500;color:#111827;}
+    .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151;}
+    table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+    thead tr{background:#9929ea;color:#fff;}
+    th{padding:9px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:start;}
+    th.right{text-align:end;}th.center{text-align:center;}
+    td{padding:9px 12px;font-size:13px;border-bottom:1px solid #f3f4f6;text-align:start;}
+    td.right{text-align:end;}td.center{text-align:center;}
+    tr:nth-child(even) td{background:#faf5ff;}
+    .totals{display:flex;justify-content:flex-end;margin-bottom:24px;}
+    .totals-box{width:260px;}
+    .totals-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#374151;border-bottom:1px solid #f3f4f6;}
+    .totals-row.grand{font-size:15px;font-weight:700;color:#9929ea;border-bottom:none;border-top:2px solid #9929ea;padding-top:8px;margin-top:4px;}
+    .notes{background:#f9fafb;border-inline-start:3px solid #9929ea;border-radius:0 6px 6px 0;padding:10px 14px;margin-bottom:24px;}
+    .notes-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:3px;}
+    .footer{text-align:center;font-size:11px;color:#9ca3af;padding-top:20px;border-top:1px solid #e5e7eb;}
+    @media print{body{padding:20px;}@page{margin:14mm;size:A4;}}
+  </style>
+</head>
+<body>
+  ${profile.name ? `<h1>${escapeHtml(profile.name)}</h1>` : ''}
+  <div class="meta">
+    ${t('purchases.poNumber')}: <strong>${escapeHtml(po.poNumber)}</strong>
+    &nbsp;·&nbsp; ${t('common.date')}: ${dfmt(po.createdAt)}
+    &nbsp;·&nbsp; <span class="badge">${t(`purchases.statuses.${po.status}` as any)}</span>
+    &nbsp;·&nbsp; <span class="badge">${t(`sales.payments.${po.paymentStatus}` as any)}</span>
+  </div>
+
+  <div class="info-grid">
+    <div>
+      <div class="info-label">${t('purchases.supplier')}</div>
+      <div class="info-value">${escapeHtml(po.supplierName)}</div>
+    </div>
+    ${po.expectedDate ? `<div>
+      <div class="info-label">${t('purchases.expectedDate')}</div>
+      <div class="info-value">${dfmt(po.expectedDate)}</div>
+    </div>` : ''}
+  </div>
+
+  <table>
+    <thead><tr>
+      <th>${t('products.modals.name')}</th>
+      <th class="center">${t('sales.modals.addItem')}</th>
+      <th class="right">${t('purchases.unitCost')}</th>
+      <th class="right">${t('purchases.total')}</th>
+    </tr></thead>
+    <tbody>
+      ${po.items.map((item) => `<tr>
+        <td>${escapeHtml(item.productName)}</td>
+        <td class="center">${item.quantity}</td>
+        <td class="right">${fmt(item.unitCost)}</td>
+        <td class="right"><strong>${fmt(item.total)}</strong></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div class="totals-box">
+      <div class="totals-row"><span>${t('purchases.subtotal')}</span><span>${fmt(po.subtotal)}</span></div>
+      <div class="totals-row"><span>${t('purchases.tax')} (${po.taxRate}%)</span><span>${fmt(po.taxAmount)}</span></div>
+      ${po.shippingCost > 0 ? `<div class="totals-row"><span>${t('purchases.shipping')}</span><span>${fmt(po.shippingCost)}</span></div>` : ''}
+      <div class="totals-row grand"><span>${t('purchases.total')}</span><span>${fmt(po.total)}</span></div>
+      ${(po.amountPaid ?? 0) > 0 ? `
+        <div class="totals-row" style="color:#22c55e;"><span>${t('purchases.amountPaid')}</span><span>${fmt(po.amountPaid ?? 0)}</span></div>
+        <div class="totals-row" style="color:#ef4444;font-weight:600;"><span>${t('purchases.balanceDue')}</span><span>${fmt(po.total - (po.amountPaid ?? 0))}</span></div>
+      ` : ''}
+    </div>
+  </div>
+
+  ${po.notes ? `<div class="notes"><div class="notes-label">${t('common.notes')}</div><div>${escapeHtml(po.notes)}</div></div>` : ''}
+
+  <div class="footer">${t('common.generatedBy' as any)} · ${dfmt(new Date().toISOString())}</div>
+</body>
+</html>`;
+  return exportReportPDF(html, `po-${po.poNumber}.pdf`);
 }
 
 // ── Item helpers ──────────────────────────────────────────────────────────────

@@ -70,6 +70,14 @@ function handleKeyDown(e: KeyboardEvent): void {
     return;
   }
 
+  // / — focus global search
+  if (e.key === '/' && !ctrl) {
+    e.preventDefault();
+    const searchInput = document.querySelector<HTMLInputElement>('#global-search-input');
+    if (searchInput) { searchInput.focus(); searchInput.select(); }
+    return;
+  }
+
   // Custom registered shortcuts
   for (const shortcut of registeredShortcuts) {
     const keyMatch = e.key.toLowerCase() === shortcut.key.toLowerCase();
