@@ -9,6 +9,7 @@ import { confirmDialog, openModal, showModalError } from '@shared/components/mod
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/helpers';
 import { printInvoice, exportInvoicePDF } from '@shared/utils/invoicePdf';
+import { openPrintPreview } from '@shared/components/printPreview';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
@@ -195,19 +196,8 @@ export function renderInvoices(): HTMLElement {
               break;
 
             case 'pdf':
-              item.setAttribute('disabled', 'true');
-              try {
-                await exportInvoicePDF(invoice);
-                notifications.success(i18n.t('common.pdfExportSuccess' as any));
-              } catch {
-                notifications.error(i18n.t('common.pdfExportError' as any));
-              } finally {
-                item.removeAttribute('disabled');
-              }
-              break;
-
             case 'print':
-              printInvoice(invoice).catch(console.error);
+              openPrintPreview(invoice).catch(console.error);
               break;
 
             case 'delete':
@@ -629,21 +619,12 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
     onUpdate();
   });
 
-  content.querySelector('#detail-pdf-btn')?.addEventListener('click', async () => {
-    const btn = content.querySelector<HTMLButtonElement>('#detail-pdf-btn')!;
-    btn.disabled = true;
-    try {
-      await exportInvoicePDF(invoice);
-      notifications.success(i18n.t('common.pdfExportSuccess' as any));
-    } catch {
-      notifications.error(i18n.t('common.pdfExportError' as any));
-    } finally {
-      btn.disabled = false;
-    }
+  content.querySelector('#detail-pdf-btn')?.addEventListener('click', () => {
+    openPrintPreview(invoice).catch(console.error);
   });
 
   content.querySelector('#detail-print-btn')?.addEventListener('click', () => {
-    printInvoice(invoice).catch(console.error);
+    openPrintPreview(invoice).catch(console.error);
   });
 }
 

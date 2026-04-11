@@ -24,6 +24,8 @@ export interface ElectronAPI {
   exportInvoicePDF: (html: string, invoiceNumber: string) => Promise<boolean>;
   /** Export a report as PDF – opens native save dialog */
   exportReportPDF: (html: string, filename: string) => Promise<boolean>;
+  /** Print an invoice – opens native print dialog with preview */
+  printInvoice: (html: string) => Promise<boolean>;
   /** Listen for menu-triggered export */
   onMenuExport: (callback: () => void) => () => void;
   /** Listen for menu-triggered import */
@@ -39,6 +41,7 @@ const api: ElectronAPI = {
   getDataPath: () => ipcRenderer.invoke('app:dataPath'),
   exportInvoicePDF: (html, invoiceNumber) => ipcRenderer.invoke('invoice:exportPDF', html, invoiceNumber),
   exportReportPDF: (html, filename) => ipcRenderer.invoke('report:exportPDF', html, filename),
+  printInvoice: (html) => ipcRenderer.invoke('invoice:print', html),
 
   onMenuExport: (callback) => {
     const handler = () => callback();

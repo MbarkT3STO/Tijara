@@ -324,15 +324,34 @@ function buildFromBlock(profile: EnterpriseProfile, lang: Language): string {
 
 export async function printInvoice(invoice: Invoice): Promise<void> {
   const html = await buildInvoiceHTML(invoice);
-  const win = window.open('', '_blank', 'width=900,height=700');
-  if (!win) return;
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
-  win.onload = () => {
-    win.focus();
-    win.print();
-    win.onafterprint = () => win.close();
+  const electron = getElectron();
+
+  // In Electron: use IPC to print via a hidden BrowserWindow — gives full native print preview
+  if (electron?.printInvoice) {
+    await electron.printInvoice(html);
+    return;
+  }
+
+  // Web fallback: inject a hidden iframe and call contentWindow.print()
+  const existing = document.getElementById('__invoice-print-frame');
+  if (existing) existing.remove();
+
+  const iframe = document.createElement('iframe');
+  iframe.id = '__invoice-print-frame';
+  iframe.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;border:none;opacity:0;';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument || iframe.contentWindow?.document;
+  if (!doc) return;
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  iframe.onload = () => {
+    setTimeout(() => {
+      iframe.contentWindow?.print();
+      setTimeout(() => iframe.remove(), 2000);
+    }, 300);
   };
 }
 
@@ -344,11 +363,7 @@ export async function exportInvoicePDF(invoice: Invoice): Promise<void> {
   if (electron) {
     await electron.exportInvoicePDF(html, invoice.invoiceNumber);
   } else {
-    const win = window.open('', '_blank', 'width=900,height=700');
-    if (!win) return;
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-    win.onload = () => { win.focus(); win.print(); win.onafterprint = () => win.close(); };
+    // Web fallback: print via iframe (same as printInvoice)
+    await printInvoice(invoice);
   }
 }

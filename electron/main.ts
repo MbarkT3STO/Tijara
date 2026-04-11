@@ -284,7 +284,32 @@ ipcMain.handle('invoice:exportPDF', async (_event, html: string, invoiceNumber: 
   }
 });
 
-/** Export a report as PDF – renders HTML in a hidden window, saves via dialog */
+/** Print an invoice – opens a visible preview window then triggers native print dialog */
+ipcMain.handle('invoice:print', async (_event, html: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const printWin = new BrowserWindow({
+      width: 900,
+      height: 700,
+      show: true,
+      title: 'Invoice Preview',
+      webPreferences: { nodeIntegration: false, contextIsolation: true },
+    });
+
+    printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+
+    printWin.webContents.once('did-finish-load', () => {
+      printWin.webContents.print(
+        { silent: false, printBackground: true, color: true },
+        (success) => {
+          printWin.destroy();
+          resolve(success);
+        }
+      );
+    });
+
+    printWin.on('closed', () => resolve(false));
+  });
+});
 ipcMain.handle('report:exportPDF', async (_event, html: string, filename: string): Promise<boolean> => {
   const win = BrowserWindow.getAllWindows()[0];
   if (!win) return false;
