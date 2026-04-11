@@ -482,12 +482,15 @@ function buildSearchBar(): HTMLElement {
     resultsPortal = null;
   };
 
-  const navigateToResult = (route: string) => {
-    // route is already in '#/xxx' format — use router for proper navigation
-    const routeKey = route.replace('#/', '') as Parameters<typeof router.navigate>[0];
+  const navigateToResult = (route: string, itemId: string) => {
+    const routeKey = route as Parameters<typeof router.navigate>[0];
     input.value = '';
     closeResults();
-    router.navigate(routeKey as any);
+    // Set pending action so the page opens the item detail after mounting
+    import('@core/pendingNavAction').then(({ setPendingNavAction }) => {
+      setPendingNavAction({ route: routeKey as any, itemId, itemType: 'view' });
+      router.navigate(routeKey as any);
+    });
   };
 
   const showResults = async (query: string) => {
@@ -508,28 +511,28 @@ function buildSearchBar(): HTMLElement {
       import('@services/invoiceService'),
     ]);
 
-    type SearchResult = { type: string; label: string; sub: string; route: string };
+    type SearchResult = { type: string; label: string; sub: string; route: string; id: string };
     const results: SearchResult[] = [];
 
     customerService.getAll()
       .filter((c) => c.name.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q))
       .slice(0, 3)
-      .forEach((c) => results.push({ type: i18n.t('nav.customers'), label: c.name, sub: c.email || '', route: 'customers' }));
+      .forEach((c) => results.push({ type: i18n.t('nav.customers'), label: c.name, sub: c.email || '', route: 'customers', id: c.id }));
 
     productService.getAll()
       .filter((p) => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q))
       .slice(0, 3)
-      .forEach((p) => results.push({ type: i18n.t('nav.products'), label: p.name, sub: p.sku || '', route: 'products' }));
+      .forEach((p) => results.push({ type: i18n.t('nav.products'), label: p.name, sub: p.sku || '', route: 'products', id: p.id }));
 
     supplierService.getAll()
       .filter((s) => s.name.toLowerCase().includes(q))
       .slice(0, 2)
-      .forEach((s) => results.push({ type: i18n.t('nav.suppliers'), label: s.name, sub: s.email || '', route: 'suppliers' }));
+      .forEach((s) => results.push({ type: i18n.t('nav.suppliers'), label: s.name, sub: s.email || '', route: 'suppliers', id: s.id }));
 
     invoiceService.getAll()
       .filter((inv) => inv.invoiceNumber.toLowerCase().includes(q) || inv.customerName.toLowerCase().includes(q))
       .slice(0, 2)
-      .forEach((inv) => results.push({ type: i18n.t('nav.invoices'), label: inv.invoiceNumber, sub: inv.customerName, route: 'invoices' }));
+      .forEach((inv) => results.push({ type: i18n.t('nav.invoices'), label: inv.invoiceNumber, sub: inv.customerName, route: 'invoices', id: inv.id }));
 
     if (results.length === 0) return;
 
@@ -562,6 +565,7 @@ function buildSearchBar(): HTMLElement {
           role="option"
           data-idx="${i}"
           data-route="${r.route}"
+          data-id="${r.id}"
           aria-selected="${i === selectedIdx}"
           style="
             display:flex;align-items:center;gap:var(--space-3);
@@ -591,7 +595,8 @@ function buildSearchBar(): HTMLElement {
           e.preventDefault(); // prevent input blur
           isClickingResult = true;
           const route = btn.getAttribute('data-route')!;
-          navigateToResult(route);
+          const id = btn.getAttribute('data-id')!;
+          navigateToResult(route, id);
           isClickingResult = false;
         });
       });
@@ -623,7 +628,8 @@ function buildSearchBar(): HTMLElement {
       const active = resultsPortal.querySelector<HTMLButtonElement>(`[data-idx="${selectedIdx}"]`);
       if (active) {
         const route = active.getAttribute('data-route')!;
-        navigateToResult(route);
+        const id = active.getAttribute('data-id')!;
+        navigateToResult(route, id);
       }
     } else if (e.key === 'Escape') {
       closeResults();

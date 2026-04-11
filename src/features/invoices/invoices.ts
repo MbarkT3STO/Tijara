@@ -252,6 +252,19 @@ export function renderInvoices(): HTMLElement {
   }
 
   render();
+
+  // Handle open-item event dispatched by app.ts after search navigation
+  page.addEventListener('open-item', (e) => {
+    const { id } = (e as CustomEvent).detail;
+    const invoice = invoiceService.getById(id);
+    if (!invoice) return;
+    openInvoiceDetailModal(invoice, () => {
+      state.invoices = invoiceService.getAll();
+      applyFilters();
+      render();
+    });
+  });
+
   return page;
 }
 

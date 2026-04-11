@@ -18,6 +18,7 @@ import { hasPermission } from '@shared/utils/helpers';
 import { Icons } from '@shared/components/icons';
 import { i18n } from '@core/i18n';
 import { initShortcuts } from '@shared/utils/shortcuts';
+import { consumePendingNavAction } from '@core/pendingNavAction';
 import '@core/sidebarTheme'; // side-effect: sets data-sidebar on body on import
 import type { Route, User } from './types';
 
@@ -190,6 +191,18 @@ async function loadPage(
 
     // Trigger enter animation
     requestAnimationFrame(() => el.classList.add('page-enter-active'));
+
+    // Consume any pending nav action (e.g. open item detail from global search)
+    const pending = consumePendingNavAction(route);
+    if (pending) {
+      // Give the page a tick to attach its event listeners before dispatching
+      setTimeout(() => {
+        el.dispatchEvent(new CustomEvent('open-item', {
+          bubbles: false,
+          detail: { id: pending.itemId, type: pending.itemType },
+        }));
+      }, 80);
+    }
   } catch (err) {
     console.error('Failed to load page:', err);
     contentArea.innerHTML = `<div class="content-inner"><div class="empty-state"><p class="empty-state-title">Failed to load page</p><button class="btn btn-primary" onclick="window.location.reload()">Reload</button></div></div>`;

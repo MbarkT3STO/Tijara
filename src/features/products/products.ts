@@ -124,6 +124,19 @@ export function renderProducts(): HTMLElement {
   }
 
   render();
+
+  // Handle open-item event dispatched by app.ts after search navigation
+  page.addEventListener('open-item', (e) => {
+    const { id } = (e as CustomEvent).detail;
+    const product = productService.getById(id);
+    if (!product) return;
+    openProductModal(product, () => {
+      state.products = productService.getAll();
+      applyFilters();
+      render();
+    });
+  });
+
   return page;
 }
 

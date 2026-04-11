@@ -134,6 +134,21 @@ export function renderCustomers(): HTMLElement {
   }
 
   render();
+
+  // Handle open-item event dispatched by app.ts after search navigation
+  page.addEventListener('open-item', (e) => {
+    const { id } = (e as CustomEvent).detail;
+    const customer = customerService.getById(id);
+    if (!customer) return;
+    openCustomerProfileModal(customer, () => {
+      openCustomerModal(customer, () => {
+        state.customers = customerService.getAll();
+        state.filtered = state.search ? customerService.search(state.search) : [...state.customers];
+        render();
+      });
+    });
+  });
+
   return page;
 }
 

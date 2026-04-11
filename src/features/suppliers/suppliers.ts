@@ -106,6 +106,19 @@ export function renderSuppliers(): HTMLElement {
   }
 
   render();
+
+  // Handle open-item event dispatched by app.ts after search navigation
+  page.addEventListener('open-item', (e) => {
+    const { id } = (e as CustomEvent).detail;
+    const supplier = supplierService.getById(id);
+    if (!supplier) return;
+    openSupplierDetailModal(supplier, () => {
+      state.suppliers = supplierService.getAll();
+      state.filtered = state.search ? supplierService.search(state.search) : [...state.suppliers];
+      render();
+    });
+  });
+
   return page;
 }
 
