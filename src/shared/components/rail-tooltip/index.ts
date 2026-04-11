@@ -26,9 +26,7 @@ function isSidebarCollapsed(): boolean {
 
   if (layout === 'floating') {
     if (!sidebarRef) return false;
-    // Explicitly collapsed by user
     if (sidebarRef.classList.contains('float-collapsed')) return true;
-    // Auto-collapsed by CSS media query (≤1100px, no override)
     if (!sidebarRef.classList.contains('float-expanded-override')) {
       return window.innerWidth <= 1100;
     }
@@ -36,6 +34,14 @@ function isSidebarCollapsed(): boolean {
   }
 
   return false;
+}
+
+/** Fallback: check if the nav-label is actually hidden (covers all edge cases) */
+function isNavLabelHidden(btn: HTMLElement): boolean {
+  const label = btn.querySelector<HTMLElement>('.nav-label');
+  if (!label) return true;
+  const style = window.getComputedStyle(label);
+  return style.display === 'none' || style.opacity === '0' || parseFloat(style.width) < 4;
 }
 
 function createTooltipEl(label: string, targetRect: DOMRect): HTMLElement {
@@ -119,7 +125,7 @@ function removeTooltip(): void {
 }
 
 function onNavItemEnter(e: MouseEvent): void {
-  if (!isSidebarCollapsed()) return;
+  if (!isSidebarCollapsed() && !isNavLabelHidden(e.currentTarget as HTMLElement)) return;
   removeTooltip();
 
   const btn = e.currentTarget as HTMLElement;
@@ -162,7 +168,7 @@ export function initRailTooltips(sidebar: HTMLElement): void {
   const nav = sidebar.querySelector('.sidebar-nav');
   if (nav) {
     new MutationObserver(() => attachListeners(sidebar))
-      .observe(nav, { childList: true, subtree: false });
+      .observe(nav, { childList: true, subtree: true });
   }
 
   // Remove tooltip on scroll (content area may scroll while sidebar is open)
