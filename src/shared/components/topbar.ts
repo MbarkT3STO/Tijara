@@ -440,33 +440,55 @@ function buildNotificationsHTML(alerts: SystemAlert[], history: NotificationHist
 function buildSearchBar(): HTMLElement {
   const wrapper = document.createElement('div');
   wrapper.className = 'topbar-search';
-  wrapper.style.cssText = `
-    flex: 1; max-width: 400px; position: relative;
-    display: flex; align-items: center;
-  `;
 
-  wrapper.innerHTML = `
-    <div class="search-bar" style="width:100%;">
-      <span class="search-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      </span>
-      <input
-        id="global-search-input"
-        type="search"
-        class="form-control"
-        placeholder="${i18n.t('topbar.search' as any) || 'Search...'}"
-        autocomplete="off"
-        style="height:34px;font-size:var(--font-size-sm);"
-      />
-      <kbd style="position:absolute;right:var(--space-3);font-size:10px;padding:2px 5px;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:3px;color:var(--color-text-tertiary);pointer-events:none;">Ctrl K</kbd>
-    </div>
-  `;
+  const searchBar = document.createElement('div');
+  searchBar.className = 'search-bar';
+  searchBar.style.width = '100%';
 
-  const input = wrapper.querySelector<HTMLInputElement>('#global-search-input')!;
+  const searchIcon = document.createElement('span');
+  searchIcon.className = 'search-icon';
+  searchIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
+
+  const input = document.createElement('input');
+  input.id = 'global-search-input';
+  input.type = 'search';
+  input.className = 'form-control';
+  input.autocomplete = 'off';
+  input.style.cssText = 'height:34px;font-size:var(--font-size-sm);';
+
+  const kbd = document.createElement('kbd');
+  kbd.className = 'search-ctrlk-hint';
+  kbd.textContent = 'Ctrl K';
+
+  // Update placeholder on language change
+  const updatePlaceholder = () => {
+    input.placeholder = i18n.t('topbar.search' as any) || i18n.t('common.search' as any) || 'Search...';
+  };
+  updatePlaceholder();
+  i18n.onLanguageChange(updatePlaceholder);
+
+  searchBar.appendChild(searchIcon);
+  searchBar.appendChild(input);
+  searchBar.appendChild(kbd);
+  wrapper.appendChild(searchBar);
+
   let resultsPortal: HTMLElement | null = null;
   let selectedIdx = 0;
+  // Track whether a result click is in progress to prevent premature close
+  let isClickingResult = false;
 
-  const closeResults = () => { resultsPortal?.remove(); resultsPortal = null; };
+  const closeResults = () => {
+    resultsPortal?.remove();
+    resultsPortal = null;
+  };
+
+  const navigateToResult = (route: string) => {
+    // route is already in '#/xxx' format — use router for proper navigation
+    const routeKey = route.replace('#/', '') as Parameters<typeof router.navigate>[0];
+    input.value = '';
+    closeResults();
+    router.navigate(routeKey as any);
+  };
 
   const showResults = async (query: string) => {
     closeResults();
@@ -474,7 +496,6 @@ function buildSearchBar(): HTMLElement {
 
     const q = query.toLowerCase();
 
-    // Lazy-load services to avoid circular deps
     const [
       { customerService },
       { productService },
@@ -493,22 +514,22 @@ function buildSearchBar(): HTMLElement {
     customerService.getAll()
       .filter((c) => c.name.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q))
       .slice(0, 3)
-      .forEach((c) => results.push({ type: i18n.t('nav.customers'), label: c.name, sub: c.email || '', route: '#/customers' }));
+      .forEach((c) => results.push({ type: i18n.t('nav.customers'), label: c.name, sub: c.email || '', route: 'customers' }));
 
     productService.getAll()
       .filter((p) => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q))
       .slice(0, 3)
-      .forEach((p) => results.push({ type: i18n.t('nav.products'), label: p.name, sub: p.sku || '', route: '#/products' }));
+      .forEach((p) => results.push({ type: i18n.t('nav.products'), label: p.name, sub: p.sku || '', route: 'products' }));
 
     supplierService.getAll()
       .filter((s) => s.name.toLowerCase().includes(q))
       .slice(0, 2)
-      .forEach((s) => results.push({ type: i18n.t('nav.suppliers'), label: s.name, sub: s.email || '', route: '#/suppliers' }));
+      .forEach((s) => results.push({ type: i18n.t('nav.suppliers'), label: s.name, sub: s.email || '', route: 'suppliers' }));
 
     invoiceService.getAll()
       .filter((inv) => inv.invoiceNumber.toLowerCase().includes(q) || inv.customerName.toLowerCase().includes(q))
       .slice(0, 2)
-      .forEach((inv) => results.push({ type: i18n.t('nav.invoices'), label: inv.invoiceNumber, sub: inv.customerName, route: '#/invoices' }));
+      .forEach((inv) => results.push({ type: i18n.t('nav.invoices'), label: inv.invoiceNumber, sub: inv.customerName, route: 'invoices' }));
 
     if (results.length === 0) return;
 
@@ -517,43 +538,61 @@ function buildSearchBar(): HTMLElement {
     const isRtl = document.documentElement.dir === 'rtl';
 
     resultsPortal = document.createElement('div');
+    resultsPortal.setAttribute('role', 'listbox');
+    resultsPortal.setAttribute('aria-label', i18n.t('topbar.search' as any));
     resultsPortal.style.cssText = `
       position:fixed;
       top:${rect.bottom + 4}px;
       ${isRtl ? `right:${window.innerWidth - rect.right}px` : `left:${rect.left}px`};
       width:${rect.width}px;
+      min-width:280px;
       background:var(--color-surface);
       border:1px solid var(--color-border);
       border-radius:var(--radius-md);
       box-shadow:var(--shadow-lg);
       z-index:9999;
       overflow:hidden;
-      animation:pageEnterAnim 120ms ease-out both;
+      animation:slideUp 120ms ease-out both;
     `;
 
     const renderItems = () => {
       if (!resultsPortal) return;
       resultsPortal.innerHTML = results.map((r, i) => `
-        <button data-idx="${i}" style="
-          display:flex;align-items:center;gap:var(--space-3);
-          width:100%;padding:var(--space-2) var(--space-3);
-          border:none;border-bottom:1px solid var(--color-border-subtle);
-          background:${i === selectedIdx ? 'var(--color-primary-subtle)' : 'var(--color-surface)'};
-          color:var(--color-text-primary);cursor:pointer;text-align:start;
-          font-family:var(--font-family);
-        ">
-          <span style="font-size:9px;padding:2px 6px;background:var(--color-bg-secondary);border-radius:var(--radius-xs);color:var(--color-text-tertiary);white-space:nowrap;flex-shrink:0;">${r.type}</span>
+        <button
+          role="option"
+          data-idx="${i}"
+          data-route="${r.route}"
+          aria-selected="${i === selectedIdx}"
+          style="
+            display:flex;align-items:center;gap:var(--space-3);
+            width:100%;padding:var(--space-2) var(--space-3);
+            border:none;border-bottom:1px solid var(--color-border-subtle);
+            background:${i === selectedIdx ? 'var(--color-primary-subtle)' : 'var(--color-surface)'};
+            color:var(--color-text-primary);cursor:pointer;text-align:start;
+            font-family:var(--font-family);
+            transition:background 80ms ease;
+          "
+        >
+          <span style="font-size:9px;padding:2px 6px;background:var(--color-bg-secondary);border-radius:var(--radius-xs);color:var(--color-text-tertiary);white-space:nowrap;flex-shrink:0;">${escapeHtml(r.type)}</span>
           <span style="flex:1;font-size:var(--font-size-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(r.label)}</span>
           ${r.sub ? `<span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">${escapeHtml(r.sub)}</span>` : ''}
         </button>
       `).join('');
 
       resultsPortal.querySelectorAll<HTMLButtonElement>('[data-idx]').forEach((btn) => {
-        btn.addEventListener('mouseenter', () => { selectedIdx = parseInt(btn.getAttribute('data-idx')!); renderItems(); });
-        btn.addEventListener('click', () => {
-          window.location.hash = results[parseInt(btn.getAttribute('data-idx')!)].route;
-          input.value = '';
-          closeResults();
+        btn.addEventListener('mouseenter', () => {
+          selectedIdx = parseInt(btn.getAttribute('data-idx')!);
+          renderItems();
+        });
+
+        // Use mousedown instead of click so it fires before the document blur/click
+        // that would otherwise remove the portal first
+        btn.addEventListener('mousedown', (e) => {
+          e.preventDefault(); // prevent input blur
+          isClickingResult = true;
+          const route = btn.getAttribute('data-route')!;
+          navigateToResult(route);
+          isClickingResult = false;
         });
       });
     };
@@ -571,19 +610,45 @@ function buildSearchBar(): HTMLElement {
   input.addEventListener('keydown', (e) => {
     if (!resultsPortal) return;
     const items = resultsPortal.querySelectorAll<HTMLButtonElement>('[data-idx]');
-    if (e.key === 'ArrowDown') { e.preventDefault(); selectedIdx = Math.min(selectedIdx + 1, items.length - 1); items[selectedIdx]?.click(); }
-    if (e.key === 'ArrowUp') { e.preventDefault(); selectedIdx = Math.max(selectedIdx - 1, 0); }
-    if (e.key === 'Enter') { e.preventDefault(); items[selectedIdx]?.click(); }
-    if (e.key === 'Escape') { closeResults(); input.blur(); }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedIdx = Math.min(selectedIdx + 1, items.length - 1);
+      renderActiveItem(resultsPortal, selectedIdx);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedIdx = Math.max(selectedIdx - 1, 0);
+      renderActiveItem(resultsPortal, selectedIdx);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const active = resultsPortal.querySelector<HTMLButtonElement>(`[data-idx="${selectedIdx}"]`);
+      if (active) {
+        const route = active.getAttribute('data-route')!;
+        navigateToResult(route);
+      }
+    } else if (e.key === 'Escape') {
+      closeResults();
+      input.blur();
+    }
   });
 
   input.addEventListener('focus', () => { if (input.value) showResults(input.value); });
-  document.addEventListener('click', (e) => { if (!wrapper.contains(e.target as Node)) closeResults(); });
 
-  // Ctrl+K focuses the search
+  input.addEventListener('blur', () => {
+    // Delay close so mousedown on a result fires first
+    if (!isClickingResult) {
+      setTimeout(() => { if (!isClickingResult) closeResults(); }, 150);
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target as Node) && !resultsPortal?.contains(e.target as Node)) {
+      closeResults();
+    }
+  });
+
+  // Ctrl+K / Cmd+K focuses the search
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      // Only focus search if command palette is not open
       if (!document.getElementById('cmd-palette-backdrop')) {
         e.preventDefault();
         input.focus();
@@ -593,6 +658,15 @@ function buildSearchBar(): HTMLElement {
   });
 
   return wrapper;
+}
+
+/** Update highlight without full re-render for keyboard nav */
+function renderActiveItem(portal: HTMLElement, activeIdx: number): void {
+  portal.querySelectorAll<HTMLButtonElement>('[data-idx]').forEach((btn) => {
+    const idx = parseInt(btn.getAttribute('data-idx')!);
+    btn.style.background = idx === activeIdx ? 'var(--color-primary-subtle)' : 'var(--color-surface)';
+    btn.setAttribute('aria-selected', String(idx === activeIdx));
+  });
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

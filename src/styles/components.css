@@ -582,6 +582,7 @@ select.form-control {
 
 .search-bar .form-control {
   padding-inline-start: var(--space-8);
+  padding-inline-end: var(--space-10);
   border-radius: var(--radius-full);
   height: 34px;
   background: var(--color-bg-secondary);
