@@ -11,7 +11,7 @@ import { router } from '@core/router';
 import { Icons } from './icons';
 import { i18n } from '@core/i18n';
 import { layoutService } from '@core/layout';
-import { themeManager } from '@core/theme';
+import { themeService } from '@core/theme';
 import { hasPermission } from '@shared/utils/helpers';
 import type { Route } from '@core/types';
 import type { User } from '@core/types';
@@ -157,12 +157,12 @@ export function createSidebar(currentUser?: User): HTMLElement {
 
   const updateThemeIcon = () => {
     themeBtn.innerHTML = `<span class="nav-icon" aria-hidden="true">
-      ${themeManager.getTheme() === 'dark' ? Icons.sun(20) : Icons.moon(20)}
+      ${themeService.getTheme() === 'dark' ? Icons.sun(20) : Icons.moon(20)}
     </span>`;
   };
   updateThemeIcon();
-  themeBtn.addEventListener('click', () => { themeManager.toggle(); updateThemeIcon(); });
-  themeManager.subscribe(updateThemeIcon);
+  themeBtn.addEventListener('click', () => { themeService.toggle(); updateThemeIcon(); });
+  themeService.subscribe(updateThemeIcon);
   railFooter.appendChild(themeBtn);
 
   // ── Floating footer (collapse toggle) ─────────────────────────────────────

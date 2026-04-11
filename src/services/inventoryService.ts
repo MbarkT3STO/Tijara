@@ -4,7 +4,7 @@
  * Every stock change is recorded as a StockMovement for full audit trail.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import type { StockMovement, StockMovementType, Product } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
 

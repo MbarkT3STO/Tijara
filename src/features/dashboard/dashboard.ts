@@ -6,7 +6,7 @@ import { dashboardService } from '@services/dashboardService';
 import { journalService } from '@services/journalService';
 import { fiscalPeriodService } from '@services/fiscalPeriodService';
 import { inventoryService } from '@services/inventoryService';
-import { reportsService } from '@services/reportsService';
+import { reportService } from '@services/reportService';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, formatPercent, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
@@ -129,7 +129,7 @@ function buildDashboardHTML(
             ${i18n.t('dashboard.viewAll')} ${Icons.chevronRight(14)}
           </button>
         </div>
-        ${buildMiniBarChart(reportsService.getMonthlyRevenue(6))}
+        ${buildMiniBarChart(reportService.getMonthlyRevenue(6))}
         <div class="table-container" style="border:none;border-radius:0;">
           <table class="data-table">
             <thead>
@@ -345,7 +345,7 @@ if (!document.getElementById('dashboard-styles')) {
   document.head.appendChild(style);
 }
 
-function buildMiniBarChart(monthly: ReturnType<typeof reportsService.getMonthlyRevenue>): string {
+function buildMiniBarChart(monthly: ReturnType<typeof reportService.getMonthlyRevenue>): string {
   const last6 = monthly.slice(-6);
   if (last6.length === 0 || last6.every((m) => m.revenue === 0)) return '';
   const maxRevenue = Math.max(...last6.map((m) => m.revenue), 1);

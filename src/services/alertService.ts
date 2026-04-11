@@ -3,7 +3,7 @@
  * No persistence: alerts are derived live from current data state.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import { i18n } from '@core/i18n';
 
 export type AlertSeverity = 'error' | 'warning' | 'info';

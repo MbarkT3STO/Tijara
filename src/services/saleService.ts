@@ -3,7 +3,7 @@
  * Automatically records stock movements when sales are created or cancelled.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import { inventoryService } from './inventoryService';
 import type { Sale, OrderItem } from '@core/types';
 import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';

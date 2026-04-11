@@ -5,9 +5,9 @@
 import { Icons } from '@shared/components/icons';
 import { i18n } from '@core/i18n';
 import { notifications } from '@core/notifications';
-import { repository } from '@data/excelRepository';
-import { storageFormatService } from '@core/storageFormat';
-import type { StorageFormat } from '@core/storageFormat';
+import { repository } from '@data/repository';
+import { storageFormatService } from '@core/storageFormatService';
+import type { StorageFormat } from '@core/storageFormatService';
 import type { ElectronAPI } from '../../../electron/preload';
 
 function getElectron(): ElectronAPI | null {

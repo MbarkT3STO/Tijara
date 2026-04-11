@@ -2,7 +2,7 @@
  * Reports & Analytics aggregation service.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import { i18n } from '@core/i18n';
 import { getLocale } from '@shared/utils/helpers';
 
@@ -60,7 +60,7 @@ export interface SupplierAgingRow {
   total: number;
 }
 
-export const reportsService = {
+export const reportService = {
   /** Revenue by month for the last N months */
   getMonthlyRevenue(months = 12): MonthlyRevenue[] {
     const sales = repository.getAll('sales').filter((s) => s.status !== 'cancelled');

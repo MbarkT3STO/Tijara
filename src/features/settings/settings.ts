@@ -3,13 +3,13 @@
  * Detects Electron environment and uses native dialogs when available.
  */
 
-import { themeManager } from '@core/theme';
+import { themeService } from '@core/theme';
 import { notifications } from '@core/notifications';
 import { Icons } from '@shared/components/icons';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { createLanguageSwitcher } from '@shared/components/languageSwitcher';
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import { layoutService } from '@core/layout';
 import { sidebarThemeService } from '@core/sidebarTheme';
 import { accountService } from '@services/accountService';
@@ -365,7 +365,7 @@ export function renderSettings(): HTMLElement {
                   <div style="font-size: var(--font-size-xs); color: var(--color-text-secondary);">${i18n.t('settings.darkModeSubtitle' as any)}</div>
                 </div>
                 <label class="toggle" aria-label="Toggle dark mode">
-                  <input type="checkbox" class="toggle-input" id="dark-mode-toggle" ${themeManager.getTheme() === 'dark' ? 'checked' : ''} />
+                  <input type="checkbox" class="toggle-input" id="dark-mode-toggle" ${themeService.getTheme() === 'dark' ? 'checked' : ''} />
                   <span class="toggle-track"></span>
                 </label>
               </div>
@@ -388,14 +388,14 @@ export function renderSettings(): HTMLElement {
               <div>
                 <div style="font-weight: 600; font-size:var(--font-size-sm); margin-bottom: var(--space-3);">${i18n.t('settings.themePreview' as any)}</div>
                 <div style="display: flex; gap: var(--space-4);">
-                  <div id="theme-light" style="flex:1; cursor: pointer; border: 2px solid ${themeManager.getTheme() === 'light' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-2); transition: transform 0.2s;">
+                  <div id="theme-light" style="flex:1; cursor: pointer; border: 2px solid ${themeService.getTheme() === 'light' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-2); transition: transform 0.2s;">
                     <div style="background: #f8f7ff; border-radius: var(--radius-sm); padding: var(--space-3); height: 70px; display: flex; flex-direction: column; gap: 6px;">
                       <div style="height: 8px; width: 60%; background: #9929ea; border-radius: 4px;"></div>
                       <div style="height: 6px; width: 80%; background: #e5e0f5; border-radius: 4px;"></div>
                     </div>
                     <div style="text-align: center; font-size: 11px; font-weight:500; margin-top: var(--space-2); color: var(--color-text-secondary);">${i18n.t('settings.light' as any)}</div>
                   </div>
-                  <div id="theme-dark" style="flex:1; cursor: pointer; border: 2px solid ${themeManager.getTheme() === 'dark' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-2); transition: transform 0.2s;">
+                  <div id="theme-dark" style="flex:1; cursor: pointer; border: 2px solid ${themeService.getTheme() === 'dark' ? 'var(--color-primary)' : 'var(--color-border)'}; border-radius: var(--radius-md); padding: var(--space-2); transition: transform 0.2s;">
                     <div style="background: #0a0614; border-radius: var(--radius-sm); padding: var(--space-3); height: 70px; display: flex; flex-direction: column; gap: 6px;">
                       <div style="height: 8px; width: 60%; background: #9929ea; border-radius: 4px;"></div>
                       <div style="height: 6px; width: 80%; background: #2a1f45; border-radius: 4px;"></div>
@@ -595,14 +595,14 @@ export function renderSettings(): HTMLElement {
     const darkToggle = page.querySelector<HTMLInputElement>('#dark-mode-toggle')!;
     darkToggle.addEventListener('change', (e) => {
       const isDark = (e.target as HTMLInputElement).checked;
-      themeManager.setTheme(isDark ? 'dark' : 'light');
+      themeService.setTheme(isDark ? 'dark' : 'light');
     });
 
     page.querySelector('#theme-light')?.addEventListener('click', () => {
-      themeManager.setTheme('light');
+      themeService.setTheme('light');
     });
     page.querySelector('#theme-dark')?.addEventListener('click', () => {
-      themeManager.setTheme('dark');
+      themeService.setTheme('dark');
     });
 
     // ── Sidebar theme toggle ─────────────────────────────────────────────────
@@ -725,7 +725,7 @@ export function renderSettings(): HTMLElement {
   };
 
   render();
-  themeManager.subscribe(render);
+  themeService.subscribe(render);
   i18n.onLanguageChange(render);
 
   return page;

@@ -606,6 +606,18 @@ const TABLE_NAMES: Record<string, string> = {
   productCostHistory: 'product_cost_history',
 };
 
+/** Tables that are allowed to be queried via IPC */
+const ALLOWED_TABLES = new Set(Object.values(TABLE_NAMES));
+
+/** Validated table name — throws if not in whitelist */
+function resolveTable(collection: string): string {
+  const table = TABLE_NAMES[collection];
+  if (!table || !ALLOWED_TABLES.has(table)) {
+    throw new Error(`Unknown collection: ${collection}`);
+  }
+  return table;
+}
+
 // JSON columns that store nested arrays
 const JSON_COLUMNS = new Set(['items', 'lines']);
 
@@ -673,8 +685,8 @@ function fromRow(collection: string, row: Record<string, unknown>): Record<strin
 /** Get all rows from a collection table */
 ipcMain.handle('sqlite:getAll', (_event, collection: string): unknown[] => {
   try {
-    const table = TABLE_NAMES[collection];
-    if (!table) return [];
+    let table: string;
+    try { table = resolveTable(collection); } catch { return []; }
     const rows = getDb().prepare(`SELECT * FROM ${table}`).all() as Record<string, unknown>[];
     return rows.map((r) => fromRow(collection, r));
   } catch (err) {
@@ -686,8 +698,8 @@ ipcMain.handle('sqlite:getAll', (_event, collection: string): unknown[] => {
 /** Get a single row by id */
 ipcMain.handle('sqlite:getById', (_event, collection: string, id: string): unknown | null => {
   try {
-    const table = TABLE_NAMES[collection];
-    if (!table) return null;
+    let table: string;
+    try { table = resolveTable(collection); } catch { return []; }
     const row = getDb().prepare(`SELECT * FROM ${table} WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
     return row ? fromRow(collection, row) : null;
   } catch (err) {
@@ -699,8 +711,8 @@ ipcMain.handle('sqlite:getById', (_event, collection: string, id: string): unkno
 /** Insert a new row */
 ipcMain.handle('sqlite:insert', (_event, collection: string, item: Record<string, unknown>): boolean => {
   try {
-    const table = TABLE_NAMES[collection];
-    if (!table) return false;
+    let table: string;
+    try { table = resolveTable(collection); } catch { return []; }
     const cols = TABLE_COLUMNS[table];
     if (!cols) return false;
     const row = toRow(collection, item);
@@ -717,8 +729,8 @@ ipcMain.handle('sqlite:insert', (_event, collection: string, item: Record<string
 /** Update an existing row by id */
 ipcMain.handle('sqlite:update', (_event, collection: string, id: string, updates: Record<string, unknown>): boolean => {
   try {
-    const table = TABLE_NAMES[collection];
-    if (!table) return false;
+    let table: string;
+    try { table = resolveTable(collection); } catch { return []; }
     const row = toRow(collection, updates);
     const sets = Object.keys(row).map((col) => `${col} = ?`).join(', ');
     const result = getDb().prepare(`UPDATE ${table} SET ${sets} WHERE id = ?`).run(...Object.values(row), id);
@@ -732,8 +744,8 @@ ipcMain.handle('sqlite:update', (_event, collection: string, id: string, updates
 /** Delete a row by id */
 ipcMain.handle('sqlite:delete', (_event, collection: string, id: string): boolean => {
   try {
-    const table = TABLE_NAMES[collection];
-    if (!table) return false;
+    let table: string;
+    try { table = resolveTable(collection); } catch { return []; }
     const result = getDb().prepare(`DELETE FROM ${table} WHERE id = ?`).run(id);
     return result.changes > 0;
   } catch (err) {

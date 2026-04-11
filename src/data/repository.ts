@@ -13,7 +13,7 @@
 import * as XLSX from 'xlsx-js-style';
 import type { Customer, Product, Sale, Invoice, User, StockMovement, Supplier, Purchase, Return, Account, JournalEntry, FiscalPeriod, CostCenter, TaxRate, JournalTemplate, ProductCostHistory } from '@core/types';
 import type { ElectronAPI } from '../../electron/preload';
-import { storageFormatService } from '@core/storageFormat';
+import { storageFormatService } from '@core/storageFormatService';
 
 /** All data collections stored in the workbook */
 export interface WorkbookData {
@@ -91,7 +91,7 @@ function getElectron(): ElectronAPI | null {
   return (window as unknown as { electron?: ElectronAPI }).electron ?? null;
 }
 
-class ExcelRepository {
+class Repository {
   private data: WorkbookData = {
     customers: [],
     products: [],
@@ -323,10 +323,16 @@ class ExcelRepository {
     localStorage.clear();
     const electron = getElectron();
     if (electron) {
-      await electron.clearData();
-      await electron.sqliteClear();
+      const format = storageFormatService.current;
+      if (format === 'json') {
+        await electron.clearData();
+      } else if (format === 'excel') {
+        await electron.clearData(); // also clear JSON backup
+      } else if (format === 'sqlite') {
+        await electron.sqliteClear();
+      }
     }
-    await this.persist();
+    await this.persist(); // re-seeds the active storage with getSeedData()
   }
 
   // ── Excel export ──────────────────────────────────────────────────────────
@@ -1033,4 +1039,4 @@ class ExcelRepository {
 }
 
 /** Singleton repository instance */
-export const repository = new ExcelRepository();
+export const repository = new Repository();

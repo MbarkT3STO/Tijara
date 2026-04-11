@@ -9,7 +9,7 @@ import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { Product } from '@core/types';
 

@@ -4,7 +4,7 @@
  * via inventoryService so the audit trail stays consistent.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import { inventoryService } from './inventoryService';
 import type { Purchase, PurchaseItem } from '@core/types';
 import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';

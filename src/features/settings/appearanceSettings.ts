@@ -2,15 +2,15 @@
  * Appearance settings sub-module: theme, layout, sidebar, color theme.
  */
 
-import { themeManager } from '@core/theme';
+import { themeService } from '@core/theme';
 import { Icons } from '@shared/components/icons';
 import { i18n } from '@core/i18n';
 import { createLanguageSwitcher } from '@shared/components/languageSwitcher';
 import { layoutService } from '@core/layout';
 import { sidebarThemeService } from '@core/sidebarTheme';
-import { colorThemeService } from '@core/colorTheme';
+import { colorThemeService } from '@core/colorThemeService';
 import { densityService } from '@core/densityService';
-import type { ColorTheme } from '@core/colorTheme';
+import type { ColorTheme } from '@core/colorThemeService';
 import type { DensityMode } from '@core/densityService';
 
 export function buildAppearanceHTML(): string {
@@ -40,7 +40,7 @@ export function buildAppearanceHTML(): string {
             <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);">${i18n.t('settings.darkModeSubtitle' as any)}</div>
           </div>
           <label class="toggle" aria-label="Toggle dark mode">
-            <input type="checkbox" class="toggle-input" id="dark-mode-toggle" ${themeManager.getTheme() === 'dark' ? 'checked' : ''} />
+            <input type="checkbox" class="toggle-input" id="dark-mode-toggle" ${themeService.getTheme() === 'dark' ? 'checked' : ''} />
             <span class="toggle-track"></span>
           </label>
         </div>
@@ -72,14 +72,14 @@ export function buildAppearanceHTML(): string {
         <div>
           <div style="font-weight:600;font-size:var(--font-size-sm);margin-bottom:var(--space-3);">${i18n.t('settings.themePreview' as any)}</div>
           <div style="display:flex;gap:var(--space-4);">
-            <div id="theme-light" style="flex:1;cursor:pointer;border:2px solid ${themeManager.getTheme() === 'light' ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:var(--radius-md);padding:var(--space-2);transition:transform 0.2s;">
+            <div id="theme-light" style="flex:1;cursor:pointer;border:2px solid ${themeService.getTheme() === 'light' ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:var(--radius-md);padding:var(--space-2);transition:transform 0.2s;">
               <div style="background:#f8f7ff;border-radius:var(--radius-sm);padding:var(--space-3);height:70px;display:flex;flex-direction:column;gap:6px;">
                 <div style="height:8px;width:60%;background:var(--color-primary);border-radius:4px;"></div>
                 <div style="height:6px;width:80%;background:var(--color-primary-subtle);border-radius:4px;"></div>
               </div>
               <div style="text-align:center;font-size:11px;font-weight:500;margin-top:var(--space-2);color:var(--color-text-secondary);">${i18n.t('settings.light' as any)}</div>
             </div>
-            <div id="theme-dark" style="flex:1;cursor:pointer;border:2px solid ${themeManager.getTheme() === 'dark' ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:var(--radius-md);padding:var(--space-2);transition:transform 0.2s;">
+            <div id="theme-dark" style="flex:1;cursor:pointer;border:2px solid ${themeService.getTheme() === 'dark' ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:var(--radius-md);padding:var(--space-2);transition:transform 0.2s;">
               <div style="background:#111111;border-radius:var(--radius-sm);padding:var(--space-3);height:70px;display:flex;flex-direction:column;gap:6px;">
                 <div style="height:8px;width:60%;background:var(--color-primary);border-radius:4px;"></div>
                 <div style="height:6px;width:80%;background:var(--color-primary-subtle);border-radius:4px;"></div>
@@ -159,10 +159,10 @@ export function attachAppearanceEvents(page: HTMLElement, rerender: () => void):
   if (langContainer) langContainer.appendChild(createLanguageSwitcher());
 
   page.querySelector<HTMLInputElement>('#dark-mode-toggle')?.addEventListener('change', (e) => {
-    themeManager.setTheme((e.target as HTMLInputElement).checked ? 'dark' : 'light');
+    themeService.setTheme((e.target as HTMLInputElement).checked ? 'dark' : 'light');
   });
-  page.querySelector('#theme-light')?.addEventListener('click', () => { themeManager.setTheme('light'); rerender(); });
-  page.querySelector('#theme-dark')?.addEventListener('click', () => { themeManager.setTheme('dark'); rerender(); });
+  page.querySelector('#theme-light')?.addEventListener('click', () => { themeService.setTheme('light'); rerender(); });
+  page.querySelector('#theme-dark')?.addEventListener('click', () => { themeService.setTheme('dark'); rerender(); });
 
   page.querySelector<HTMLInputElement>('#sidebar-theme-toggle')?.addEventListener('change', (e) => {
     sidebarThemeService.set((e.target as HTMLInputElement).checked ? 'light' : 'dark');

@@ -5,7 +5,7 @@
 
 import { Icons } from '@shared/components/icons';
 import { i18n } from '@core/i18n';
-import { themeManager } from '@core/theme';
+import { themeService } from '@core/theme';
 import { buildGeneralHTML, attachGeneralEvents } from './generalSettings';
 import { buildAppearanceHTML, attachAppearanceEvents } from './appearanceSettings';
 import { buildDataHTML, attachDataEvents } from './dataSettings';
@@ -61,7 +61,7 @@ export function renderSettings(): HTMLElement {
   };
 
   render();
-  themeManager.subscribe(render);
+  themeService.subscribe(render);
   i18n.onLanguageChange(render);
 
   return page;

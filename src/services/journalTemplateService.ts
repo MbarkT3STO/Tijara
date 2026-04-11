@@ -4,7 +4,7 @@
  * (payroll, depreciation, rent, etc.).
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import type { JournalTemplate } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
 

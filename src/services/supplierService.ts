@@ -2,7 +2,7 @@
  * Supplier business logic service.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import type { Supplier } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
 

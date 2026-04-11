@@ -2,7 +2,7 @@
  * User management service.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import type { User, UserRole } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';

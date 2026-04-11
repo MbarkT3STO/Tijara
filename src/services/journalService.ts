@@ -3,7 +3,7 @@
  * Handles journal entries, account balances, and financial statement computation.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import { accountService } from './accountService';
 import { fiscalPeriodService } from './fiscalPeriodService';
 import type {

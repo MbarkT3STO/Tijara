@@ -13,14 +13,14 @@ import { createSidebar } from '@shared/components/sidebar';
 import { createTopbar } from '@shared/components/topbar';
 import { initToasts } from '@shared/components/toast';
 import { initRailTooltips } from '@shared/components/rail-tooltip';
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import { hasPermission } from '@shared/utils/helpers';
 import { Icons } from '@shared/components/icons';
 import { i18n } from '@core/i18n';
 import { initShortcuts } from '@shared/utils/shortcuts';
 import { consumePendingNavAction } from '@core/pendingNavAction';
 import '@core/sidebarTheme'; // side-effect: sets data-sidebar on body on import
-import '@core/storageFormat'; // side-effect: initializes storage format singleton before repository.init()
+import '@core/storageFormatService'; // side-effect: initializes storage format singleton before repository.init()
 import type { Route, User } from './types';
 
 /** Lazy-loaded page renderers */

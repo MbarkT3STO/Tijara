@@ -1,7 +1,7 @@
 /**
  * Color theme service – manages the 5 brand color presets.
  * Persists to localStorage and sets data-color-theme on <html> synchronously.
- * Follows the same pattern as themeManager and sidebarThemeService.
+ * Follows the same pattern as themeService and sidebarThemeService.
  */
 
 export type ColorTheme = 'violet' | 'ocean' | 'forest' | 'copper' | 'slate';

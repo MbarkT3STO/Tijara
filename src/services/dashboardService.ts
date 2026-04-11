@@ -3,7 +3,7 @@
  * Computes KPIs and summary statistics from all data sources.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import { inventoryService } from './inventoryService';
 import type { DashboardStats } from '@core/types';
 

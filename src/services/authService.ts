@@ -5,7 +5,7 @@
  * Session is stored in localStorage (survives app restarts).
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import type { User, UserRole } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
 

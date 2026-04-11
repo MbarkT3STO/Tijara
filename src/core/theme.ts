@@ -62,5 +62,5 @@ class ThemeManager {
   }
 }
 
-/** Singleton theme manager */
-export const themeManager = new ThemeManager();
+/** Singleton theme service */
+export const themeService = new ThemeManager();

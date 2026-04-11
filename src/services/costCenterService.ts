@@ -2,7 +2,7 @@
  * Cost Center service.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import type { CostCenter } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
 

@@ -2,7 +2,7 @@
  * Account (Chart of Accounts) service.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import type { Account, AccountType, AccountCategory } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
 

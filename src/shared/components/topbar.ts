@@ -5,7 +5,7 @@
  * In Modern layout: slim 36px height with breadcrumb trail.
  */
 
-import { themeManager } from '@core/theme';
+import { themeService } from '@core/theme';
 import { router } from '@core/router';
 import { Icons } from './icons';
 import { getInitials, escapeHtml } from '@shared/utils/helpers';
@@ -90,11 +90,11 @@ export function createTopbar(
   themeBtn.setAttribute('aria-label', i18n.t('topbar.toggleTheme' as any));
   themeBtn.setAttribute('data-tooltip', i18n.t('topbar.toggleTheme' as any));
   const updateThemeIcon = () => {
-    themeBtn.innerHTML = themeManager.getTheme() === 'dark' ? Icons.sun() : Icons.moon();
+    themeBtn.innerHTML = themeService.getTheme() === 'dark' ? Icons.sun() : Icons.moon();
   };
   updateThemeIcon();
-  themeBtn.addEventListener('click', () => { themeManager.toggle(); updateThemeIcon(); });
-  themeManager.subscribe(updateThemeIcon);
+  themeBtn.addEventListener('click', () => { themeService.toggle(); updateThemeIcon(); });
+  themeService.subscribe(updateThemeIcon);
 
   // Notifications bell
   const bellWrapper = buildBellButton();

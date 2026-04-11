@@ -3,7 +3,7 @@
  * Wraps repository access with validation and ID generation.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import type { Customer } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
 

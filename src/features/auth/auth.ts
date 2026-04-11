@@ -4,7 +4,7 @@
  */
 
 import { authService } from '@services/authService';
-import { themeManager } from '@core/theme';
+import { themeService } from '@core/theme';
 import { Icons } from '@shared/components/icons';
 import { i18n } from '@core/i18n';
 import { createLanguageSwitcher } from '@shared/components/languageSwitcher';
@@ -39,7 +39,7 @@ export function renderAuthScreen(onSuccess: (user: User) => void): HTMLElement {
 
     // Theme toggle
     root.querySelector('#auth-theme-btn')?.addEventListener('click', () => {
-      themeManager.toggle();
+      themeService.toggle();
       updateThemeIcon();
     });
 
@@ -80,7 +80,7 @@ export function renderAuthScreen(onSuccess: (user: User) => void): HTMLElement {
   function updateThemeIcon() {
     const btn = root.querySelector<HTMLButtonElement>('#auth-theme-btn');
     if (!btn) return;
-    btn.innerHTML = themeManager.getTheme() === 'dark' ? Icons.sun() : Icons.moon();
+    btn.innerHTML = themeService.getTheme() === 'dark' ? Icons.sun() : Icons.moon();
   }
 
   async function handleLogin() {

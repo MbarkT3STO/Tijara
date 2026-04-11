@@ -6,7 +6,7 @@
 
 import '@styles/main.css';
 import '@core/layout'; // apply data-layout to <body> before first paint
-import '@core/colorTheme'; // apply data-color-theme to <html> before first paint
+import '@core/colorThemeService'; // apply data-color-theme to <html> before first paint
 import { bootstrap } from '@core/app';
 
 const root = document.getElementById('app');

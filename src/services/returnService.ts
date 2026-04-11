@@ -4,7 +4,7 @@
  * Approving a pending return also restocks if restockItems = true.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import { inventoryService } from './inventoryService';
 import type { Return, ReturnItem } from '@core/types';
 import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';

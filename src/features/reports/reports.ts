@@ -3,7 +3,7 @@
  * Revenue trends, category breakdown, top customers, top products.
  */
 
-import { reportsService } from '@services/reportsService';
+import { reportService } from '@services/reportService';
 import { invoiceService } from '@services/invoiceService';
 import { purchaseService } from '@services/purchaseService';
 import { Icons } from '@shared/components/icons';
@@ -44,11 +44,11 @@ export function renderReports(): HTMLElement {
 }
 
 function buildHTML(monthRange: number): string {
-  const summary = reportsService.getSummary();
-  const monthly = reportsService.getMonthlyRevenue(monthRange);
-  const categories = reportsService.getCategorySales();
-  const topCustomers = reportsService.getTopCustomers(8);
-  const topProducts = reportsService.getTopProducts(8);
+  const summary = reportService.getSummary();
+  const monthly = reportService.getMonthlyRevenue(monthRange);
+  const categories = reportService.getCategorySales();
+  const topCustomers = reportService.getTopCustomers(8);
+  const topProducts = reportService.getTopProducts(8);
 
   const profitMargin = summary.totalRevenue > 0
     ? (summary.totalProfit / summary.totalRevenue) * 100
@@ -236,7 +236,7 @@ function buildFinancialReportCard(title: string, desc: string, iconSvg: string, 
     </div>`;
 }
 
-function buildBarChart(monthly: ReturnType<typeof reportsService.getMonthlyRevenue>): string {
+function buildBarChart(monthly: ReturnType<typeof reportService.getMonthlyRevenue>): string {
   if (monthly.every((m) => m.revenue === 0)) {
     return `<div class="empty-state" style="padding:var(--space-8);"><p style="color:var(--color-text-tertiary);font-size:var(--font-size-sm);">${i18n.t('reports.charts.noData')}</p></div>`;
   }
@@ -275,7 +275,7 @@ function buildBarChart(monthly: ReturnType<typeof reportsService.getMonthlyReven
     </div>`;
 }
 
-function buildCategoryRow(c: ReturnType<typeof reportsService.getCategorySales>[number]): string {
+function buildCategoryRow(c: ReturnType<typeof reportService.getCategorySales>[number]): string {
   return `
     <div style="display:flex;flex-direction:column;gap:var(--space-1);padding:var(--space-3) 0;border-bottom:1px solid var(--color-border-subtle);">
       <div style="display:flex;justify-content:space-between;align-items:center;">

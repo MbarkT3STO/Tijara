@@ -2,7 +2,7 @@
  * Product business logic service.
  */
 
-import { repository } from '@data/excelRepository';
+import { repository } from '@data/repository';
 import { inventoryService } from './inventoryService';
 import { authService } from './authService';
 import type { Product, ProductCostHistory } from '@core/types';
