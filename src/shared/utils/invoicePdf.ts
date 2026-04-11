@@ -253,7 +253,6 @@ export async function buildInvoiceHTML(invoice: Invoice): Promise<string> {
 
   <div class="footer">
     ${t('common.thankYou' as any)}
-    ${profile.name ? ` · ${profile.name}` : ''}
     · ${t('common.generatedBy' as any)}
     · ${dfmt(new Date().toISOString())}
   </div>
