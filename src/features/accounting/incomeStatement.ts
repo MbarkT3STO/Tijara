@@ -45,7 +45,7 @@ export function renderIncomeStatement(): HTMLElement {
     page.querySelector('#is-generate')?.addEventListener('click', generate);
     page.querySelector('#is-export-pdf')?.addEventListener('click', () => {
       if (!state.statement) return;
-      const profile = profileService.getProfile();
+      const profile = profileService.get();
       const html = buildPrintHTML(state, profile.name);
       exportReportPDF(html, `income-statement-${state.startDate}-${state.endDate}.pdf`).catch(console.error);
     });

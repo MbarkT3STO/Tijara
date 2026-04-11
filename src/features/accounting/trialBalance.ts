@@ -52,7 +52,7 @@ export function renderTrialBalance(): HTMLElement {
 
     page.querySelector('#tb-export-pdf')?.addEventListener('click', () => {
       if (!state.trialBalance) return;
-      const profile = profileService.getProfile();
+      const profile = profileService.get();
       const periodName = periods.find((p) => p.id === state.periodId)?.name ?? state.periodId;
       const html = buildPrintHTML(state, periods, profile.name, periodName);
       exportReportPDF(html, `trial-balance-${periodName}.pdf`).catch(console.error);

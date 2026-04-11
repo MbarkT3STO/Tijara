@@ -38,7 +38,7 @@ export function renderBalanceSheet(): HTMLElement {
     page.querySelector('#bs-generate')?.addEventListener('click', generate);
     page.querySelector('#bs-export-pdf')?.addEventListener('click', () => {
       if (!state.sheet) return;
-      const profile = profileService.getProfile();
+      const profile = profileService.get();
       const html = buildPrintHTML(state, profile.name);
       exportReportPDF(html, `balance-sheet-${state.asOf}.pdf`).catch(console.error);
     });
