@@ -15,6 +15,7 @@ import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
+import { openHtmlPrintPreview } from '@shared/components/printPreview';
 import type { Sale, OrderItem, Product } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -380,10 +381,13 @@ function attachItemEvents(
 function openSaleDetailModal(sale: Sale): void {
   const content = document.createElement('div');
 
-  // PDF export button row
+  // PDF export + Print button row
   const printRow = document.createElement('div');
-  printRow.style.cssText = 'display:flex;justify-content:flex-end;margin-bottom:var(--space-3);';
-  printRow.innerHTML = `<button class="btn btn-secondary btn-sm" id="sale-pdf-btn">${Icons.download(14)} ${i18n.t('common.exportPdf' as any)}</button>`;
+  printRow.style.cssText = 'display:flex;justify-content:flex-end;gap:var(--space-2);margin-bottom:var(--space-3);';
+  printRow.innerHTML = `
+    <button class="btn btn-secondary btn-sm" id="sale-print-btn">${Icons.printer(14)} ${i18n.t('common.print')}</button>
+    <button class="btn btn-secondary btn-sm" id="sale-pdf-btn">${Icons.download(14)} ${i18n.t('common.exportPdf' as any)}</button>
+  `;
   content.appendChild(printRow);
 
   const details = document.createElement('div');
@@ -432,6 +436,9 @@ function openSaleDetailModal(sale: Sale): void {
     ${sale.notes ? `<div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">${escapeHtml(sale.notes)}</div>` : ''}
   `;
   content.appendChild(details);
+  printRow.querySelector('#sale-print-btn')?.addEventListener('click', () => {
+    openHtmlPrintPreview(buildSaleOrderHTML(sale), sale.orderNumber, `order-${sale.orderNumber}.pdf`);
+  });
   printRow.querySelector('#sale-pdf-btn')?.addEventListener('click', async () => {
     const btn = printRow.querySelector<HTMLButtonElement>('#sale-pdf-btn')!;
     btn.disabled = true;
@@ -460,7 +467,7 @@ function openSaleDetailModal(sale: Sale): void {
   openModal({ title: `${i18n.t('dashboard.order')} ${escapeHtml(sale.orderNumber)}`, content, size: 'lg', hideFooter: true });
 }
 
-function openSalePdfExport(sale: Sale): Promise<void> {
+function buildSaleOrderHTML(sale: Sale): string {
   const profile = profileService.get();
   const pdfLang = (profile.defaultPdfLanguage || 'en') as any;
   const dir = i18n.getDirectionFor(pdfLang);
@@ -469,7 +476,7 @@ function openSalePdfExport(sale: Sale): Promise<void> {
   const dfmt = (d: string) => formatDate(d, pdfLang);
   const fontFamily = dir === 'rtl' ? "'Cairo','Segoe UI',sans-serif" : "'Segoe UI',-apple-system,sans-serif";
 
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="${pdfLang}" dir="${dir}">
 <head>
   <meta charset="utf-8">
@@ -508,7 +515,6 @@ function openSalePdfExport(sale: Sale): Promise<void> {
     &nbsp;·&nbsp; <span class="badge">${t(`sales.statuses.${sale.status}` as any)}</span>
     &nbsp;·&nbsp; <span class="badge">${t(`sales.payments.${sale.paymentStatus}` as any)}</span>
   </div>
-
   <div class="info-grid">
     <div>
       <div class="info-label">${t('sales.customer')}</div>
@@ -519,7 +525,6 @@ function openSalePdfExport(sale: Sale): Promise<void> {
       <div class="info-value">${t(`sales.payments.${sale.paymentMethod ?? 'cash'}` as any)}</div>
     </div>
   </div>
-
   <table>
     <thead><tr>
       <th>${t('products.modals.name')}</th>
@@ -538,7 +543,6 @@ function openSalePdfExport(sale: Sale): Promise<void> {
       </tr>`).join('')}
     </tbody>
   </table>
-
   <div class="totals">
     <div class="totals-box">
       <div class="totals-row"><span>${t('sales.subtotal')}</span><span>${fmt(sale.subtotal)}</span></div>
@@ -547,13 +551,14 @@ function openSalePdfExport(sale: Sale): Promise<void> {
       <div class="totals-row grand"><span>${t('common.total')}</span><span>${fmt(sale.total)}</span></div>
     </div>
   </div>
-
   ${sale.notes ? `<div class="notes"><div class="notes-label">${t('common.notes')}</div><div>${escapeHtml(sale.notes)}</div></div>` : ''}
-
   <div class="footer">${t('common.generatedBy' as any)} · ${dfmt(new Date().toISOString())}</div>
 </body>
 </html>`;
-  return exportReportPDF(html, `order-${sale.orderNumber}.pdf`);
+}
+
+function openSalePdfExport(sale: Sale): Promise<void> {
+  return exportReportPDF(buildSaleOrderHTML(sale), `order-${sale.orderNumber}.pdf`);
 }
 
 // ── Add Sale modal ────────────────────────────────────────────────────────────

@@ -13,6 +13,7 @@ import { formatCurrency, formatDate, debounce, escapeHtml, exportReportPDF } fro
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
+import { openHtmlPrintPreview } from '@shared/components/printPreview';
 import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { Purchase, PurchaseItem, Product } from '@core/types';
 
@@ -283,10 +284,13 @@ function buildPagination(page: number, totalPages: number, total: number, start:
 function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
   const content = document.createElement('div');
 
-  // PDF export button row
+  // PDF export + Print button row
   const printRow = document.createElement('div');
-  printRow.style.cssText = 'display:flex;justify-content:flex-end;margin-bottom:var(--space-3);';
-  printRow.innerHTML = `<button class="btn btn-secondary btn-sm" id="po-pdf-btn">${Icons.download(14)} ${i18n.t('common.exportPdf' as any)}</button>`;
+  printRow.style.cssText = 'display:flex;justify-content:flex-end;gap:var(--space-2);margin-bottom:var(--space-3);';
+  printRow.innerHTML = `
+    <button class="btn btn-secondary btn-sm" id="po-print-btn">${Icons.printer(14)} ${i18n.t('common.print')}</button>
+    <button class="btn btn-secondary btn-sm" id="po-pdf-btn">${Icons.download(14)} ${i18n.t('common.exportPdf' as any)}</button>
+  `;
   content.appendChild(printRow);
 
   const details = document.createElement('div');
@@ -381,6 +385,9 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
     </div>` : ''}
   `;
   content.appendChild(details);
+  printRow.querySelector('#po-print-btn')?.addEventListener('click', () => {
+    openHtmlPrintPreview(buildPurchaseOrderHTML(po), po.poNumber, `po-${po.poNumber}.pdf`);
+  });
   printRow.querySelector('#po-pdf-btn')?.addEventListener('click', async () => {
     const btn = printRow.querySelector<HTMLButtonElement>('#po-pdf-btn')!;
     btn.disabled = true;
@@ -447,7 +454,7 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
   });
 }
 
-function openPurchasePdfExport(po: Purchase): Promise<void> {
+function buildPurchaseOrderHTML(po: Purchase): string {
   const profile = profileService.get();
   const pdfLang = (profile.defaultPdfLanguage || 'en') as any;
   const dir = i18n.getDirectionFor(pdfLang);
@@ -456,7 +463,7 @@ function openPurchasePdfExport(po: Purchase): Promise<void> {
   const dfmt = (d: string) => formatDate(d, pdfLang);
   const fontFamily = dir === 'rtl' ? "'Cairo','Segoe UI',sans-serif" : "'Segoe UI',-apple-system,sans-serif";
 
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="${pdfLang}" dir="${dir}">
 <head>
   <meta charset="utf-8">
@@ -495,7 +502,6 @@ function openPurchasePdfExport(po: Purchase): Promise<void> {
     &nbsp;·&nbsp; <span class="badge">${t(`purchases.statuses.${po.status}` as any)}</span>
     &nbsp;·&nbsp; <span class="badge">${t(`sales.payments.${po.paymentStatus}` as any)}</span>
   </div>
-
   <div class="info-grid">
     <div>
       <div class="info-label">${t('purchases.supplier')}</div>
@@ -506,7 +512,6 @@ function openPurchasePdfExport(po: Purchase): Promise<void> {
       <div class="info-value">${dfmt(po.expectedDate)}</div>
     </div>` : ''}
   </div>
-
   <table>
     <thead><tr>
       <th>${t('products.modals.name')}</th>
@@ -523,7 +528,6 @@ function openPurchasePdfExport(po: Purchase): Promise<void> {
       </tr>`).join('')}
     </tbody>
   </table>
-
   <div class="totals">
     <div class="totals-box">
       <div class="totals-row"><span>${t('purchases.subtotal')}</span><span>${fmt(po.subtotal)}</span></div>
@@ -536,13 +540,14 @@ function openPurchasePdfExport(po: Purchase): Promise<void> {
       ` : ''}
     </div>
   </div>
-
   ${po.notes ? `<div class="notes"><div class="notes-label">${t('common.notes')}</div><div>${escapeHtml(po.notes)}</div></div>` : ''}
-
   <div class="footer">${t('common.generatedBy' as any)} · ${dfmt(new Date().toISOString())}</div>
 </body>
 </html>`;
-  return exportReportPDF(html, `po-${po.poNumber}.pdf`);
+}
+
+function openPurchasePdfExport(po: Purchase): Promise<void> {
+  return exportReportPDF(buildPurchaseOrderHTML(po), `po-${po.poNumber}.pdf`);
 }
 
 // ── Item helpers ──────────────────────────────────────────────────────────────
