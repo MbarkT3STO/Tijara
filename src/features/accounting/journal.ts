@@ -17,7 +17,7 @@ const PAGE_SIZE = 10;
 
 /** Translate a journalService error code to a localized string */
 function translateJournalError(err: unknown): string {
-  const msg = translateJournalError(err);
+  const msg = err instanceof Error ? err.message : String(err);
   const errorMap: Record<string, string> = {
     'ERR_MIN_TWO_LINES':             i18n.t('accounting.journal.errors.minTwoLines' as any),
     'ERR_MUST_BALANCE':              i18n.t('accounting.journal.errors.mustBalance' as any),

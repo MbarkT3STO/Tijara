@@ -4,7 +4,7 @@
 
 import { journalService } from '@services/journalService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency } from '@shared/utils/helpers';
+import { formatCurrency, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { CashFlowStatement } from '@core/types';
 
@@ -54,7 +54,7 @@ function buildHTML(state: State): string {
   const buildSection = (items: { description: string; amount: number }[]) =>
     items.map((item) => `
       <tr>
-        <td style="padding-inline-start:var(--space-8);">${item.description}</td>
+        <td style="padding-inline-start:var(--space-8);">${escapeHtml(item.description)}</td>
         <td style="text-align:right;color:${item.amount >= 0 ? 'var(--color-success)' : 'var(--color-error)'};">${formatCurrency(item.amount)}</td>
       </tr>`).join('');
 

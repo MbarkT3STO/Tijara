@@ -4,7 +4,7 @@
 
 import { journalService } from '@services/journalService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, exportReportPDF } from '@shared/utils/helpers';
+import { formatCurrency, exportReportPDF, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { Language } from '@core/i18n/types';
 import { profileService } from '@services/profileService';
@@ -56,7 +56,7 @@ function buildHTML(state: State): string {
   const buildSection = (rows: { accountCode: string; accountName: string; amount: number }[]) =>
     rows.map((r) => `
       <tr>
-        <td style="padding-inline-start:var(--space-6);">${r.accountCode} · ${r.accountName}</td>
+        <td style="padding-inline-start:var(--space-6);">${escapeHtml(r.accountCode)} · ${escapeHtml(r.accountName)}</td>
         <td style="text-align:right;">${formatCurrency(r.amount)}</td>
       </tr>`).join('');
 
@@ -157,7 +157,7 @@ function buildPrintHTML(state: State, companyName: string, lang: Language = 'en'
   const dir = i18n.getDirectionFor(lang);
   const s = state.sheet!;
   const buildRows = (rows: { accountCode: string; accountName: string; amount: number }[]) =>
-    rows.map((r) => `<tr><td style="padding:4px 8px;">${r.accountCode} · ${r.accountName}</td><td style="text-align:right;padding:4px 8px;">${formatCurrency(r.amount)}</td></tr>`).join('');
+    rows.map((r) => `<tr><td style="padding:4px 8px;">${escapeHtml(r.accountCode)} · ${escapeHtml(r.accountName)}</td><td style="text-align:right;padding:4px 8px;">${formatCurrency(r.amount)}</td></tr>`).join('');
 
   return `<!DOCTYPE html><html dir="${dir}"><head><meta charset="utf-8"><title>Balance Sheet</title>
   <style>

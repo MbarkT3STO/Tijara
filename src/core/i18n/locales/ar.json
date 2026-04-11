@@ -70,7 +70,20 @@
     "description": "الوصف",
     "thankYou": "شكراً لتعاملكم معنا",
     "days": "أيام",
-    "generatedBy": "تم الإنشاء بواسطة تجارة"
+    "generatedBy": "تم الإنشاء بواسطة تجارة",
+    "skipToContent": "تخطي إلى المحتوى"
+  },
+  "shortcuts": {
+    "title": "اختصارات لوحة المفاتيح",
+    "commandPalette": "لوحة الأوامر",
+    "searchPages": "البحث في الصفحات والإجراءات...",
+    "openPalette": "فتح لوحة الأوامر",
+    "newItem": "إنشاء عنصر جديد",
+    "saveForm": "حفظ النموذج الحالي",
+    "showHelp": "عرض اختصارات لوحة المفاتيح",
+    "navigate": "تنقل",
+    "select": "اختر",
+    "close": "إغلاق"
   },
   "settings": {
     "title": "الإعدادات",
@@ -148,6 +161,20 @@
     "layoutModernDesc": "شريط أيقونات مدمج مع تلميحات عند التمرير",
     "layoutFloating": "عائم",
     "layoutFloatingDesc": "جميع الألواح تطفو كبطاقات مستقلة ذات زوايا مدورة",
+    "colorTheme": "لون السمة",
+    "colorThemeViolet": "بنفسجي",
+    "colorThemeOcean": "محيطي",
+    "colorThemeForest": "غابي",
+    "colorThemeCopper": "نحاسي",
+    "colorThemeSlate": "رمادي",
+    "density": "كثافة الواجهة",
+    "densitySubtitle": "التحكم في التباعد وحجم النص في التطبيق",
+    "densityCompact": "مضغوط",
+    "densityCompactDesc": "محتوى أكثر، مساحة أقل",
+    "densityComfortable": "مريح",
+    "densityComfortableDesc": "الإعداد الافتراضي المتوازن",
+    "densitySpacious": "فسيح",
+    "densitySpacioussDesc": "مساحة تنفس أكبر",
     "accountingSetup": {
       "title": "إعداد المحاسبة",
       "subtitle": "استيراد دليل الحسابات المغربي (CGNC 2005)",
@@ -185,7 +212,12 @@
     "signOut": "تسجيل الخروج",
     "signOutConfirm": "تسجيل الخروج من تجارة؟",
     "signOutHint": "يتم حفظ بياناتك تلقائيًا. يمكنك تسجيل الدخول مرة أخرى في أي وقت.",
-    "stay": "البقاء"
+    "stay": "البقاء",
+    "search": "بحث...",
+    "markAllRead": "تحديد الكل كمقروء",
+    "systemAlerts": "تنبيهات النظام",
+    "recentActivity": "النشاط الأخير",
+    "justNow": "الآن"
   },
   "alerts": {
     "outOfStock": {

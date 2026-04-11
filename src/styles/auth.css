@@ -10,26 +10,23 @@
 }
 
 .auth-bg {
-  display: flex;
-  height: 100vh;
-  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 480px 1fr;
 }
 
 /* ── Left card ───────────────────────────────────────────────────────────── */
 
 .auth-card {
-  position: relative;
-  width: 480px;
-  flex-shrink: 0;
+  background: var(--color-surface);
+  border-inline-end: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: var(--space-10);
-  background: var(--color-surface);
-  border-inline-end: 1px solid var(--color-border);
-  overflow-y: auto;
+  padding: var(--space-12) var(--space-10);
   gap: var(--space-6);
-  transition: background-color var(--transition-slow), border-color var(--transition-slow);
+  overflow-y: auto;
+  position: relative;
 }
 
 .auth-theme-btn {
@@ -201,14 +198,15 @@
 /* ── Right decorative panel ──────────────────────────────────────────────── */
 
 .auth-panel {
-  flex: 1;
   background: var(--gradient-primary);
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: var(--space-6);
   padding: var(--space-12);
-  position: relative;
-  overflow: hidden;
 }
 
 /* Geometric CSS pattern overlay */
@@ -239,7 +237,8 @@
 .auth-panel-content {
   position: relative;
   z-index: 1;
-  color: white;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.95);
   max-width: 400px;
 }
 
@@ -293,14 +292,14 @@
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
-  .auth-panel {
-    display: none;
-  }
-
+  .auth-bg { grid-template-columns: 1fr; }
+  .auth-panel { display: none; }
   .auth-card {
     width: 100%;
-    border-inline-end: none;
-    padding: var(--space-8) var(--space-6);
+    max-width: 480px;
+    margin: 0 auto;
+    border: none;
+    min-height: 100vh;
   }
 }
 
@@ -308,4 +307,22 @@
   .auth-card {
     padding: var(--space-6) var(--space-4);
   }
+}
+
+/* ── Auth form fields ────────────────────────────────────────────────────── */
+
+.auth-form .form-control {
+  height: 44px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+}
+
+.auth-submit-btn,
+.btn-full {
+  width: 100%;
+  height: 44px;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-2);
 }

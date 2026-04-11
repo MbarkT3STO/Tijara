@@ -4,7 +4,7 @@
 
 import { journalService } from '@services/journalService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency } from '@shared/utils/helpers';
+import { formatCurrency, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { TaxReport } from '@core/types';
 
@@ -99,8 +99,8 @@ function buildHTML(state: State): string {
               ? `<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">${Icons.fileText(32)}</div><p class="empty-state-title">${i18n.t('common.noData')}</p></div></td></tr>`
               : r.lines.map((l) => `
                 <tr>
-                  <td style="font-family:monospace;color:var(--color-primary);">${l.taxCode}</td>
-                  <td>${l.taxName}</td>
+                  <td style="font-family:monospace;color:var(--color-primary);">${escapeHtml(l.taxCode)}</td>
+                  <td>${escapeHtml(l.taxName)}</td>
                   <td style="text-align:right;">${formatCurrency(l.taxableAmount)}</td>
                   <td style="text-align:right;">${l.taxRate}%</td>
                   <td style="text-align:right;font-weight:600;">${formatCurrency(l.taxAmount)}</td>

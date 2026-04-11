@@ -70,7 +70,20 @@
     "description": "Description",
     "thankYou": "Merci de votre confiance",
     "days": "jours",
-    "generatedBy": "Généré par Tijara"
+    "generatedBy": "Généré par Tijara",
+    "skipToContent": "Aller au contenu"
+  },
+  "shortcuts": {
+    "title": "Raccourcis clavier",
+    "commandPalette": "Palette de commandes",
+    "searchPages": "Rechercher des pages et actions...",
+    "openPalette": "Ouvrir la palette de commandes",
+    "newItem": "Créer un nouvel élément",
+    "saveForm": "Enregistrer le formulaire actuel",
+    "showHelp": "Afficher les raccourcis clavier",
+    "navigate": "naviguer",
+    "select": "sélectionner",
+    "close": "fermer"
   },
   "settings": {
     "title": "Paramètres",
@@ -148,6 +161,20 @@
     "layoutModernDesc": "Rail d'icônes compact avec info-bulles au survol",
     "layoutFloating": "Flottant",
     "layoutFloatingDesc": "Tous les panneaux flottent comme des cartes arrondies détachées",
+    "colorTheme": "Couleur du thème",
+    "colorThemeViolet": "Violet",
+    "colorThemeOcean": "Océan",
+    "colorThemeForest": "Forêt",
+    "colorThemeCopper": "Cuivre",
+    "colorThemeSlate": "Ardoise",
+    "density": "Densité de l'interface",
+    "densitySubtitle": "Contrôler l'espacement et la taille du texte",
+    "densityCompact": "Compact",
+    "densityCompactDesc": "Plus de contenu, moins d'espace",
+    "densityComfortable": "Confortable",
+    "densityComfortableDesc": "Équilibre par défaut",
+    "densitySpacious": "Spacieux",
+    "densitySpacioussDesc": "Plus d'espace de respiration",
     "accountingSetup": {
       "title": "Configuration Comptable",
       "subtitle": "Importez le Plan Comptable Général Marocain (CGNC 2005)",
@@ -185,7 +212,12 @@
     "signOut": "Se déconnecter",
     "signOutConfirm": "Se déconnecter de Tijara?",
     "signOutHint": "Vos données sont enregistrées automatiquement. Vous pouvez vous reconnecter à tout moment.",
-    "stay": "Rester"
+    "stay": "Rester",
+    "search": "Rechercher...",
+    "markAllRead": "Tout marquer comme lu",
+    "systemAlerts": "Alertes système",
+    "recentActivity": "Activité récente",
+    "justNow": "À l'instant"
   },
   "alerts": {
     "outOfStock": {

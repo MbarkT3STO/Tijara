@@ -4,7 +4,7 @@
 
 import { journalService } from '@services/journalService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, exportReportPDF } from '@shared/utils/helpers';
+import { formatCurrency, exportReportPDF, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { Language } from '@core/i18n/types';
 import { profileService } from '@services/profileService';
@@ -68,7 +68,7 @@ function buildHTML(state: State): string {
   const buildRows = (rows: { accountCode: string; accountName: string; amount: number; percentage?: number }[]) =>
     rows.map((r) => `
       <tr>
-        <td style="padding-inline-start:var(--space-8);">${r.accountCode} · ${r.accountName}</td>
+        <td style="padding-inline-start:var(--space-8);">${escapeHtml(r.accountCode)} · ${escapeHtml(r.accountName)}</td>
         <td style="text-align:right;">${fmtAmt(r.amount)}</td>
         ${r.percentage !== undefined ? `<td style="text-align:right;color:var(--color-text-tertiary);font-size:var(--font-size-xs);">${r.percentage.toFixed(1)}%</td>` : '<td></td>'}
       </tr>`).join('');
@@ -170,7 +170,7 @@ function buildPrintHTML(state: State, companyName: string, lang: Language = 'en'
   const s = state.statement!;
   const fmtAmt = (n: number) => n < 0 ? `(${formatCurrency(Math.abs(n))})` : formatCurrency(n);
   const buildRows = (rows: { accountCode: string; accountName: string; amount: number }[]) =>
-    rows.map((r) => `<tr><td style="padding:4px 8px 4px 24px;">${r.accountCode} · ${r.accountName}</td><td style="text-align:right;padding:4px 8px;">${fmtAmt(r.amount)}</td><td></td></tr>`).join('');
+    rows.map((r) => `<tr><td style="padding:4px 8px 4px 24px;">${escapeHtml(r.accountCode)} · ${escapeHtml(r.accountName)}</td><td style="text-align:right;padding:4px 8px;">${fmtAmt(r.amount)}</td><td></td></tr>`).join('');
 
   return `<!DOCTYPE html><html dir="${dir}"><head><meta charset="utf-8"><title>Income Statement</title>
   <style>

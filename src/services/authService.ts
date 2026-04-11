@@ -10,10 +10,12 @@ import type { User, UserRole } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
 
 const SESSION_KEY = 'tijara-session';
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 /** Logged-in session stored in localStorage */
 interface Session {
   userId: string;
+  sessionExpiresAt: number; // Unix timestamp (ms)
 }
 
 /** Hash a plain-text password with SHA-256 */
@@ -36,6 +38,11 @@ class AuthService {
     if (!raw) return null;
     try {
       const session = JSON.parse(raw) as Session;
+      // Reject expired sessions
+      if (session.sessionExpiresAt && Date.now() > session.sessionExpiresAt) {
+        localStorage.removeItem(SESSION_KEY);
+        return null;
+      }
       const user = repository.getById('users', session.userId);
       if (user && user.active) {
         this.currentUser = user;
@@ -50,7 +57,10 @@ class AuthService {
 
   /** Persist session to localStorage */
   private saveSession(user: User): void {
-    const session: Session = { userId: user.id };
+    const session: Session = {
+      userId: user.id,
+      sessionExpiresAt: Date.now() + SESSION_TTL_MS,
+    };
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
 

@@ -39,7 +39,9 @@ function isSidebarCollapsed(): boolean {
 }
 
 function createTooltipEl(label: string, targetRect: DOMRect): HTMLElement {
-  const isRtl = document.documentElement.dir === 'rtl';
+  // Read RTL from CSS variable (respects [dir="rtl"] on html element)
+  const sidebarSide = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-side').trim();
+  const isRtl = sidebarSide === 'right';
 
   const tip = document.createElement('div');
   tip.className = 'rail-tooltip';

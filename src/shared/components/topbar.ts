@@ -8,12 +8,14 @@
 import { themeManager } from '@core/theme';
 import { router } from '@core/router';
 import { Icons } from './icons';
-import { getInitials } from '@shared/utils/helpers';
+import { getInitials, escapeHtml } from '@shared/utils/helpers';
 import { alertService } from '@services/alertService';
+import { notifications } from '@core/notifications';
 import { i18n } from '@core/i18n';
 import { layoutService } from '@core/layout';
 import type { User } from '@core/types';
 import type { SystemAlert } from '@services/alertService';
+import type { NotificationHistoryEntry } from '@core/notifications';
 
 
 
@@ -75,6 +77,9 @@ export function createTopbar(
   left.appendChild(title);
   left.appendChild(breadcrumb);
 
+  // ── Global Search ─────────────────────────────────────────────────────────
+  const searchWrapper = buildSearchBar();
+
   // ── Right ─────────────────────────────────────────────────────────────────
   const right = document.createElement('div');
   right.className = 'topbar-right';
@@ -102,6 +107,7 @@ export function createTopbar(
   right.appendChild(userTrigger);
 
   topbar.appendChild(left);
+  topbar.appendChild(searchWrapper);
   topbar.appendChild(right);
 
   // In Modern layout, hide theme toggle (it's in the rail footer)
@@ -124,6 +130,9 @@ export function createTopbar(
   });
   i18n.onLanguageChange(updateTitle);
 
+  // Refresh bell badge when notification history changes
+  notifications.onHistoryChange(() => refreshBadge(bellWrapper));
+
   // ── Shared portal close state ─────────────────────────────────────────────
   let activePortal: HTMLElement | null = null;
   let activeTrigger: HTMLElement | null = null;
@@ -145,9 +154,13 @@ export function createTopbar(
     closePortal();
 
     const alerts = alertService.getAlerts();
+    const history = notifications.getHistory();
     const rect = bellBtn.getBoundingClientRect();
-    const menuWidth = 340;
-    const left = Math.max(8, rect.right - menuWidth);
+    const menuWidth = 360;
+    const isRtl = document.documentElement.dir === 'rtl';
+    const left = isRtl
+      ? Math.max(8, rect.left)
+      : Math.max(8, rect.right - menuWidth);
     const top = rect.bottom + 6;
 
     const portal = document.createElement('div');
@@ -158,7 +171,7 @@ export function createTopbar(
       top: ${top}px;
       left: ${left}px;
       width: ${menuWidth}px;
-      max-height: 480px;
+      max-height: 520px;
       overflow-y: auto;
       z-index: 9999;
       background: var(--color-surface);
@@ -168,7 +181,7 @@ export function createTopbar(
       animation: slideUp 150ms ease;
     `;
 
-    portal.innerHTML = buildNotificationsHTML(alerts);
+    portal.innerHTML = buildNotificationsHTML(alerts, history);
     portal.addEventListener('click', (e) => e.stopPropagation());
 
     // Wire up "Go to" navigation links
@@ -177,6 +190,13 @@ export function createTopbar(
         closePortal();
         window.location.hash = link.getAttribute('data-nav')!;
       });
+    });
+
+    // Mark all read button
+    portal.querySelector('#notif-mark-all-read')?.addEventListener('click', () => {
+      notifications.markAllRead();
+      refreshBadge(bellWrapper);
+      closePortal();
     });
 
     document.body.appendChild(portal);
@@ -249,20 +269,22 @@ function buildBellButton(): HTMLElement {
   const wrapper = document.createElement('div');
   wrapper.style.cssText = 'position:relative;display:inline-flex;';
 
-  const count = alertService.getCount();
+  const alertCount = alertService.getCount();
+  const unreadCount = notifications.getUnreadCount();
+  const totalCount = alertCount + unreadCount;
 
   wrapper.innerHTML = `
     <button
       id="bell-btn"
       class="btn btn-ghost btn-icon"
-      aria-label="${i18n.t('topbar.notifications')}${count > 0 ? ` (${count})` : ''}"
+      aria-label="${i18n.t('topbar.notifications')}${totalCount > 0 ? ` (${totalCount})` : ''}"
       aria-haspopup="true"
       aria-expanded="false"
       data-tooltip="${i18n.t('topbar.notifications')}"
       style="position:relative;"
     >
       ${Icons.bell()}
-      ${count > 0 ? `
+      ${totalCount > 0 ? `
         <span id="bell-badge" style="
           position: absolute;
           top: 2px; right: 2px;
@@ -276,7 +298,7 @@ function buildBellButton(): HTMLElement {
           display: flex; align-items: center; justify-content: center;
           line-height: 1;
           pointer-events: none;
-        ">${count > 99 ? '99+' : count}</span>
+        ">${totalCount > 99 ? '99+' : totalCount}</span>
       ` : ''}
     </button>
   `;
@@ -285,14 +307,16 @@ function buildBellButton(): HTMLElement {
 }
 
 function refreshBadge(wrapper: HTMLElement): void {
-  const count = alertService.getCount();
+  const alertCount = alertService.getCount();
+  const unreadCount = notifications.getUnreadCount();
+  const totalCount = alertCount + unreadCount;
   const btn = wrapper.querySelector<HTMLButtonElement>('#bell-btn');
   if (!btn) return;
 
-  btn.setAttribute('aria-label', `${i18n.t('topbar.notifications')}${count > 0 ? ` (${count})` : ''}`);
+  btn.setAttribute('aria-label', `${i18n.t('topbar.notifications')}${totalCount > 0 ? ` (${totalCount})` : ''}`);
 
   let badge = wrapper.querySelector<HTMLElement>('#bell-badge');
-  if (count > 0) {
+  if (totalCount > 0) {
     if (!badge) {
       badge = document.createElement('span');
       badge.id = 'bell-badge';
@@ -312,7 +336,7 @@ function refreshBadge(wrapper: HTMLElement): void {
       `;
       btn.appendChild(badge);
     }
-    badge.textContent = count > 99 ? '99+' : String(count);
+    badge.textContent = totalCount > 99 ? '99+' : String(totalCount);
   } else {
     badge?.remove();
   }
@@ -320,91 +344,255 @@ function refreshBadge(wrapper: HTMLElement): void {
 
 // ── Notifications dropdown HTML ───────────────────────────────────────────────
 
-function buildNotificationsHTML(alerts: SystemAlert[]): string {
+function formatRelativeTime(timestamp: number): string {
+  const diff = Date.now() - timestamp;
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 1) return i18n.t('topbar.justNow' as any) || 'Just now';
+  if (mins < 60) return `${mins}m`;
+  if (hours < 24) return `${hours}h`;
+  return `${days}d`;
+}
+
+const HISTORY_TYPE_COLORS: Record<string, string> = {
+  success: 'var(--color-success)',
+  error:   'var(--color-error)',
+  warning: 'var(--color-warning)',
+  info:    'var(--color-info)',
+};
+
+function buildNotificationsHTML(alerts: SystemAlert[], history: NotificationHistoryEntry[]): string {
+  const totalCount = alerts.length + history.filter((h) => !h.read).length;
   const header = `
     <div style="
-      display: flex; align-items: center; justify-content: space-between;
-      padding: var(--space-3) var(--space-4);
-      border-bottom: 1px solid var(--color-border);
-      position: sticky; top: 0;
-      background: var(--color-surface);
-      z-index: 1;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:var(--space-3) var(--space-4);
+      border-bottom:1px solid var(--color-border);
+      position:sticky;top:0;
+      background:var(--color-surface);
+      z-index:1;
     ">
       <div style="display:flex;align-items:center;gap:var(--space-2);">
         <span style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-primary);">${i18n.t('topbar.notifications')}</span>
-        ${alerts.length > 0 ? `<span class="badge badge-error" style="font-size:10px;">${alerts.length}</span>` : ''}
+        ${totalCount > 0 ? `<span class="badge badge-error" style="font-size:10px;">${totalCount}</span>` : ''}
       </div>
-      ${alerts.length > 0 ? `<span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${alerts.filter(a => a.severity === 'error').length} ${i18n.t('topbar.critical')}</span>` : ''}
+      ${history.some((h) => !h.read) ? `<button id="notif-mark-all-read" style="font-size:var(--font-size-xs);color:var(--color-primary);background:none;border:none;cursor:pointer;padding:0;">${i18n.t('topbar.markAllRead' as any) || 'Mark all read'}</button>` : ''}
     </div>
   `;
 
-  if (alerts.length === 0) {
+  if (alerts.length === 0 && history.length === 0) {
     return header + `
-      <div style="
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: var(--space-10) var(--space-6);
-        gap: var(--space-3);
-        text-align: center;
-      ">
-        <div style="
-          width: 48px; height: 48px; border-radius: var(--radius-full);
-          background: var(--color-success-subtle); color: var(--color-success);
-          display: flex; align-items: center; justify-content: center;
-        ">${Icons.check(24)}</div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--space-10) var(--space-6);gap:var(--space-3);text-align:center;">
+        <div style="width:48px;height:48px;border-radius:var(--radius-full);background:var(--color-success-subtle);color:var(--color-success);display:flex;align-items:center;justify-content:center;">${Icons.check(24)}</div>
         <div style="font-size:var(--font-size-sm);font-weight:500;color:var(--color-text-primary);">${i18n.t('topbar.allClear')}</div>
         <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);">${i18n.t('topbar.noAlerts')}</div>
       </div>
     `;
   }
 
-  const items = alerts.map((alert) => {
+  // System alerts section
+  const alertItems = alerts.map((alert) => {
     const s = SEVERITY_COLORS[alert.severity];
     const catIcon = CATEGORY_ICONS[alert.category];
     return `
-      <a data-nav="${alert.route}" style="
-        display: flex; align-items: flex-start; gap: var(--space-3);
-        padding: var(--space-3) var(--space-4);
-        border-bottom: 1px solid var(--color-border-subtle);
-        cursor: pointer;
-        text-decoration: none;
-        transition: background var(--transition-fast);
-      "
-      onmouseenter="this.style.background='var(--color-primary-subtle)'"
-      onmouseleave="this.style.background='transparent'"
-      role="menuitem"
-      >
-        <!-- Severity dot + category icon -->
-        <div style="
-          width: 36px; height: 36px; border-radius: var(--radius-sm);
-          background: ${s.bg}; color: ${s.color};
-          border: 1px solid ${s.border};
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0;
-        ">${catIcon}</div>
-
-        <!-- Text -->
+      <a data-nav="${alert.route}" style="display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border-subtle);cursor:pointer;text-decoration:none;transition:background var(--transition-fast);"
+        onmouseenter="this.style.background='var(--color-primary-subtle)'"
+        onmouseleave="this.style.background='transparent'"
+        role="menuitem">
+        <div style="width:36px;height:36px;border-radius:var(--radius-sm);background:${s.bg};color:${s.color};border:1px solid ${s.border};display:flex;align-items:center;justify-content:center;flex-shrink:0;">${catIcon}</div>
         <div style="flex:1;min-width:0;">
-          <div style="
-            font-size: var(--font-size-sm); font-weight: 600;
-            color: ${s.color};
-            margin-bottom: 2px;
-          ">${alert.title}</div>
-          <div style="
-            font-size: var(--font-size-xs);
-            color: var(--color-text-secondary);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-          ">${alert.message}</div>
+          <div style="font-size:var(--font-size-sm);font-weight:600;color:${s.color};margin-bottom:2px;">${alert.title}</div>
+          <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${alert.message}</div>
         </div>
-
-        <!-- Arrow -->
-        <div style="color:var(--color-text-tertiary);flex-shrink:0;margin-top:2px;">
-          ${Icons.arrowRight(14)}
-        </div>
-      </a>
-    `;
+        <div style="color:var(--color-text-tertiary);flex-shrink:0;margin-top:2px;">${Icons.arrowRight(14)}</div>
+      </a>`;
   }).join('');
 
-  return header + `<div>${items}</div>`;
+  // History section
+  const historyItems = history.slice(0, 20).map((entry) => {
+    const color = HISTORY_TYPE_COLORS[entry.type] || 'var(--color-info)';
+    return `
+      <div style="display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border-subtle);${!entry.read ? 'background:var(--color-primary-subtle);' : ''}">
+        <div style="width:8px;height:8px;border-radius:var(--radius-full);background:${color};flex-shrink:0;margin-top:5px;${entry.read ? 'opacity:0.3;' : ''}"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:var(--font-size-xs);color:var(--color-text-primary);line-height:1.4;">${entry.message}</div>
+        </div>
+        <div style="font-size:10px;color:var(--color-text-tertiary);flex-shrink:0;white-space:nowrap;">${formatRelativeTime(entry.timestamp)}</div>
+      </div>`;
+  }).join('');
+
+  const alertSection = alerts.length > 0 ? `
+    <div style="padding:var(--space-2) var(--space-4) var(--space-1);font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.06em;">${i18n.t('topbar.systemAlerts' as any) || 'System Alerts'}</div>
+    ${alertItems}
+  ` : '';
+
+  const historySection = history.length > 0 ? `
+    <div style="padding:var(--space-2) var(--space-4) var(--space-1);font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.06em;">${i18n.t('topbar.recentActivity' as any) || 'Recent Activity'}</div>
+    ${historyItems}
+  ` : '';
+
+  return header + `<div>${alertSection}${historySection}</div>`;
+}
+
+// ── Global Search ─────────────────────────────────────────────────────────────
+
+function buildSearchBar(): HTMLElement {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'topbar-search';
+  wrapper.style.cssText = `
+    flex: 1; max-width: 400px; position: relative;
+    display: flex; align-items: center;
+  `;
+
+  wrapper.innerHTML = `
+    <div class="search-bar" style="width:100%;">
+      <span class="search-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input
+        id="global-search-input"
+        type="search"
+        class="form-control"
+        placeholder="${i18n.t('topbar.search' as any) || 'Search...'}"
+        autocomplete="off"
+        style="height:34px;font-size:var(--font-size-sm);"
+      />
+      <kbd style="position:absolute;right:var(--space-3);font-size:10px;padding:2px 5px;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:3px;color:var(--color-text-tertiary);pointer-events:none;">Ctrl K</kbd>
+    </div>
+  `;
+
+  const input = wrapper.querySelector<HTMLInputElement>('#global-search-input')!;
+  let resultsPortal: HTMLElement | null = null;
+  let selectedIdx = 0;
+
+  const closeResults = () => { resultsPortal?.remove(); resultsPortal = null; };
+
+  const showResults = async (query: string) => {
+    closeResults();
+    if (!query.trim()) return;
+
+    const q = query.toLowerCase();
+
+    // Lazy-load services to avoid circular deps
+    const [
+      { customerService },
+      { productService },
+      { supplierService },
+      { invoiceService },
+    ] = await Promise.all([
+      import('@services/customerService'),
+      import('@services/productService'),
+      import('@services/supplierService'),
+      import('@services/invoiceService'),
+    ]);
+
+    type SearchResult = { type: string; label: string; sub: string; route: string };
+    const results: SearchResult[] = [];
+
+    customerService.getAll()
+      .filter((c) => c.name.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q))
+      .slice(0, 3)
+      .forEach((c) => results.push({ type: i18n.t('nav.customers'), label: c.name, sub: c.email || '', route: '#/customers' }));
+
+    productService.getAll()
+      .filter((p) => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q))
+      .slice(0, 3)
+      .forEach((p) => results.push({ type: i18n.t('nav.products'), label: p.name, sub: p.sku || '', route: '#/products' }));
+
+    supplierService.getAll()
+      .filter((s) => s.name.toLowerCase().includes(q))
+      .slice(0, 2)
+      .forEach((s) => results.push({ type: i18n.t('nav.suppliers'), label: s.name, sub: s.email || '', route: '#/suppliers' }));
+
+    invoiceService.getAll()
+      .filter((inv) => inv.invoiceNumber.toLowerCase().includes(q) || inv.customerName.toLowerCase().includes(q))
+      .slice(0, 2)
+      .forEach((inv) => results.push({ type: i18n.t('nav.invoices'), label: inv.invoiceNumber, sub: inv.customerName, route: '#/invoices' }));
+
+    if (results.length === 0) return;
+
+    selectedIdx = 0;
+    const rect = wrapper.getBoundingClientRect();
+    const isRtl = document.documentElement.dir === 'rtl';
+
+    resultsPortal = document.createElement('div');
+    resultsPortal.style.cssText = `
+      position:fixed;
+      top:${rect.bottom + 4}px;
+      ${isRtl ? `right:${window.innerWidth - rect.right}px` : `left:${rect.left}px`};
+      width:${rect.width}px;
+      background:var(--color-surface);
+      border:1px solid var(--color-border);
+      border-radius:var(--radius-md);
+      box-shadow:var(--shadow-lg);
+      z-index:9999;
+      overflow:hidden;
+      animation:pageEnterAnim 120ms ease-out both;
+    `;
+
+    const renderItems = () => {
+      if (!resultsPortal) return;
+      resultsPortal.innerHTML = results.map((r, i) => `
+        <button data-idx="${i}" style="
+          display:flex;align-items:center;gap:var(--space-3);
+          width:100%;padding:var(--space-2) var(--space-3);
+          border:none;border-bottom:1px solid var(--color-border-subtle);
+          background:${i === selectedIdx ? 'var(--color-primary-subtle)' : 'var(--color-surface)'};
+          color:var(--color-text-primary);cursor:pointer;text-align:start;
+          font-family:var(--font-family);
+        ">
+          <span style="font-size:9px;padding:2px 6px;background:var(--color-bg-secondary);border-radius:var(--radius-xs);color:var(--color-text-tertiary);white-space:nowrap;flex-shrink:0;">${r.type}</span>
+          <span style="flex:1;font-size:var(--font-size-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(r.label)}</span>
+          ${r.sub ? `<span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">${escapeHtml(r.sub)}</span>` : ''}
+        </button>
+      `).join('');
+
+      resultsPortal.querySelectorAll<HTMLButtonElement>('[data-idx]').forEach((btn) => {
+        btn.addEventListener('mouseenter', () => { selectedIdx = parseInt(btn.getAttribute('data-idx')!); renderItems(); });
+        btn.addEventListener('click', () => {
+          window.location.hash = results[parseInt(btn.getAttribute('data-idx')!)].route;
+          input.value = '';
+          closeResults();
+        });
+      });
+    };
+
+    renderItems();
+    document.body.appendChild(resultsPortal);
+  };
+
+  let searchTimer: ReturnType<typeof setTimeout>;
+  input.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => showResults(input.value), 250);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (!resultsPortal) return;
+    const items = resultsPortal.querySelectorAll<HTMLButtonElement>('[data-idx]');
+    if (e.key === 'ArrowDown') { e.preventDefault(); selectedIdx = Math.min(selectedIdx + 1, items.length - 1); items[selectedIdx]?.click(); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); selectedIdx = Math.max(selectedIdx - 1, 0); }
+    if (e.key === 'Enter') { e.preventDefault(); items[selectedIdx]?.click(); }
+    if (e.key === 'Escape') { closeResults(); input.blur(); }
+  });
+
+  input.addEventListener('focus', () => { if (input.value) showResults(input.value); });
+  document.addEventListener('click', (e) => { if (!wrapper.contains(e.target as Node)) closeResults(); });
+
+  // Ctrl+K focuses the search
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      // Only focus search if command palette is not open
+      if (!document.getElementById('cmd-palette-backdrop')) {
+        e.preventDefault();
+        input.focus();
+        input.select();
+      }
+    }
+  });
+
+  return wrapper;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

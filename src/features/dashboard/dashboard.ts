@@ -5,11 +5,12 @@
 import { dashboardService } from '@services/dashboardService';
 import { journalService } from '@services/journalService';
 import { fiscalPeriodService } from '@services/fiscalPeriodService';
+import { inventoryService } from '@services/inventoryService';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, formatPercent, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { router } from '@core/router';
-import type { DashboardStats } from '@core/types';
+import type { DashboardStats, Product } from '@core/types';
 
 /** Render and return the dashboard page element */
 export function renderDashboard(): HTMLElement {
@@ -17,6 +18,9 @@ export function renderDashboard(): HTMLElement {
   page.className = 'content-inner page-enter';
 
   const stats = dashboardService.getStats();
+
+  // Low stock products for dismissible banner
+  const lowStockProducts = inventoryService.getLowStockProducts();
 
   // Accounting health (non-blocking — catch errors silently)
   let accountingStats: ReturnType<typeof journalService.computeAccountingStats> | null = null;
@@ -30,7 +34,12 @@ export function renderDashboard(): HTMLElement {
     }
   } catch { /* accounting not yet set up */ }
 
-  page.innerHTML = buildDashboardHTML(stats, accountingStats, booksBalanced);
+  page.innerHTML = buildDashboardHTML(stats, accountingStats, booksBalanced, lowStockProducts);
+
+  // Dismiss low stock banner
+  page.querySelector('#low-stock-dismiss')?.addEventListener('click', () => {
+    page.querySelector<HTMLElement>('#low-stock-banner')?.remove();
+  });
 
   // Wire data-navigate buttons
   page.querySelectorAll<HTMLButtonElement>('[data-navigate]').forEach((btn) => {
@@ -42,8 +51,46 @@ export function renderDashboard(): HTMLElement {
   return page;
 }
 
-function buildDashboardHTML(stats: DashboardStats, accountingStats: ReturnType<typeof journalService.computeAccountingStats> | null, booksBalanced: boolean | null): string {
+function buildDashboardHTML(
+  stats: DashboardStats,
+  accountingStats: ReturnType<typeof journalService.computeAccountingStats> | null,
+  booksBalanced: boolean | null,
+  lowStockProducts: Product[]
+): string {
+  const lowStockBanner = lowStockProducts.length > 0 ? `
+    <div id="low-stock-banner" style="
+      display:flex;align-items:flex-start;gap:var(--space-3);
+      padding:var(--space-4);
+      background:var(--color-warning-subtle);
+      border:1px solid var(--color-warning);
+      border-radius:var(--radius-md);
+      margin-bottom:var(--space-5);
+    ">
+      <div style="color:var(--color-warning);flex-shrink:0;margin-top:2px;">${Icons.alertTriangle(18)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:var(--font-size-sm);color:var(--color-warning);margin-bottom:var(--space-1);">
+          ${i18n.t('dashboard.lowStockAlert')} — ${lowStockProducts.length} ${i18n.t('dashboard.lowStockItems')}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-2);">
+          ${lowStockProducts.slice(0, 6).map((p) => `
+            <button data-navigate="inventory" style="
+              font-size:var(--font-size-xs);padding:2px 8px;
+              background:var(--color-warning);color:var(--color-text-inverse);
+              border:none;border-radius:var(--radius-full);cursor:pointer;
+            ">${escapeHtml(p.name)} (${p.stock})</button>
+          `).join('')}
+          ${lowStockProducts.length > 6 ? `<span style="font-size:var(--font-size-xs);color:var(--color-warning);align-self:center;">+${lowStockProducts.length - 6} more</span>` : ''}
+        </div>
+      </div>
+      <button id="low-stock-dismiss" style="
+        background:none;border:none;cursor:pointer;
+        color:var(--color-warning);padding:var(--space-1);flex-shrink:0;
+      " aria-label="Dismiss">${Icons.close(16)}</button>
+    </div>
+  ` : '';
+
   return `
+    ${lowStockBanner}
     <div class="page-header">
       <div class="page-header-left">
         <div class="page-header-icon">${Icons.dashboard(22)}</div>

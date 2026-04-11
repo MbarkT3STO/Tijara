@@ -5,7 +5,7 @@
 import { journalService } from '@services/journalService';
 import { fiscalPeriodService } from '@services/fiscalPeriodService';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, exportReportPDF } from '@shared/utils/helpers';
+import { formatCurrency, exportReportPDF, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import type { Language } from '@core/i18n/types';
 import { profileService } from '@services/profileService';
@@ -121,8 +121,8 @@ function buildHTML(state: State, periods: ReturnType<typeof fiscalPeriodService.
                     `<tr class="fs-section-header"><td colspan="4">${i18n.t(`accounting.accounts.types.${type}` as any)}</td></tr>`,
                     ...typeRows.map((r) => `
                       <tr>
-                        <td style="font-family:monospace;color:var(--color-primary);">${r.accountCode}</td>
-                        <td>${r.accountName}</td>
+                        <td style="font-family:monospace;color:var(--color-primary);">${escapeHtml(r.accountCode)}</td>
+                        <td>${escapeHtml(r.accountName)}</td>
                         <td style="text-align:right;">${r.debitBalance > 0 ? formatCurrency(r.debitBalance) : '—'}</td>
                         <td style="text-align:right;">${r.creditBalance > 0 ? formatCurrency(r.creditBalance) : '—'}</td>
                       </tr>`),
@@ -169,7 +169,7 @@ function buildPrintHTML(
     const subCredit = typeRows.reduce((s, r) => s + r.creditBalance, 0);
     return [
       `<tr style="background:#f8f8f8;font-weight:700;"><td colspan="4" style="padding:6px 8px;">${t(`accounting.accounts.types.${type}` as any)}</td></tr>`,
-      ...typeRows.map((r) => `<tr><td style="padding:4px 8px;font-family:monospace;">${r.accountCode}</td><td style="padding:4px 8px;">${r.accountName}</td><td style="text-align:right;padding:4px 8px;">${r.debitBalance > 0 ? formatCurrency(r.debitBalance) : '—'}</td><td style="text-align:right;padding:4px 8px;">${r.creditBalance > 0 ? formatCurrency(r.creditBalance) : '—'}</td></tr>`),
+      ...typeRows.map((r) => `<tr><td style="padding:4px 8px;font-family:monospace;">${escapeHtml(r.accountCode)}</td><td style="padding:4px 8px;">${escapeHtml(r.accountName)}</td><td style="text-align:right;padding:4px 8px;">${r.debitBalance > 0 ? formatCurrency(r.debitBalance) : '—'}</td><td style="text-align:right;padding:4px 8px;">${r.creditBalance > 0 ? formatCurrency(r.creditBalance) : '—'}</td></tr>`),
       `<tr style="font-weight:600;border-top:1px solid #ccc;"><td colspan="2" style="text-align:right;padding:4px 8px;">${t(`accounting.accounts.types.${type}` as any)} ${t('common.total')}</td><td style="text-align:right;padding:4px 8px;">${subDebit > 0 ? formatCurrency(subDebit) : '—'}</td><td style="text-align:right;padding:4px 8px;">${subCredit > 0 ? formatCurrency(subCredit) : '—'}</td></tr>`,
     ];
   }).join('');

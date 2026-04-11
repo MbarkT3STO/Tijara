@@ -17,6 +17,7 @@ import { repository } from '@data/excelRepository';
 import { hasPermission } from '@shared/utils/helpers';
 import { Icons } from '@shared/components/icons';
 import { i18n } from '@core/i18n';
+import { initShortcuts } from '@shared/utils/shortcuts';
 import '@core/sidebarTheme'; // side-effect: sets data-sidebar on body on import
 import type { Route, User } from './types';
 
@@ -33,7 +34,7 @@ const PAGE_RENDERERS: Record<Route, () => Promise<HTMLElement>> = {
   returns:   () => import('@features/returns/returns').then((m) => m.renderReturns()),
   reports:   () => import('@features/reports/reports').then((m) => m.renderReports()),
   users:     () => import('@features/users/users').then((m) => m.renderUsers()),
-  settings:  () => import('@features/settings/settings').then((m) => m.renderSettings()),
+  settings:  () => import('@features/settings/index').then((m) => m.renderSettings()),
   // Accounting routes
   'accounting':        () => import('@features/accounting/accounting').then((m) => m.renderAccounting()),
   'chart-of-accounts': () => import('@features/accounting/chartOfAccounts').then((m) => m.renderChartOfAccounts()),
@@ -66,6 +67,7 @@ export async function bootstrap(root: HTMLElement): Promise<void> {
   );
 
   initToasts();
+  initShortcuts();
 
   const sessionUser = authService.restoreSession();
   if (sessionUser) {
@@ -86,6 +88,13 @@ function showAuthScreen(root: HTMLElement): void {
 }
 
 function buildShell(root: HTMLElement, user: User): void {
+  // Skip-to-content link (accessibility)
+  const skipLink = document.createElement('a');
+  skipLink.href = '#main-content';
+  skipLink.className = 'skip-to-content';
+  skipLink.textContent = i18n.t('common.skipToContent' as any) || 'Skip to content';
+  root.insertBefore(skipLink, root.firstChild);
+
   const shell = document.createElement('div');
   shell.className = 'app-shell';
 
@@ -166,9 +175,21 @@ async function loadPage(
 
   try {
     const el = await PAGE_RENDERERS[route]();
+
+    // Page exit animation on existing content
+    const existing = contentArea.firstElementChild as HTMLElement | null;
+    if (existing) {
+      existing.classList.add('page-exit');
+      await new Promise((r) => setTimeout(r, 120));
+    }
+
     contentArea.innerHTML = '';
+    el.classList.add('page-enter');
     contentArea.appendChild(el);
     contentArea.scrollTop = 0;
+
+    // Trigger enter animation
+    requestAnimationFrame(() => el.classList.add('page-enter-active'));
   } catch (err) {
     console.error('Failed to load page:', err);
     contentArea.innerHTML = `<div class="content-inner"><div class="empty-state"><p class="empty-state-title">Failed to load page</p><button class="btn btn-primary" onclick="window.location.reload()">Reload</button></div></div>`;

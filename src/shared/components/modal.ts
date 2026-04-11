@@ -81,11 +81,32 @@ export function openModal(options: ModalOptions): () => void {
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
 
-  // Focus first focusable element
-  const focusable = modal.querySelectorAll<HTMLElement>(
-    'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
-  );
-  focusable[0]?.focus();
+  // ── Focus trap ────────────────────────────────────────────────────────────
+  const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  const getFocusable = () => Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE));
+
+  // Focus first focusable element on open
+  requestAnimationFrame(() => {
+    const focusable = getFocusable();
+    if (focusable.length) focusable[0].focus();
+  });
+
+  // Trap focus within modal
+  const trapFocus = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key !== 'Tab') return;
+    const focusable = getFocusable();
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  };
+  backdrop.addEventListener('keydown', trapFocus);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -122,9 +143,17 @@ export function openModal(options: ModalOptions): () => void {
   modal.addEventListener('change', clearError, { passive: true });
 
   // ── Close ─────────────────────────────────────────────────────────────────
+  // Remember the element that was focused before the modal opened
+  const previouslyFocused = document.activeElement as HTMLElement | null;
+
   const close = () => {
+    backdrop.removeEventListener('keydown', trapFocus);
     backdrop.style.opacity = '0';
-    setTimeout(() => backdrop.remove(), 200);
+    setTimeout(() => {
+      backdrop.remove();
+      // Return focus to the element that triggered the modal
+      previouslyFocused?.focus();
+    }, 200);
     options.onCancel?.();
   };
 
