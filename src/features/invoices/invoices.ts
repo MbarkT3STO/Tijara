@@ -207,7 +207,7 @@ export function renderInvoices(): HTMLElement {
               break;
 
             case 'print':
-              printInvoice(invoice);
+              printInvoice(invoice).catch(console.error);
               break;
 
             case 'delete':
@@ -643,7 +643,7 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
   });
 
   content.querySelector('#detail-print-btn')?.addEventListener('click', () => {
-    printInvoice(invoice);
+    printInvoice(invoice).catch(console.error);
   });
 }
 

@@ -15,14 +15,41 @@ function getElectron(): ElectronAPI | null {
   return (window as unknown as { electron?: ElectronAPI }).electron ?? null;
 }
 
+// ── App logo (base64 cache) ───────────────────────────────────────────────────
+
+let _appLogoBase64: string | null = null;
+
+/** Fetch the app logo once and cache as a base64 data URL */
+async function getAppLogoBase64(): Promise<string> {
+  if (_appLogoBase64) return _appLogoBase64;
+  try {
+    const res = await fetch('./icons/icon-512.png');
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        _appLogoBase64 = reader.result as string;
+        resolve(_appLogoBase64);
+      };
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    // Fallback: empty transparent pixel
+    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+  }
+}
+
 // ── HTML template ─────────────────────────────────────────────────────────────
 
 /** Build a complete, self-contained invoice HTML document */
-export function buildInvoiceHTML(invoice: Invoice): string {
+export async function buildInvoiceHTML(invoice: Invoice): Promise<string> {
   const profile  = profileService.get();
   const currency = profile.currency || 'USD';
   const pdfLang  = (profile.defaultPdfLanguage || 'en') as Language;
   const dir      = i18n.getDirectionFor(pdfLang);
+
+  // Resolve logo: use enterprise logo if set, otherwise fall back to app logo as base64
+  const appLogoBase64 = profile.logo ? '' : await getAppLogoBase64();
 
   /** Locale-aware translator for this PDF */
   const t = (key: any, vars?: any) => i18n.tFor(pdfLang, key, vars);
@@ -53,7 +80,7 @@ export function buildInvoiceHTML(invoice: Invoice): string {
     )
     .join('');
 
-  const brandBlock = buildBrandBlock(profile);
+  const brandBlock = buildBrandBlock(profile, appLogoBase64, t);
   const fromBlock  = buildFromBlock(profile, pdfLang);
 
   const netDays = Math.round(
@@ -68,30 +95,20 @@ export function buildInvoiceHTML(invoice: Invoice): string {
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: ${dir === 'rtl' ? "'Cairo', 'Segoe UI', sans-serif" : "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif"};
       font-size: 13px; color: #111827; background: #fff;
-      padding: 48px; line-height: 1.5;
+      padding: 48px; line-height: 1.6;
       direction: ${dir};
-      text-align: ${dir === 'rtl' ? 'right' : 'left'};
     }
     .header {
       display: flex; justify-content: space-between; align-items: flex-start;
       margin-bottom: 40px; padding-bottom: 24px; border-bottom: 2px solid #9929ea;
-      flex-direction: ${dir === 'rtl' ? 'row-reverse' : 'row'};
     }
-    .brand { display: flex; align-items: center; gap: 14px; flex-direction: ${dir === 'rtl' ? 'row-reverse' : 'row'}; }
-    .brand-logo {
-      max-height: 56px; max-width: 160px;
-      object-fit: contain; display: block;
-    }
-    .brand-icon {
-      width: 48px; height: 48px;
-      background: linear-gradient(135deg, #7a1fc0, #cc66da);
-      border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    }
-    .brand-name { font-size: 24px; font-weight: 700; color: #9929ea; letter-spacing: -0.02em; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-logo { max-height: 56px; max-width: 160px; object-fit: contain; display: block; }
+    .brand-name { font-size: 22px; font-weight: 700; color: #9929ea; letter-spacing: -0.02em; }
     .brand-tagline { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
-    .invoice-meta { text-align: ${dir === 'rtl' ? 'left' : 'right'}; }
+    .invoice-meta { text-align: end; }
     .invoice-number { font-size: 22px; font-weight: 700; color: #111827; }
     .invoice-date { font-size: 12px; color: #6b7280; margin-top: 4px; }
     .status-badge {
@@ -100,7 +117,9 @@ export function buildInvoiceHTML(invoice: Invoice): string {
       text-transform: uppercase; letter-spacing: 0.05em;
       background: ${color}22; color: ${color}; border: 1px solid ${color}44;
     }
-    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px; direction: ${dir}; }
+    .parties {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px;
+    }
     .party-label {
       font-size: 10px; font-weight: 600; text-transform: uppercase;
       letter-spacing: 0.08em; color: #9ca3af; margin-bottom: 6px;
@@ -110,32 +129,30 @@ export function buildInvoiceHTML(invoice: Invoice): string {
     .dates-row {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
       background: #f9fafb; border-radius: 8px; padding: 16px 20px; margin-bottom: 32px;
-      direction: ${dir};
     }
     .date-item-label {
       font-size: 10px; font-weight: 600; text-transform: uppercase;
       letter-spacing: 0.06em; color: #9ca3af; margin-bottom: 4px;
     }
     .date-item-value { font-size: 13px; font-weight: 500; color: #111827; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; direction: ${dir}; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
     thead tr { background: #9929ea; color: white; }
     thead th {
       padding: 10px 14px; font-size: 11px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.05em; text-align: ${dir === 'rtl' ? 'right' : 'left'};
+      text-transform: uppercase; letter-spacing: 0.05em; text-align: start;
     }
     thead th.center { text-align: center; }
-    thead th.right  { text-align: ${dir === 'rtl' ? 'left' : 'right'}; }
-    tbody td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f3f4f6; text-align: ${dir === 'rtl' ? 'right' : 'left'}; }
+    thead th.right  { text-align: end; }
+    tbody td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f3f4f6; text-align: start; }
     td.center { text-align: center; }
-    td.right  { text-align: ${dir === 'rtl' ? 'left' : 'right'}; }
+    td.right  { text-align: end; }
     .row-even { background: #fff; }
     .row-odd  { background: #faf5ff; }
-    .totals { display: flex; justify-content: flex-end; margin-bottom: 32px; flex-direction: ${dir === 'rtl' ? 'row-reverse' : 'row'}; }
+    .totals { display: flex; justify-content: flex-end; margin-bottom: 32px; }
     .totals-box { width: 280px; }
     .totals-row {
       display: flex; justify-content: space-between;
       padding: 6px 0; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6;
-      flex-direction: ${dir === 'rtl' ? 'row-reverse' : 'row'};
     }
     .totals-row.grand {
       font-size: 16px; font-weight: 700; color: #9929ea;
@@ -144,8 +161,10 @@ export function buildInvoiceHTML(invoice: Invoice): string {
     .totals-row.paid-row { color: #22c55e; font-weight: 500; }
     .totals-row.due-row  { color: ${invoice.amountDue > 0 ? '#ef4444' : '#22c55e'}; font-weight: 600; }
     .notes {
-      background: #f9fafb; border-${dir === 'rtl' ? 'right' : 'left'}: 3px solid #9929ea;
-      border-radius: ${dir === 'rtl' ? '6px 0 0 6px' : '0 6px 6px 0'}; padding: 12px 16px; margin-bottom: 32px;
+      background: #f9fafb;
+      border-inline-start: 3px solid #9929ea;
+      border-radius: 0 6px 6px 0;
+      padding: 12px 16px; margin-bottom: 32px;
     }
     .notes-label {
       font-size: 10px; font-weight: 600; text-transform: uppercase;
@@ -244,7 +263,11 @@ export function buildInvoiceHTML(invoice: Invoice): string {
 }
 
 /** Build the brand/logo block for the invoice header */
-function buildBrandBlock(profile: EnterpriseProfile): string {
+function buildBrandBlock(profile: EnterpriseProfile, appLogoBase64: string, t: (key: any) => string): string {
+  const fallbackLogo = appLogoBase64;
+  const appName = t('app.name' as any);
+  const appTagline = t('app.tagline' as any);
+
   if (profile.logo) {
     return `
       <div class="brand">
@@ -260,13 +283,7 @@ function buildBrandBlock(profile: EnterpriseProfile): string {
   if (profile.name) {
     return `
       <div class="brand">
-        <div class="brand-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <path d="M16 10a4 4 0 0 1-8 0"/>
-          </svg>
-        </div>
+        <img src="${fallbackLogo}" alt="${appName} logo" class="brand-logo" style="max-height:48px;max-width:48px;border-radius:8px;" />
         <div>
           <div class="brand-name">${profile.name}</div>
           ${profile.tagline ? `<div class="brand-tagline">${profile.tagline}</div>` : ''}
@@ -274,19 +291,13 @@ function buildBrandBlock(profile: EnterpriseProfile): string {
       </div>`;
   }
 
-  // Fallback: Tijara default branding
+  // No profile set — show app logo + translated app name
   return `
     <div class="brand">
-      <div class="brand-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <path d="M16 10a4 4 0 0 1-8 0"/>
-        </svg>
-      </div>
+      <img src="${fallbackLogo}" alt="${appName} logo" class="brand-logo" style="max-height:48px;max-width:48px;border-radius:8px;" />
       <div>
-        <div class="brand-name">Tijara</div>
-        <div class="brand-tagline">Sales Management</div>
+        <div class="brand-name">${appName}</div>
+        <div class="brand-tagline">${appTagline}</div>
       </div>
     </div>`;
 }
@@ -296,8 +307,8 @@ function buildFromBlock(profile: EnterpriseProfile, lang: Language): string {
   const t = (key: any) => i18n.tFor(lang, key);
   if (!profile.name) {
     return `
-      <div class="party-name">Tijara Inc.</div>
-      <div class="party-detail">billing@tijara.app</div>`;
+      <div class="party-name">${t('app.name' as any)}</div>
+      <div class="party-detail">${t('app.tagline' as any)}</div>`;
   }
 
   const lines: string[] = [];
@@ -312,8 +323,8 @@ function buildFromBlock(profile: EnterpriseProfile, lang: Language): string {
 
 // ── Print ─────────────────────────────────────────────────────────────────────
 
-export function printInvoice(invoice: Invoice): void {
-  const html = buildInvoiceHTML(invoice);
+export async function printInvoice(invoice: Invoice): Promise<void> {
+  const html = await buildInvoiceHTML(invoice);
   const win = window.open('', '_blank', 'width=900,height=700');
   if (!win) return;
   win.document.open();
@@ -330,10 +341,15 @@ export function printInvoice(invoice: Invoice): void {
 
 export async function exportInvoicePDF(invoice: Invoice): Promise<void> {
   const electron = getElectron();
-  const html = buildInvoiceHTML(invoice);
+  const html = await buildInvoiceHTML(invoice);
   if (electron) {
     await electron.exportInvoicePDF(html, invoice.invoiceNumber);
   } else {
-    printInvoice(invoice);
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (!win) return;
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.onload = () => { win.focus(); win.print(); win.onafterprint = () => win.close(); };
   }
 }
