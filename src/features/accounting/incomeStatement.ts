@@ -6,6 +6,7 @@ import { journalService } from '@services/journalService';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, exportReportPDF } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import type { Language } from '@core/i18n/types';
 import { profileService } from '@services/profileService';
 import type { IncomeStatement } from '@core/types';
 
@@ -46,7 +47,8 @@ export function renderIncomeStatement(): HTMLElement {
     page.querySelector('#is-export-pdf')?.addEventListener('click', () => {
       if (!state.statement) return;
       const profile = profileService.get();
-      const html = buildPrintHTML(state, profile.name);
+      const pdfLang = (profile.defaultPdfLanguage as Language) ?? 'en';
+      const html = buildPrintHTML(state, profile.name, pdfLang);
       exportReportPDF(html, `income-statement-${state.startDate}-${state.endDate}.pdf`).catch(console.error);
     });
   }
@@ -162,13 +164,15 @@ function buildHTML(state: State): string {
   `;
 }
 
-function buildPrintHTML(state: State, companyName: string): string {
+function buildPrintHTML(state: State, companyName: string, lang: Language = 'en'): string {
+  const t = (key: Parameters<typeof i18n.t>[0], vars?: Record<string, string | number>) => i18n.tFor(lang, key, vars);
+  const dir = i18n.getDirectionFor(lang);
   const s = state.statement!;
   const fmtAmt = (n: number) => n < 0 ? `(${formatCurrency(Math.abs(n))})` : formatCurrency(n);
   const buildRows = (rows: { accountCode: string; accountName: string; amount: number }[]) =>
     rows.map((r) => `<tr><td style="padding:4px 8px 4px 24px;">${r.accountCode} · ${r.accountName}</td><td style="text-align:right;padding:4px 8px;">${fmtAmt(r.amount)}</td><td></td></tr>`).join('');
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Income Statement</title>
+  return `<!DOCTYPE html><html dir="${dir}"><head><meta charset="utf-8"><title>Income Statement</title>
   <style>
     body{font-family:Arial,sans-serif;color:#000;background:#fff;margin:0;padding:24px;}
     h1{font-size:18px;margin:0 0 4px;}h2{font-size:14px;margin:0 0 16px;color:#555;}
@@ -181,28 +185,28 @@ function buildPrintHTML(state: State, companyName: string): string {
     .footer{margin-top:24px;font-size:10px;color:#888;text-align:center;}
   </style></head><body>
   <h1>${companyName}</h1>
-  <h2>${i18n.t('accounting.incomeStatement.title' as any)} — ${state.startDate} ${i18n.t('common.to')} ${state.endDate}</h2>
+  <h2>${t('accounting.incomeStatement.title' as any)} — ${state.startDate} ${t('common.to')} ${state.endDate}</h2>
   <table>
-    <thead><tr><th>${i18n.t('accounting.accounts.name' as any)}</th><th style="text-align:right;">${i18n.t('common.amount')}</th><th style="text-align:right;">%</th></tr></thead>
+    <thead><tr><th>${t('accounting.accounts.name' as any)}</th><th style="text-align:right;">${t('common.amount')}</th><th style="text-align:right;">%</th></tr></thead>
     <tbody>
-      <tr class="section-header"><td colspan="3">${i18n.t('accounting.incomeStatement.revenue' as any)}</td></tr>
+      <tr class="section-header"><td colspan="3">${t('accounting.incomeStatement.revenue' as any)}</td></tr>
       ${buildRows(s.revenue)}
-      <tr class="subtotal"><td>${i18n.t('accounting.incomeStatement.totalRevenue' as any)}</td><td style="text-align:right;">${fmtAmt(s.revenue.reduce((x,r)=>x+r.amount,0))}</td><td></td></tr>
-      <tr class="section-header"><td colspan="3">${i18n.t('accounting.incomeStatement.cogs' as any)}</td></tr>
+      <tr class="subtotal"><td>${t('accounting.incomeStatement.totalRevenue' as any)}</td><td style="text-align:right;">${fmtAmt(s.revenue.reduce((x,r)=>x+r.amount,0))}</td><td></td></tr>
+      <tr class="section-header"><td colspan="3">${t('accounting.incomeStatement.cogs' as any)}</td></tr>
       ${buildRows(s.costOfGoodsSold)}
-      <tr class="subtotal"><td>${i18n.t('accounting.incomeStatement.grossProfit' as any)}</td><td style="text-align:right;">${fmtAmt(s.grossProfit)}</td><td style="text-align:right;">${s.grossProfitMargin.toFixed(1)}%</td></tr>
-      <tr class="section-header"><td colspan="3">${i18n.t('accounting.incomeStatement.operatingExpenses' as any)}</td></tr>
+      <tr class="subtotal"><td>${t('accounting.incomeStatement.grossProfit' as any)}</td><td style="text-align:right;">${fmtAmt(s.grossProfit)}</td><td style="text-align:right;">${s.grossProfitMargin.toFixed(1)}%</td></tr>
+      <tr class="section-header"><td colspan="3">${t('accounting.incomeStatement.operatingExpenses' as any)}</td></tr>
       ${buildRows(s.operatingExpenses)}
-      <tr class="subtotal"><td>${i18n.t('accounting.incomeStatement.operatingIncome' as any)}</td><td style="text-align:right;">${fmtAmt(s.operatingIncome)}</td><td></td></tr>
-      ${s.otherIncome.length > 0 ? `<tr class="section-header"><td colspan="3">${i18n.t('accounting.incomeStatement.otherIncome' as any)}</td></tr>${buildRows(s.otherIncome)}` : ''}
-      ${s.otherExpenses.length > 0 ? `<tr class="section-header"><td colspan="3">${i18n.t('accounting.incomeStatement.otherExpenses' as any)}</td></tr>${buildRows(s.otherExpenses)}` : ''}
-      <tr class="subtotal"><td>${i18n.t('accounting.incomeStatement.incomeBeforeTax' as any)}</td><td style="text-align:right;">${fmtAmt(s.incomeBeforeTax)}</td><td></td></tr>
-      <tr><td style="padding-left:24px;">${i18n.t('accounting.incomeStatement.taxExpense' as any)}</td><td style="text-align:right;">${fmtAmt(s.taxExpense)}</td><td></td></tr>
+      <tr class="subtotal"><td>${t('accounting.incomeStatement.operatingIncome' as any)}</td><td style="text-align:right;">${fmtAmt(s.operatingIncome)}</td><td></td></tr>
+      ${s.otherIncome.length > 0 ? `<tr class="section-header"><td colspan="3">${t('accounting.incomeStatement.otherIncome' as any)}</td></tr>${buildRows(s.otherIncome)}` : ''}
+      ${s.otherExpenses.length > 0 ? `<tr class="section-header"><td colspan="3">${t('accounting.incomeStatement.otherExpenses' as any)}</td></tr>${buildRows(s.otherExpenses)}` : ''}
+      <tr class="subtotal"><td>${t('accounting.incomeStatement.incomeBeforeTax' as any)}</td><td style="text-align:right;">${fmtAmt(s.incomeBeforeTax)}</td><td></td></tr>
+      <tr><td style="padding-left:24px;">${t('accounting.incomeStatement.taxExpense' as any)}</td><td style="text-align:right;">${fmtAmt(s.taxExpense)}</td><td></td></tr>
     </tbody>
     <tfoot>
-      <tr class="total"><td>${i18n.t('accounting.incomeStatement.netIncome' as any)}</td><td style="text-align:right;">${fmtAmt(s.netIncome)}</td><td style="text-align:right;">${s.netProfitMargin.toFixed(1)}%</td></tr>
+      <tr class="total"><td>${t('accounting.incomeStatement.netIncome' as any)}</td><td style="text-align:right;">${fmtAmt(s.netIncome)}</td><td style="text-align:right;">${s.netProfitMargin.toFixed(1)}%</td></tr>
     </tfoot>
   </table>
-  <div class="footer">${i18n.t('common.generatedBy')} · ${new Date().toLocaleDateString()}</div>
+  <div class="footer">${t('common.generatedBy')} · ${new Date().toLocaleDateString()}</div>
   </body></html>`;
 }

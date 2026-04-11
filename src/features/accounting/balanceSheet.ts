@@ -6,6 +6,7 @@ import { journalService } from '@services/journalService';
 import { Icons } from '@shared/components/icons';
 import { formatCurrency, exportReportPDF } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import type { Language } from '@core/i18n/types';
 import { profileService } from '@services/profileService';
 import type { BalanceSheet } from '@core/types';
 
@@ -39,7 +40,8 @@ export function renderBalanceSheet(): HTMLElement {
     page.querySelector('#bs-export-pdf')?.addEventListener('click', () => {
       if (!state.sheet) return;
       const profile = profileService.get();
-      const html = buildPrintHTML(state, profile.name);
+      const pdfLang = (profile.defaultPdfLanguage as Language) ?? 'en';
+      const html = buildPrintHTML(state, profile.name, pdfLang);
       exportReportPDF(html, `balance-sheet-${state.asOf}.pdf`).catch(console.error);
     });
   }
@@ -150,12 +152,14 @@ function buildHTML(state: State): string {
   `;
 }
 
-function buildPrintHTML(state: State, companyName: string): string {
+function buildPrintHTML(state: State, companyName: string, lang: Language = 'en'): string {
+  const t = (key: Parameters<typeof i18n.t>[0], vars?: Record<string, string | number>) => i18n.tFor(lang, key, vars);
+  const dir = i18n.getDirectionFor(lang);
   const s = state.sheet!;
   const buildRows = (rows: { accountCode: string; accountName: string; amount: number }[]) =>
     rows.map((r) => `<tr><td style="padding:4px 8px;">${r.accountCode} · ${r.accountName}</td><td style="text-align:right;padding:4px 8px;">${formatCurrency(r.amount)}</td></tr>`).join('');
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Balance Sheet</title>
+  return `<!DOCTYPE html><html dir="${dir}"><head><meta charset="utf-8"><title>Balance Sheet</title>
   <style>
     body{font-family:Arial,sans-serif;color:#000;background:#fff;margin:0;padding:24px;}
     h1{font-size:18px;margin:0 0 4px;}h2{font-size:14px;margin:0 0 16px;color:#555;}
@@ -169,38 +173,38 @@ function buildPrintHTML(state: State, companyName: string): string {
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
   </style></head><body>
   <h1>${companyName}</h1>
-  <h2>${i18n.t('accounting.balanceSheet.title' as any)} — ${i18n.t('accounting.balanceSheet.asOf' as any)} ${state.asOf}</h2>
+  <h2>${t('accounting.balanceSheet.title' as any)} — ${t('accounting.balanceSheet.asOf' as any)} ${state.asOf}</h2>
   <div class="grid">
     <div>
       <table>
-        <thead><tr><th colspan="2">${i18n.t('accounting.balanceSheet.assets' as any)}</th></tr></thead>
+        <thead><tr><th colspan="2">${t('accounting.balanceSheet.assets' as any)}</th></tr></thead>
         <tbody>
-          <tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.currentAssets' as any)}</td></tr>
+          <tr class="section-header"><td colspan="2">${t('accounting.balanceSheet.currentAssets' as any)}</td></tr>
           ${buildRows(s.currentAssets)}
-          <tr class="subtotal"><td>${i18n.t('accounting.balanceSheet.currentAssets' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalCurrentAssets)}</td></tr>
-          ${s.fixedAssets.length > 0 ? `<tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.fixedAssets' as any)}</td></tr>${buildRows(s.fixedAssets)}<tr class="subtotal"><td>${i18n.t('accounting.balanceSheet.fixedAssets' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalFixedAssets)}</td></tr>` : ''}
-          ${s.otherAssets.length > 0 ? `<tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.otherAssets' as any)}</td></tr>${buildRows(s.otherAssets)}` : ''}
-          <tr class="total"><td>${i18n.t('accounting.balanceSheet.totalAssets' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalAssets)}</td></tr>
+          <tr class="subtotal"><td>${t('accounting.balanceSheet.currentAssets' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalCurrentAssets)}</td></tr>
+          ${s.fixedAssets.length > 0 ? `<tr class="section-header"><td colspan="2">${t('accounting.balanceSheet.fixedAssets' as any)}</td></tr>${buildRows(s.fixedAssets)}<tr class="subtotal"><td>${t('accounting.balanceSheet.fixedAssets' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalFixedAssets)}</td></tr>` : ''}
+          ${s.otherAssets.length > 0 ? `<tr class="section-header"><td colspan="2">${t('accounting.balanceSheet.otherAssets' as any)}</td></tr>${buildRows(s.otherAssets)}` : ''}
+          <tr class="total"><td>${t('accounting.balanceSheet.totalAssets' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalAssets)}</td></tr>
         </tbody>
       </table>
     </div>
     <div>
       <table>
-        <thead><tr><th colspan="2">${i18n.t('accounting.balanceSheet.liabilities' as any)} &amp; ${i18n.t('accounting.balanceSheet.equity' as any)}</th></tr></thead>
+        <thead><tr><th colspan="2">${t('accounting.balanceSheet.liabilities' as any)} &amp; ${t('accounting.balanceSheet.equity' as any)}</th></tr></thead>
         <tbody>
-          <tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.currentLiabilities' as any)}</td></tr>
+          <tr class="section-header"><td colspan="2">${t('accounting.balanceSheet.currentLiabilities' as any)}</td></tr>
           ${buildRows(s.currentLiabilities)}
-          <tr class="subtotal"><td>${i18n.t('accounting.balanceSheet.currentLiabilities' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalCurrentLiabilities)}</td></tr>
-          ${s.longTermLiabilities.length > 0 ? `<tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.longTermLiabilities' as any)}</td></tr>${buildRows(s.longTermLiabilities)}` : ''}
-          <tr class="subtotal"><td>${i18n.t('accounting.balanceSheet.totalLiabilities' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalLiabilities)}</td></tr>
-          <tr class="section-header"><td colspan="2">${i18n.t('accounting.balanceSheet.equity' as any)}</td></tr>
+          <tr class="subtotal"><td>${t('accounting.balanceSheet.currentLiabilities' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalCurrentLiabilities)}</td></tr>
+          ${s.longTermLiabilities.length > 0 ? `<tr class="section-header"><td colspan="2">${t('accounting.balanceSheet.longTermLiabilities' as any)}</td></tr>${buildRows(s.longTermLiabilities)}` : ''}
+          <tr class="subtotal"><td>${t('accounting.balanceSheet.totalLiabilities' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalLiabilities)}</td></tr>
+          <tr class="section-header"><td colspan="2">${t('accounting.balanceSheet.equity' as any)}</td></tr>
           ${buildRows(s.equity)}
-          <tr class="subtotal"><td>${i18n.t('accounting.balanceSheet.totalEquity' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalEquity)}</td></tr>
-          <tr class="total"><td>${i18n.t('accounting.balanceSheet.totalLiabilitiesAndEquity' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalLiabilitiesAndEquity)}</td></tr>
+          <tr class="subtotal"><td>${t('accounting.balanceSheet.totalEquity' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalEquity)}</td></tr>
+          <tr class="total"><td>${t('accounting.balanceSheet.totalLiabilitiesAndEquity' as any)}</td><td style="text-align:right;">${formatCurrency(s.totalLiabilitiesAndEquity)}</td></tr>
         </tbody>
       </table>
     </div>
   </div>
-  <div class="footer">${i18n.t('common.generatedBy')} · ${new Date().toLocaleDateString()}</div>
+  <div class="footer">${t('common.generatedBy')} · ${new Date().toLocaleDateString()}</div>
   </body></html>`;
 }
