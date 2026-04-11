@@ -110,15 +110,18 @@
 }
 
 .sidebar-section-label {
-  font-size: 10px;
-  font-weight: var(--font-weight-semibold);
+  display: block;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
   color: var(--color-sidebar-section-label);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: var(--space-4) var(--space-3) var(--space-1);
+  letter-spacing: var(--letter-spacing-wider);
+  padding: var(--space-5) var(--space-3) var(--space-2);
   white-space: nowrap;
   overflow: hidden;
-  transition: opacity var(--transition-base);
+  opacity: 1;
+  transition: opacity var(--transition-base), width var(--transition-base);
+  flex-shrink: 0;
 }
 
 .sidebar.collapsed .sidebar-section-label {

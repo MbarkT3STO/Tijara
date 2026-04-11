@@ -1837,16 +1837,4 @@ select.form-control {
   .dashboard-grid { grid-template-columns: 1fr; }
 }
 
-/* ── Sidebar section label (refined) ────────────────────────────────────── */
 
-.sidebar-section-label {
-  font-size: var(--font-size-2xs);
-  font-weight: var(--font-weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: var(--letter-spacing-wider);
-  color: var(--color-sidebar-section-label);
-  padding: var(--space-4) var(--space-4) var(--space-2);
-  white-space: nowrap;
-  overflow: hidden;
-  transition: opacity var(--transition-base);
-}
