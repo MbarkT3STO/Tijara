@@ -18,6 +18,8 @@
     "settings": "Settings",
     "main": "Main",
     "management": "Management",
+    "operations": "Operations",
+    "catalog": "Catalog",
     "analytics": "Analytics",
     "admin": "Admin",
     "accounting": "Accounting",
