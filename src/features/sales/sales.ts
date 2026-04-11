@@ -13,6 +13,7 @@ import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce, autoNote } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
+import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
 import type { Sale, OrderItem, Product } from '@core/types';
 import { escapeHtml } from '@shared/utils/helpers';
@@ -98,33 +99,27 @@ export function renderSales(): HTMLElement {
       openSaleModal(null, () => { state.sales = saleService.getAll(); applyFilters(); render(); });
     });
 
-    page.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const sale = saleService.getById(btn.getAttribute('data-view')!);
-        if (sale) openSaleDetailModal(sale);
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const sale = saleService.getById(btn.getAttribute('data-edit')!);
+    attachMenuTriggers(
+      page,
+      () => [
+        { action: 'view',   icon: Icons.eye(16),   label: i18n.t('common.view') },
+        { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
+        { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+      ],
+      (action, id) => {
+        const sale = saleService.getById(id);
         if (!sale) return;
-        openSaleEditModal(sale, () => { state.sales = saleService.getAll(); applyFilters(); render(); });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const sale = saleService.getById(btn.getAttribute('data-delete')!);
-        if (!sale) return;
-        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${sale.orderNumber}"?`, () => {
+        const refresh = () => { state.sales = saleService.getAll(); applyFilters(); render(); };
+        if (action === 'view')        openSaleDetailModal(sale);
+        else if (action === 'edit')   openSaleEditModal(sale, refresh);
+        else if (action === 'delete') confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${sale.orderNumber}"?`, () => {
           accountingIntegrationService.reverseEntryForSource('sale', sale.id).catch(console.error);
-          saleService.delete(sale.id);
+          saleService.delete(id);
           notifications.success(i18n.t('common.delete'));
-          state.sales = saleService.getAll(); applyFilters(); render();
+          refresh();
         });
-      });
-    });
+      }
+    );
 
     page.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -195,9 +190,7 @@ function buildHTML(state: State): string {
                   <td style="color:var(--color-text-secondary);">${formatDate(s.createdAt)}</td>
                   <td>
                     <div class="table-actions">
-                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${s.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">${Icons.eye(16)}</button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-edit="${s.id}" aria-label="${i18n.t('common.edit')}" data-tooltip="${i18n.t('common.edit')}">${Icons.edit(16)}</button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${s.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>
+                      ${menuTriggerHTML(s.id)}
                     </div>
                   </td>
                 </tr>`).join('')

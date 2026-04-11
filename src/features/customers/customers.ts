@@ -10,6 +10,7 @@ import { confirmDialog, openModal, showModalError } from '@shared/components/mod
 import { Icons } from '@shared/components/icons';
 import { formatDate, formatCurrency, debounce, getInitials, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { Customer } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -64,62 +65,35 @@ export function renderCustomers(): HTMLElement {
       });
     });
 
-    // View profile buttons
-    page.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-view')!;
+    // Three-dot action menus
+    attachMenuTriggers(
+      page,
+      () => [
+        { action: 'view',   icon: Icons.eye(16),   label: i18n.t('common.view') },
+        { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
+        { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+      ],
+      (action, id) => {
         const customer = customerService.getById(id);
         if (!customer) return;
-        openCustomerProfileModal(customer, () => {
-          openCustomerModal(customer, () => {
-            state.customers = customerService.getAll();
-            state.filtered = state.search ? customerService.search(state.search) : [...state.customers];
-            render();
-          });
-        });
-      });
-    });
-
-    // Edit buttons
-    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-edit')!;
-        const customer = customerService.getById(id);
-        if (!customer) return;
-        openCustomerModal(customer, () => {
+        const refresh = () => {
           state.customers = customerService.getAll();
-          state.filtered = state.search
-            ? customerService.search(state.search)
-            : [...state.customers];
+          state.filtered = state.search ? customerService.search(state.search) : [...state.customers];
           render();
-        });
-      });
-    });
-
-    // Delete buttons
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-delete')!;
-        const customer = customerService.getById(id);
-        if (!customer) return;
-        confirmDialog(
-          i18n.t('common.delete'),
-          `${i18n.t('common.confirm')} "${customer.name}"?`,
-          () => {
+        };
+        if (action === 'view') {
+          openCustomerProfileModal(customer, () => openCustomerModal(customer, refresh));
+        } else if (action === 'edit') {
+          openCustomerModal(customer, refresh);
+        } else if (action === 'delete') {
+          confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${customer.name}"?`, () => {
             customerService.delete(id);
-            notifications.success(`${i18n.t('customers.title').slice(0,-1)} "${customer.name}" ${i18n.t('common.delete').toLowerCase()}.`);
-            state.customers = customerService.getAll();
-            state.filtered = state.search
-              ? customerService.search(state.search)
-              : [...state.customers];
-            if (state.page > Math.ceil(state.filtered.length / PAGE_SIZE)) {
-              state.page = Math.max(1, state.page - 1);
-            }
-            render();
-          }
-        );
-      });
-    });
+            notifications.success(`"${customer.name}" ${i18n.t('common.delete').toLowerCase()}.`);
+            refresh();
+          });
+        }
+      }
+    );
 
     // Pagination
     page.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((btn) => {
@@ -227,15 +201,9 @@ function buildHTML(state: State): string {
                 <td style="color: var(--color-text-secondary);">${formatDate(c.createdAt)}</td>
                 <td>
                   <div class="table-actions">
-                    <button class="btn btn-ghost btn-icon btn-sm" data-view="${c.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">
-                      ${Icons.eye(16)}
-                    </button>
-                    <button class="btn btn-ghost btn-icon btn-sm" data-edit="${c.id}" aria-label="${i18n.t('common.edit')}" data-tooltip="${i18n.t('common.edit')}">
-                      ${Icons.edit(16)}
-                    </button>
-                    <button class="btn btn-ghost btn-icon btn-sm" data-delete="${c.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color: var(--color-error);">
-                      ${Icons.trash(16)}
-                    </button>
+                    ${menuTriggerHTML(c.id)}
+                  </div>
+                </td>
                   </div>
                 </td>
               </tr>

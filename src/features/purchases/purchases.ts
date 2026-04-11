@@ -13,6 +13,7 @@ import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
+import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { Purchase, PurchaseItem, Product } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -87,53 +88,46 @@ export function renderPurchases(): HTMLElement {
       openPurchaseModal(null, () => { state.purchases = purchaseService.getAll(); applyFilters(); render(); });
     });
 
-    page.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const po = purchaseService.getById(btn.getAttribute('data-view')!);
-        if (po) openPurchaseDetailModal(po, () => { state.purchases = purchaseService.getAll(); applyFilters(); render(); });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const po = purchaseService.getById(btn.getAttribute('data-edit')!);
+    attachMenuTriggers(
+      page,
+      (id) => {
+        const po = purchaseService.getById(id);
+        const canEdit = po && po.status !== 'received' && po.status !== 'cancelled';
+        return [
+          { action: 'view',    icon: Icons.eye(16),   label: i18n.t('common.view') },
+          ...(canEdit ? [
+            { action: 'edit',    icon: Icons.edit(16),  label: i18n.t('common.edit') },
+            { action: 'receive', icon: Icons.check(16), label: i18n.t('purchases.modals.receiveConfirm') },
+          ] : []),
+          { action: 'delete',  icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+        ];
+      },
+      (action, id) => {
+        const po = purchaseService.getById(id);
         if (!po) return;
-        openPurchaseModal(po, () => { state.purchases = purchaseService.getAll(); applyFilters(); render(); });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-receive]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const po = purchaseService.getById(btn.getAttribute('data-receive')!);
-        if (!po) return;
-        confirmDialog(
+        const refresh = () => { state.purchases = purchaseService.getAll(); applyFilters(); render(); };
+        if (action === 'view')    openPurchaseDetailModal(po, refresh);
+        else if (action === 'edit')    openPurchaseModal(po, refresh);
+        else if (action === 'receive') confirmDialog(
           i18n.t('purchases.modals.receiveTitle'),
           i18n.t('purchases.modals.receiveMsg', { no: po.poNumber }),
           () => {
             purchaseService.updateStatus(po.id, 'received');
-            // Accounting integration
-            const updatedPo = purchaseService.getById(po.id)!;
-            accountingIntegrationService.postPurchaseEntry(updatedPo).catch(console.error);
+            const updated = purchaseService.getById(po.id)!;
+            accountingIntegrationService.postPurchaseEntry(updated).catch(console.error);
             notifications.success(i18n.t('purchases.modals.receiveTitle'));
-            state.purchases = purchaseService.getAll(); applyFilters(); render();
+            refresh();
           },
           i18n.t('purchases.modals.receiveConfirm'),
           'btn-primary'
         );
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const po = purchaseService.getById(btn.getAttribute('data-delete')!);
-        if (!po) return;
-        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${po.poNumber}"?`, () => {
-          purchaseService.delete(po.id);
-          notifications.success(i18n.t('common.save'));
-          state.purchases = purchaseService.getAll(); applyFilters(); render();
+        else if (action === 'delete') confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${po.poNumber}"?`, () => {
+          purchaseService.delete(id);
+          notifications.success(i18n.t('common.delete'));
+          refresh();
         });
-      });
-    });
+      }
+    );
 
     page.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -245,12 +239,7 @@ function buildHTML(state: State): string {
                   <td style="color:var(--color-text-secondary);">${formatDate(po.createdAt)}</td>
                   <td>
                     <div class="table-actions">
-                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${po.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">${Icons.eye(16)}</button>
-                      ${po.status !== 'received' && po.status !== 'cancelled'
-                        ? `<button class="btn btn-ghost btn-icon btn-sm" data-edit="${po.id}" aria-label="${i18n.t('common.edit')}" data-tooltip="${i18n.t('common.edit')}">${Icons.edit(16)}</button>
-                           <button class="btn btn-ghost btn-icon btn-sm" data-receive="${po.id}" aria-label="${i18n.t('purchases.modals.receiveConfirm')}" data-tooltip="${i18n.t('purchases.modals.receiveConfirm')}" style="color:var(--color-success);">${Icons.check(16)}</button>`
-                        : ''}
-                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${po.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>
+                      ${menuTriggerHTML(po.id)}
                     </div>
                   </td>
                 </tr>`).join('')

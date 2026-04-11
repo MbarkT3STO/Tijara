@@ -8,6 +8,7 @@ import { confirmDialog, openModal, showModalError } from '@shared/components/mod
 import { Icons } from '@shared/components/icons';
 import { formatDate, debounce, getInitials, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
+import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { Supplier } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -57,45 +58,30 @@ export function renderSuppliers(): HTMLElement {
       });
     });
 
-    page.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const supplier = supplierService.getById(btn.getAttribute('data-view')!);
-        if (supplier) openSupplierDetailModal(supplier, () => {
-          state.suppliers = supplierService.getAll();
-          state.filtered = state.search ? supplierService.search(state.search) : [...state.suppliers];
-          render();
-        });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const supplier = supplierService.getById(btn.getAttribute('data-edit')!);
+    attachMenuTriggers(
+      page,
+      () => [
+        { action: 'view',   icon: Icons.eye(16),   label: i18n.t('common.view') },
+        { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
+        { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+      ],
+      (action, id) => {
+        const supplier = supplierService.getById(id);
         if (!supplier) return;
-        openSupplierModal(supplier, () => {
+        const refresh = () => {
           state.suppliers = supplierService.getAll();
           state.filtered = state.search ? supplierService.search(state.search) : [...state.suppliers];
           render();
+        };
+        if (action === 'view')        openSupplierDetailModal(supplier, refresh);
+        else if (action === 'edit')   openSupplierModal(supplier, refresh);
+        else if (action === 'delete') confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${supplier.name}"?`, () => {
+          supplierService.delete(id);
+          notifications.success(i18n.t('common.delete'));
+          refresh();
         });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const supplier = supplierService.getById(btn.getAttribute('data-delete')!);
-        if (!supplier) return;
-        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${supplier.name}"? ${i18n.t('common.noData')}`, () => {
-          supplierService.delete(supplier.id);
-          notifications.success(i18n.t('common.save'));
-          state.suppliers = supplierService.getAll();
-          state.filtered = state.search ? supplierService.search(state.search) : [...state.suppliers];
-          if (state.page > Math.ceil(state.filtered.length / PAGE_SIZE)) {
-            state.page = Math.max(1, state.page - 1);
-          }
-          render();
-        });
-      });
-    });
+      }
+    );
 
     page.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -188,9 +174,7 @@ function buildHTML(state: State): string {
                   <td style="color:var(--color-text-secondary);">${formatDate(s.createdAt)}</td>
                   <td>
                     <div class="table-actions">
-                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${s.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">${Icons.eye(16)}</button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-edit="${s.id}" aria-label="${i18n.t('common.edit')}" data-tooltip="${i18n.t('common.edit')}">${Icons.edit(16)}</button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${s.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>
+                      ${menuTriggerHTML(s.id)}
                     </div>
                   </td>
                 </tr>`).join('')

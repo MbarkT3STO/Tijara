@@ -11,6 +11,7 @@ import { Icons } from '@shared/components/icons';
 import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
+import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { Return, ReturnItem, ReturnReason, Sale } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -91,63 +92,49 @@ export function renderReturns(): HTMLElement {
       openReturnModal(null, () => { state.returns = returnService.getAll(); applyFilters(); render(); });
     });
 
-    page.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const ret = returnService.getById(btn.getAttribute('data-view')!);
-        if (ret) openReturnDetailModal(ret, () => { state.returns = returnService.getAll(); applyFilters(); render(); });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-approve]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const ret = returnService.getById(btn.getAttribute('data-approve')!);
+    attachMenuTriggers(
+      page,
+      (id) => {
+        const ret = returnService.getById(id);
+        const isPending = ret?.status === 'pending';
+        return [
+          { action: 'view',    icon: Icons.eye(16),   label: i18n.t('common.view') },
+          ...(isPending ? [
+            { action: 'approve', icon: Icons.check(16), label: i18n.t('returns.modals.approveConfirm') },
+            { action: 'reject',  icon: Icons.close(16), label: i18n.t('returns.modals.rejectConfirm'), danger: true },
+          ] : []),
+          { action: 'delete',  icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+        ];
+      },
+      (action, id) => {
+        const ret = returnService.getById(id);
         if (!ret) return;
-        confirmDialog(
-          i18n.t('returns.modals.approveTitle'),
-          i18n.t('returns.modals.approveMsg', { 
-            no: ret.returnNumber, 
-            restock: ret.restockItems ? ` ${i18n.t('returns.modals.restockHint')}.` : '' 
-          }),
-          () => {
-            returnService.updateStatus(ret.id, 'approved');
+        const refresh = () => { state.returns = returnService.getAll(); applyFilters(); render(); };
+        if (action === 'view') {
+          openReturnDetailModal(ret, refresh);
+        } else if (action === 'approve') {
+          confirmDialog(
+            i18n.t('returns.modals.approveTitle'),
+            i18n.t('returns.modals.approveMsg', { no: ret.returnNumber, restock: ret.restockItems ? ` ${i18n.t('returns.modals.restockHint')}.` : '' }),
+            () => { returnService.updateStatus(ret.id, 'approved'); notifications.success(i18n.t('common.save')); refresh(); },
+            i18n.t('returns.modals.approveConfirm'), 'btn-primary'
+          );
+        } else if (action === 'reject') {
+          confirmDialog(
+            i18n.t('returns.modals.rejectTitle'),
+            i18n.t('returns.modals.rejectMsg', { no: ret.returnNumber }),
+            () => { returnService.updateStatus(ret.id, 'rejected'); notifications.success(i18n.t('common.save')); refresh(); },
+            i18n.t('returns.modals.rejectConfirm'), 'btn-danger'
+          );
+        } else if (action === 'delete') {
+          confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${ret.returnNumber}"?`, () => {
+            returnService.delete(ret.id);
             notifications.success(i18n.t('common.save'));
-            state.returns = returnService.getAll(); applyFilters(); render();
-          },
-          i18n.t('returns.modals.approveConfirm'),
-          'btn-primary'
-        );
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-reject]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const ret = returnService.getById(btn.getAttribute('data-reject')!);
-        if (!ret) return;
-        confirmDialog(
-          i18n.t('returns.modals.rejectTitle'),
-          i18n.t('returns.modals.rejectMsg', { no: ret.returnNumber }),
-          () => {
-            returnService.updateStatus(ret.id, 'rejected');
-            notifications.success(i18n.t('common.save'));
-            state.returns = returnService.getAll(); applyFilters(); render();
-          },
-          i18n.t('returns.modals.rejectConfirm'),
-          'btn-danger'
-        );
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const ret = returnService.getById(btn.getAttribute('data-delete')!);
-        if (!ret) return;
-        confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${ret.returnNumber}"?`, () => {
-          returnService.delete(ret.id);
-          notifications.success(i18n.t('common.save'));
-          state.returns = returnService.getAll(); applyFilters(); render();
-        });
-      });
-    });
+            refresh();
+          });
+        }
+      }
+    );
 
     page.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -259,12 +246,7 @@ function buildHTML(state: State): string {
                   <td style="color:var(--color-text-secondary);">${formatDate(r.createdAt)}</td>
                   <td>
                     <div class="table-actions">
-                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${r.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">${Icons.eye(16)}</button>
-                      ${r.status === 'pending' ? `
-                        <button class="btn btn-ghost btn-icon btn-sm" data-approve="${r.id}" aria-label="${i18n.t('returns.modals.approveConfirm')}" data-tooltip="${i18n.t('returns.modals.approveConfirm')}" style="color:var(--color-success);">${Icons.check(16)}</button>
-                        <button class="btn btn-ghost btn-icon btn-sm" data-reject="${r.id}" aria-label="${i18n.t('returns.modals.rejectConfirm')}" data-tooltip="${i18n.t('returns.modals.rejectConfirm')}" style="color:var(--color-error);">${Icons.close(16)}</button>
-                      ` : ''}
-                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${r.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color:var(--color-error);">${Icons.trash(16)}</button>
+                      ${menuTriggerHTML(r.id)}
                     </div>
                   </td>
                 </tr>`).join('')

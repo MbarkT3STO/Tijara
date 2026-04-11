@@ -10,6 +10,7 @@ import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { repository } from '@data/excelRepository';
+import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { Product } from '@core/types';
 
 const PAGE_SIZE = 10;
@@ -80,49 +81,26 @@ export function renderProducts(): HTMLElement {
       });
     });
 
-    page.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const product = productService.getById(btn.getAttribute('data-view')!);
-        if (!product) return;
-        openProductDetailModal(product, () => {
-          state.products = productService.getAll();
-          applyFilters();
-          render();
-        });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-edit')!;
+    attachMenuTriggers(
+      page,
+      () => [
+        { action: 'view',   icon: Icons.eye(16),   label: i18n.t('common.view') },
+        { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
+        { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+      ],
+      (action, id) => {
         const product = productService.getById(id);
         if (!product) return;
-        openProductModal(product, () => {
-          state.products = productService.getAll();
-          applyFilters();
-          render();
+        const refresh = () => { state.products = productService.getAll(); applyFilters(); render(); };
+        if (action === 'view')        openProductDetailModal(product, refresh);
+        else if (action === 'edit')   openProductModal(product, refresh);
+        else if (action === 'delete') confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${product.name}"?`, () => {
+          productService.delete(id);
+          notifications.success(i18n.t('common.delete'));
+          refresh();
         });
-      });
-    });
-
-    page.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-delete')!;
-        const product = productService.getById(id);
-        if (!product) return;
-        confirmDialog(
-          i18n.t('common.delete'),
-          `${i18n.t('common.confirm')} "${product.name}"?`,
-          () => {
-            productService.delete(id);
-            notifications.success(`${i18n.t('products.title').slice(0,-1)} "${product.name}" ${i18n.t('common.delete').toLowerCase()}.`);
-            state.products = productService.getAll();
-            applyFilters();
-            render();
-          }
-        );
-      });
-    });
+      }
+    );
 
     page.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -238,15 +216,9 @@ function buildHTML(state: State): string {
                   <td style="color: ${margin >= 30 ? 'var(--color-success)' : margin >= 15 ? 'var(--color-warning)' : 'var(--color-error)'}; font-weight: 500;">${margin.toFixed(1)}%</td>
                   <td>
                     <div class="table-actions">
-                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${p.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">
-                        ${Icons.eye(16)}
-                      </button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-edit="${p.id}" aria-label="${i18n.t('common.edit')}" data-tooltip="${i18n.t('common.edit')}">
-                        ${Icons.edit(16)}
-                      </button>
-                      <button class="btn btn-ghost btn-icon btn-sm" data-delete="${p.id}" aria-label="${i18n.t('common.delete')}" data-tooltip="${i18n.t('common.delete')}" style="color: var(--color-error);">
-                        ${Icons.trash(16)}
-                      </button>
+                      ${menuTriggerHTML(p.id)}
+                    </div>
+                  </td>
                     </div>
                   </td>
                 </tr>
