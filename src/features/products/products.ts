@@ -80,6 +80,18 @@ export function renderProducts(): HTMLElement {
       });
     });
 
+    page.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const product = productService.getById(btn.getAttribute('data-view')!);
+        if (!product) return;
+        openProductDetailModal(product, () => {
+          state.products = productService.getAll();
+          applyFilters();
+          render();
+        });
+      });
+    });
+
     page.querySelectorAll<HTMLButtonElement>('[data-edit]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-edit')!;
@@ -130,7 +142,7 @@ export function renderProducts(): HTMLElement {
     const { id } = (e as CustomEvent).detail;
     const product = productService.getById(id);
     if (!product) return;
-    openProductModal(product, () => {
+    openProductDetailModal(product, () => {
       state.products = productService.getAll();
       applyFilters();
       render();
@@ -226,6 +238,9 @@ function buildHTML(state: State): string {
                   <td style="color: ${margin >= 30 ? 'var(--color-success)' : margin >= 15 ? 'var(--color-warning)' : 'var(--color-error)'}; font-weight: 500;">${margin.toFixed(1)}%</td>
                   <td>
                     <div class="table-actions">
+                      <button class="btn btn-ghost btn-icon btn-sm" data-view="${p.id}" aria-label="${i18n.t('common.view')}" data-tooltip="${i18n.t('common.view')}">
+                        ${Icons.eye(16)}
+                      </button>
                       <button class="btn btn-ghost btn-icon btn-sm" data-edit="${p.id}" aria-label="${i18n.t('common.edit')}" data-tooltip="${i18n.t('common.edit')}">
                         ${Icons.edit(16)}
                       </button>
@@ -291,6 +306,115 @@ const PRODUCT_UNITS = [
   'license',
   'other',
 ] as const;
+
+function openProductDetailModal(product: Product, onEdit: () => void): void {
+  const margin = product.price > 0 ? ((product.price - product.cost) / product.price) * 100 : 0;
+  const marginColor = margin >= 30 ? 'var(--color-success)' : margin >= 15 ? 'var(--color-warning)' : 'var(--color-error)';
+  const stockClass = product.stock === 0 ? 'badge-error' : product.stock < 10 ? 'badge-warning' : 'badge-success';
+  const currencySymbol = profileService.getCurrencySymbol();
+
+  const costHistory = repository.getAll('productCostHistory')
+    .filter((h) => h.productId === product.id)
+    .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime())
+    .slice(0, 8);
+
+  const content = document.createElement('div');
+  content.innerHTML = `
+    <div style="display:flex;align-items:center;gap:var(--space-4);padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-sm);margin-bottom:var(--space-5);">
+      <div style="width:48px;height:48px;border-radius:var(--radius-sm);background:var(--color-primary-subtle);color:var(--color-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        ${Icons.products(24)}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:var(--font-size-lg);font-weight:700;color:var(--color-text-primary);">${escapeHtml(product.name)}</div>
+        <div style="display:flex;align-items:center;gap:var(--space-2);margin-top:4px;flex-wrap:wrap;">
+          <code style="font-size:var(--font-size-xs);background:var(--color-surface);border:1px solid var(--color-border);padding:2px 6px;border-radius:var(--radius-xs);">${escapeHtml(product.sku)}</code>
+          <span class="badge badge-primary">${escapeHtml(product.category)}</span>
+          <span class="badge ${stockClass}">${product.stock} ${escapeHtml(product.unit)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-3);margin-bottom:var(--space-5);">
+      <div style="padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);text-align:center;">
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">${i18n.t('products.price')}</div>
+        <div style="font-size:var(--font-size-xl);font-weight:700;color:var(--color-text-primary);">${currencySymbol}${product.price.toFixed(2)}</div>
+      </div>
+      <div style="padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);text-align:center;">
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">${i18n.t('products.cost')}</div>
+        <div style="font-size:var(--font-size-xl);font-weight:700;color:var(--color-text-secondary);">${currencySymbol}${product.cost.toFixed(2)}</div>
+      </div>
+      <div style="padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);text-align:center;">
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">${i18n.t('products.margin' as any)}</div>
+        <div style="font-size:var(--font-size-xl);font-weight:700;color:${marginColor};">${margin.toFixed(1)}%</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
+      <div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('products.modals.unit')}</div>
+        <div style="font-weight:500;">${escapeHtml(product.unit)}</div>
+      </div>
+      <div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('products.modals.reorderPoint')}</div>
+        <div style="font-weight:500;">${product.reorderPoint ?? 0}</div>
+      </div>
+      <div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('products.modals.reorderQty')}</div>
+        <div style="font-weight:500;">${product.reorderQuantity ?? 0}</div>
+      </div>
+      <div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('common.date')}</div>
+        <div style="font-weight:500;">${formatDate(product.createdAt)}</div>
+      </div>
+    </div>
+
+    ${product.description ? `
+    <div style="padding:var(--space-3) var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-sm);margin-bottom:var(--space-5);">
+      <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:4px;">${i18n.t('products.modals.description')}</div>
+      <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);">${escapeHtml(product.description)}</div>
+    </div>` : ''}
+
+    ${costHistory.length > 0 ? `
+    <div>
+      <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:var(--space-3);">${i18n.t('products.costHistory' as any)}</div>
+      <table style="width:100%;font-size:var(--font-size-xs);border-collapse:collapse;">
+        <thead>
+          <tr style="color:var(--color-text-tertiary);">
+            <th style="text-align:start;padding:4px 8px;">${i18n.t('common.date')}</th>
+            <th style="text-align:end;padding:4px 8px;">${i18n.t('products.costOld' as any)}</th>
+            <th style="text-align:end;padding:4px 8px;">${i18n.t('products.costNew' as any)}</th>
+            <th style="text-align:start;padding:4px 8px;">${i18n.t('products.changedBy' as any)}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${costHistory.map((h) => `
+            <tr style="border-top:1px solid var(--color-border-subtle);">
+              <td style="padding:4px 8px;color:var(--color-text-secondary);">${formatDate(h.changedAt)}</td>
+              <td style="padding:4px 8px;text-align:end;color:var(--color-error);">${formatCurrency(h.oldCost)}</td>
+              <td style="padding:4px 8px;text-align:end;color:var(--color-success);">${formatCurrency(h.newCost)}</td>
+              <td style="padding:4px 8px;color:var(--color-text-tertiary);">${h.changedBy ? escapeHtml(h.changedBy) : '—'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+
+    <div style="margin-top:var(--space-5);">
+      <button class="btn btn-secondary" id="product-detail-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>
+    </div>
+  `;
+
+  const close = openModal({
+    title: escapeHtml(product.name),
+    content,
+    size: 'lg',
+    hideFooter: true,
+  });
+
+  content.querySelector('#product-detail-edit-btn')?.addEventListener('click', () => {
+    close();
+    openProductModal(product, onEdit);
+  });
+}
 
 function openProductModal(product: Product | null, onSave: () => void): void {
   const isEdit = product !== null;
