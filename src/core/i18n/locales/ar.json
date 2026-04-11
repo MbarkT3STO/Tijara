@@ -189,6 +189,10 @@
     "storageMigrationFailed": "فشلت عملية النقل. لم تتغير بياناتك.",
     "storageSwitchedExcel": "تُخزَّن البيانات الآن في ملف Excel.",
     "storageSwitchedJson": "تُخزَّن البيانات الآن بتنسيق JSON.",
+    "storageSqlite": "قاعدة بيانات SQLite",
+    "storageSqliteDesc": "سريعة وموثوقة وتدعم معاملات ACID. تُخزَّن البيانات في ملف قاعدة بيانات SQLite محلي. الأفضل للبيانات الكبيرة وأعباء المحاسبة.",
+    "storageSqlitePath": "مخزّن في مجلد التطبيق (tijara.db)",
+    "storageSwitchedSqlite": "تُخزَّن البيانات الآن في قاعدة بيانات SQLite.",
     "accountingSetup": {
       "title": "إعداد المحاسبة",
       "subtitle": "استيراد دليل الحسابات المغربي (CGNC 2005)",

@@ -188,6 +188,10 @@
     "storageMigrationFailed": "Migration failed. Your data has not been changed.",
     "storageSwitchedExcel": "Data is now stored in the Excel file.",
     "storageSwitchedJson": "Data is now stored in JSON format.",
+    "storageSqlite": "SQLite Database",
+    "storageSqliteDesc": "Fast, reliable, and ACID-safe. Data stored in a local SQLite database file. Best for large datasets and accounting workloads.",
+    "storageSqlitePath": "Stored in app data folder (tijara.db)",
+    "storageSwitchedSqlite": "Data is now stored in the SQLite database.",
     "accountingSetup": {
       "title": "Accounting Setup",
       "subtitle": "Import the Moroccan Chart of Accounts (CGNC 2005)",

@@ -184,6 +184,16 @@ class ExcelRepository {
     const format = storageFormatService.current;
     const electron = getElectron();
 
+    if (format === 'sqlite') {
+      // SQLite: load all collections directly into memory
+      if (!electron) return null;
+      const result: Record<string, unknown> = {};
+      for (const key of Object.keys(SHEET_NAMES)) {
+        result[key] = await electron.sqliteGetAll(key);
+      }
+      return JSON.stringify(result);
+    }
+
     if (format === 'excel') {
       const path = storageFormatService.resolveExcelPath();
       if (!path || !electron) return null;
@@ -216,6 +226,18 @@ class ExcelRepository {
   private async _persistNow(): Promise<void> {
     const format = storageFormatService.current;
     const electron = getElectron();
+
+    if (format === 'sqlite') {
+      // SQLite writes are handled per-operation in insert/update/delete.
+      // _persistNow is only called from init() seed path — use bulkInsert.
+      if (!electron) return;
+      const allData: Record<string, unknown[]> = {};
+      for (const key of Object.keys(SHEET_NAMES)) {
+        allData[key] = this.data[key as keyof WorkbookData] as unknown[];
+      }
+      await electron.sqliteBulkInsert(allData);
+      return;
+    }
 
     if (format === 'excel') {
       const path = storageFormatService.resolveExcelPath();
@@ -251,7 +273,12 @@ class ExcelRepository {
   /** Insert a new item */
   insert<K extends keyof WorkbookData>(collection: K, item: WorkbookData[K][number]): void {
     (this.data[collection] as WorkbookData[K][number][]).push(item);
-    void this.persist();
+    if (storageFormatService.current === 'sqlite') {
+      const electron = getElectron();
+      if (electron) void electron.sqliteInsert(collection, item as Record<string, unknown>);
+    } else {
+      void this.persist();
+    }
   }
 
   /** Update an existing item by id */
@@ -264,7 +291,12 @@ class ExcelRepository {
     const idx = arr.findIndex((item) => item.id === id);
     if (idx === -1) return false;
     arr[idx] = { ...arr[idx], ...updates };
-    void this.persist();
+    if (storageFormatService.current === 'sqlite') {
+      const electron = getElectron();
+      if (electron) void electron.sqliteUpdate(collection, id, updates as Record<string, unknown>);
+    } else {
+      void this.persist();
+    }
     return true;
   }
 
@@ -273,25 +305,27 @@ class ExcelRepository {
     const arr = this.data[collection] as { id: string }[];
     const before = arr.length;
     (this.data[collection] as { id: string }[]) = arr.filter((item) => item.id !== id);
-    void this.persist();
-    return (this.data[collection] as { id: string }[]).length < before;
+    const deleted = (this.data[collection] as { id: string }[]).length < before;
+    if (deleted) {
+      if (storageFormatService.current === 'sqlite') {
+        const electron = getElectron();
+        if (electron) void electron.sqliteDelete(collection, id);
+      } else {
+        void this.persist();
+      }
+    }
+    return deleted;
   }
 
   /** Clear all data - reset to seed data and delete persisted storage */
   async clearAll(): Promise<void> {
-    // Reset in-memory data to seed data
     this.data = this.getSeedData();
-    
-    // Clear localStorage
     localStorage.clear();
-    
-    // Clear Electron file storage if available
     const electron = getElectron();
     if (electron) {
       await electron.clearData();
+      await electron.sqliteClear();
     }
-    
-    // Persist the seed data
     await this.persist();
   }
 
@@ -906,6 +940,24 @@ class ExcelRepository {
     }
 
     return JSON.stringify(result);
+  }
+
+  /**
+   * Migrate current in-memory data to SQLite (proper per-table schema).
+   * Returns true on success. Call BEFORE storageFormatService.set('sqlite').
+   */
+  async migrateToSqlite(): Promise<boolean> {
+    const electron = getElectron();
+    if (!electron) return false;
+    try {
+      const allData: Record<string, unknown[]> = {};
+      for (const key of Object.keys(SHEET_NAMES)) {
+        allData[key] = this.data[key as keyof WorkbookData] as unknown[];
+      }
+      return await electron.sqliteBulkInsert(allData);
+    } catch {
+      return false;
+    }
   }
 
   /**

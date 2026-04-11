@@ -16,12 +16,24 @@ function getElectron(): ElectronAPI | null {
 
 const isElectron = !!getElectron();
 
-function buildStorageFormatCard(format: 'json' | 'excel', active: boolean): string {
+function buildStorageFormatCard(format: StorageFormat, active: boolean): string {
   const border = active ? 'var(--color-primary)' : 'var(--color-border)';
   const bg = active ? 'var(--color-primary-subtle)' : 'transparent';
-  const iconEl = format === 'json' ? Icons.fileJson(24) : Icons.fileSpreadsheet(24);
-  const titleKey = format === 'json' ? 'settings.storageJson' : 'settings.storageExcel';
-  const descKey = format === 'json' ? 'settings.storageJsonDesc' : 'settings.storageExcelDesc';
+  const iconEl = format === 'json'
+    ? Icons.fileJson(24)
+    : format === 'excel'
+      ? Icons.fileSpreadsheet(24)
+      : Icons.database(24);
+  const titleKey = format === 'json'
+    ? 'settings.storageJson'
+    : format === 'excel'
+      ? 'settings.storageExcel'
+      : 'settings.storageSqlite';
+  const descKey = format === 'json'
+    ? 'settings.storageJsonDesc'
+    : format === 'excel'
+      ? 'settings.storageExcelDesc'
+      : 'settings.storageSqliteDesc';
   const checkmark = active ? `<span style="color:var(--color-primary);font-size:16px;">✓</span>` : '';
 
   return `
@@ -58,9 +70,10 @@ export function buildDataHTML(): string {
           <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);margin-bottom:var(--space-4);">
             ${i18n.t('settings.storageFormatSubtitle' as any)}
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-bottom:var(--space-4);" id="storage-format-cards">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-bottom:var(--space-4);" id="storage-format-cards">
             ${buildStorageFormatCard('json', storageFormatService.current === 'json')}
             ${buildStorageFormatCard('excel', storageFormatService.current === 'excel')}
+            ${buildStorageFormatCard('sqlite', storageFormatService.current === 'sqlite')}
           </div>
           <div id="storage-format-info" style="
             padding:var(--space-3) var(--space-4);
@@ -73,7 +86,9 @@ export function buildDataHTML(): string {
           ">
             ${storageFormatService.current === 'excel' && storageFormatService.resolveExcelPath()
               ? `${Icons.fileSpreadsheet(14)} ${i18n.t('settings.storageExcelPath' as any)}: <code style="color:var(--color-text-primary);font-family:var(--font-mono);word-break:break-all;">${storageFormatService.resolveExcelPath()}</code>`
-              : `${Icons.fileJson(14)} ${i18n.t('settings.storageJsonPath' as any)}`
+              : storageFormatService.current === 'sqlite'
+                ? `${Icons.database(14)} ${i18n.t('settings.storageSqlitePath' as any)}`
+                : `${Icons.fileJson(14)} ${i18n.t('settings.storageJsonPath' as any)}`
             }
           </div>
         </div>
@@ -140,7 +155,7 @@ export function attachDataEvents(page: HTMLElement): void {
     });
 
     // Storage format card clicks
-    (['json', 'excel'] as StorageFormat[]).forEach((format) => {
+    (['json', 'excel', 'sqlite'] as StorageFormat[]).forEach((format) => {
       page.querySelector(`#storage-format-${format}`)?.addEventListener('click', async () => {
         if (format === storageFormatService.current) return;
         await handleStorageFormatChange(format, page, electron);
@@ -207,44 +222,52 @@ async function handleStorageFormatChange(
   page: HTMLElement,
   electron: ElectronAPI
 ): Promise<void> {
-  if (newFormat === 'excel') {
+  notifications.info(i18n.t('settings.storageMigrating' as any));
+
+  if (newFormat === 'sqlite') {
+    const ok = await repository.migrateToSqlite();
+    if (!ok) {
+      notifications.error(i18n.t('settings.storageMigrationFailed' as any));
+      return;
+    }
+    storageFormatService.excelFilePath = null;
+    storageFormatService.set('sqlite');
+    notifications.success(i18n.t('settings.storageSwitchedSqlite' as any));
+
+  } else if (newFormat === 'excel') {
     const filePath = await electron.chooseExcelStorageFile();
     if (!filePath) return; // user cancelled
-
-    notifications.info(i18n.t('settings.storageMigrating' as any));
 
     const ok = await repository.migrateToExcel(filePath);
     if (!ok) {
       notifications.error(i18n.t('settings.storageMigrationFailed' as any));
       return;
     }
-
     storageFormatService.excelFilePath = filePath;
     storageFormatService.set('excel');
     notifications.success(i18n.t('settings.storageSwitchedExcel' as any));
-  } else {
-    notifications.info(i18n.t('settings.storageMigrating' as any));
 
+  } else {
+    // Switching to JSON
     const ok = await repository.migrateToJson();
     if (!ok) {
       notifications.error(i18n.t('settings.storageMigrationFailed' as any));
       return;
     }
-
     storageFormatService.excelFilePath = null;
     storageFormatService.set('json');
     notifications.success(i18n.t('settings.storageSwitchedJson' as any));
   }
 
-  // Re-render the format cards and info row to reflect the new state
+  // Re-render cards and info row
   const cardsContainer = page.querySelector('#storage-format-cards');
   if (cardsContainer) {
     cardsContainer.innerHTML =
       buildStorageFormatCard('json', storageFormatService.current === 'json') +
-      buildStorageFormatCard('excel', storageFormatService.current === 'excel');
+      buildStorageFormatCard('excel', storageFormatService.current === 'excel') +
+      buildStorageFormatCard('sqlite', storageFormatService.current === 'sqlite');
 
-    // Re-attach click handlers on the new card elements
-    (['json', 'excel'] as StorageFormat[]).forEach((format) => {
+    (['json', 'excel', 'sqlite'] as StorageFormat[]).forEach((format) => {
       cardsContainer.querySelector(`#storage-format-${format}`)?.addEventListener('click', async () => {
         if (format === storageFormatService.current) return;
         await handleStorageFormatChange(format, page, electron);
@@ -257,6 +280,8 @@ async function handleStorageFormatChange(
     infoEl.innerHTML =
       storageFormatService.current === 'excel' && storageFormatService.resolveExcelPath()
         ? `${Icons.fileSpreadsheet(14)} ${i18n.t('settings.storageExcelPath' as any)}: <code style="color:var(--color-text-primary);font-family:var(--font-mono);word-break:break-all;">${storageFormatService.resolveExcelPath()}</code>`
-        : `${Icons.fileJson(14)} ${i18n.t('settings.storageJsonPath' as any)}`;
+        : storageFormatService.current === 'sqlite'
+          ? `${Icons.database(14)} ${i18n.t('settings.storageSqlitePath' as any)}`
+          : `${Icons.fileJson(14)} ${i18n.t('settings.storageJsonPath' as any)}`;
   }
 }

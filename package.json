@@ -8,15 +8,19 @@
     "build": "electron-vite build",
     "package": "electron-vite build && electron-builder",
     "preview": "electron-vite preview",
+    "postinstall": "electron-rebuild -f -w better-sqlite3",
     "lint": "eslint src electron --ext .ts --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint src electron --ext .ts --fix",
     "format": "prettier --write \"src/**/*.{ts,css}\" \"electron/**/*.ts\""
   },
   "dependencies": {
+    "better-sqlite3": "^12.8.0",
     "xlsx": "^0.18.5",
     "xlsx-js-style": "^1.2.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.7.2",
+    "@types/better-sqlite3": "^7.6.13",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "electron": "^30.0.0",
@@ -37,10 +41,23 @@
     "files": [
       "out/**/*"
     ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*"
+    ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "public/icon.ico"
     },

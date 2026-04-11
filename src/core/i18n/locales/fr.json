@@ -189,6 +189,10 @@
     "storageMigrationFailed": "La migration a échoué. Vos données n'ont pas été modifiées.",
     "storageSwitchedExcel": "Les données sont maintenant stockées dans le fichier Excel.",
     "storageSwitchedJson": "Les données sont maintenant stockées au format JSON.",
+    "storageSqlite": "Base de données SQLite",
+    "storageSqliteDesc": "Rapide, fiable et ACID. Les données sont stockées dans une base SQLite locale. Idéal pour les grands ensembles de données et la comptabilité.",
+    "storageSqlitePath": "Stocké dans le dossier de l'application (tijara.db)",
+    "storageSwitchedSqlite": "Les données sont maintenant stockées dans la base de données SQLite.",
     "accountingSetup": {
       "title": "Configuration Comptable",
       "subtitle": "Importez le Plan Comptable Général Marocain (CGNC 2005)",

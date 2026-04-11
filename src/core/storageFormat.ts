@@ -1,10 +1,10 @@
 /**
- * Storage format service – manages whether data is persisted as JSON or Excel.
- * Persists the preference to localStorage.
+ * Storage format service – manages whether data is persisted as JSON, Excel,
+ * or SQLite. Persists the preference to localStorage.
  * Follows the same singleton pattern as colorThemeService.ts / densityService.ts.
  */
 
-export type StorageFormat = 'json' | 'excel';
+export type StorageFormat = 'json' | 'excel' | 'sqlite';
 
 const STORAGE_KEY = 'tijara_storage_format';
 const EXCEL_PATH_KEY = 'tijara_excel_path';
@@ -15,7 +15,11 @@ class StorageFormatService {
 
   constructor() {
     const stored = localStorage.getItem(STORAGE_KEY) as StorageFormat | null;
-    this._current = stored === 'excel' ? 'excel' : 'json';
+    if (stored === 'excel' || stored === 'sqlite') {
+      this._current = stored;
+    } else {
+      this._current = 'json';
+    }
     const savedPath = localStorage.getItem(EXCEL_PATH_KEY);
     if (savedPath) this._excelFilePath = savedPath;
   }

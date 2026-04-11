@@ -36,6 +36,23 @@ export interface ElectronAPI {
   readExcelStorage: (filePath: string) => Promise<ArrayBuffer | null>;
   /** Write the Excel storage file from raw bytes */
   writeExcelStorage: (buffer: ArrayBuffer, filePath: string) => Promise<boolean>;
+  // ── SQLite storage ──────────────────────────────────────────────────────
+  /** Get all rows from a collection */
+  sqliteGetAll: (collection: string) => Promise<unknown[]>;
+  /** Get a single row by id */
+  sqliteGetById: (collection: string, id: string) => Promise<unknown | null>;
+  /** Insert a new row */
+  sqliteInsert: (collection: string, item: Record<string, unknown>) => Promise<boolean>;
+  /** Update an existing row by id */
+  sqliteUpdate: (collection: string, id: string, updates: Record<string, unknown>) => Promise<boolean>;
+  /** Delete a row by id */
+  sqliteDelete: (collection: string, id: string) => Promise<boolean>;
+  /** Bulk insert all collections atomically (migration) */
+  sqliteBulkInsert: (allData: Record<string, unknown[]>) => Promise<boolean>;
+  /** Clear all rows from all tables */
+  sqliteClear: () => Promise<boolean>;
+  /** Get the SQLite database file path */
+  sqliteDbPath: () => Promise<string>;
 }
 
 const api: ElectronAPI = {
@@ -64,6 +81,15 @@ const api: ElectronAPI = {
   chooseExcelStorageFile: () => ipcRenderer.invoke('storage:chooseExcelFile'),
   readExcelStorage: (filePath) => ipcRenderer.invoke('storage:readExcel', filePath),
   writeExcelStorage: (buffer, filePath) => ipcRenderer.invoke('storage:writeExcel', buffer, filePath),
+
+  sqliteGetAll: (collection) => ipcRenderer.invoke('sqlite:getAll', collection),
+  sqliteGetById: (collection, id) => ipcRenderer.invoke('sqlite:getById', collection, id),
+  sqliteInsert: (collection, item) => ipcRenderer.invoke('sqlite:insert', collection, item),
+  sqliteUpdate: (collection, id, updates) => ipcRenderer.invoke('sqlite:update', collection, id, updates),
+  sqliteDelete: (collection, id) => ipcRenderer.invoke('sqlite:delete', collection, id),
+  sqliteBulkInsert: (allData) => ipcRenderer.invoke('sqlite:bulkInsert', allData),
+  sqliteClear: () => ipcRenderer.invoke('sqlite:clear'),
+  sqliteDbPath: () => ipcRenderer.invoke('sqlite:dbPath'),
 };
 
 contextBridge.exposeInMainWorld('electron', api);
