@@ -5,6 +5,7 @@
 import { repository } from '@data/repository';
 import { inventoryService } from './inventoryService';
 import { authService } from './authService';
+import { assertPermission } from '@shared/utils/helpers';
 import type { Product, ProductCostHistory } from '@core/types';
 import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';
 
@@ -68,6 +69,7 @@ export const productService = {
   },
 
   delete(id: string): boolean {
+    assertPermission('products:delete');
     return repository.delete('products', id);
   },
 

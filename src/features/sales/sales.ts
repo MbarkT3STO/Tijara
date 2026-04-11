@@ -10,7 +10,7 @@ import { invoiceService } from '@services/invoiceService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce, autoNote, escapeHtml, exportReportPDF } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, autoNote, escapeHtml, exportReportPDF, usePermissions } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
@@ -51,6 +51,7 @@ const PAYMENT_BADGE: Record<string, string> = {
 };
 
 export function renderSales(): HTMLElement {
+  const { can } = usePermissions();
   const state: State = {
     sales: saleService.getAll(),
     filtered: [],
@@ -103,8 +104,8 @@ export function renderSales(): HTMLElement {
       page,
       () => [
         { action: 'view',   icon: Icons.eye(16),   label: i18n.t('common.view') },
-        { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
-        { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+        ...(can('sales:edit')   ? [{ action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') }] : []),
+        ...(can('sales:delete') ? [{ action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true }] : []),
       ],
       (action, id) => {
         const sale = saleService.getById(id);
@@ -113,10 +114,14 @@ export function renderSales(): HTMLElement {
         if (action === 'view')        openSaleDetailModal(sale);
         else if (action === 'edit')   openSaleEditModal(sale, refresh);
         else if (action === 'delete') confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${sale.orderNumber}"?`, () => {
-          accountingIntegrationService.reverseEntryForSource('sale', sale.id).catch(console.error);
-          saleService.delete(id);
-          notifications.success(i18n.t('common.delete'));
-          refresh();
+          try {
+            accountingIntegrationService.reverseEntryForSource('sale', sale.id).catch(console.error);
+            saleService.delete(id);
+            notifications.success(i18n.t('common.delete'));
+            refresh();
+          } catch {
+            notifications.error(i18n.t('errors.actionDenied' as any));
+          }
         });
       }
     );
@@ -143,6 +148,7 @@ export function renderSales(): HTMLElement {
 }
 
 function buildHTML(state: State): string {
+  const { can } = usePermissions();
   const total = state.filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const start = (state.page - 1) * PAGE_SIZE;
@@ -154,7 +160,7 @@ function buildHTML(state: State): string {
         <h2 class="page-title">${i18n.t('sales.title')}</h2>
         <p class="page-subtitle">${total === 1 ? i18n.t('sales.countTotal', { count: total }) : i18n.t('sales.countPlural', { count: total })}</p>
       </div>
-      <button class="btn btn-primary" id="add-sale-btn">${Icons.plus()} ${i18n.t('sales.addNew')}</button>
+      ${can('sales:create') ? `<button class="btn btn-primary" id="add-sale-btn">${Icons.plus()} ${i18n.t('sales.addNew')}</button>` : ''}
     </div>
 
     <div class="card">

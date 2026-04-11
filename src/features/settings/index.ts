@@ -10,6 +10,7 @@ import { buildGeneralHTML, attachGeneralEvents } from './generalSettings';
 import { buildAppearanceHTML, attachAppearanceEvents } from './appearanceSettings';
 import { buildDataHTML, attachDataEvents } from './dataSettings';
 import { buildAccountingSetupHTML, attachAccountingEvents } from './accountingSettings';
+import { usePermissions } from '@shared/utils/helpers';
 
 export function renderSettings(): HTMLElement {
   const page = document.createElement('div');
@@ -23,6 +24,10 @@ export function renderSettings(): HTMLElement {
   });
 
   const render = () => {
+    const { can } = usePermissions();
+    const canEditProfile = can('settings:editProfile');
+    const canSeeData = can('settings:exportData');
+
     page.innerHTML = `
       <div style="max-width:1000px;margin:0 auto;width:100%;display:grid;gap:var(--space-6);">
         <div class="page-header">
@@ -30,22 +35,22 @@ export function renderSettings(): HTMLElement {
             <h2 class="page-title">${i18n.t('settings.title' as any)}</h2>
             <p class="page-subtitle">${i18n.t('settings.subtitle' as any)}</p>
           </div>
-          <div class="header-actions">
+          ${canEditProfile ? `<div class="header-actions">
             <button class="btn btn-primary" id="save-profile-btn">
               ${Icons.check(16)} ${i18n.t('settings.saveProfile' as any)}
             </button>
-          </div>
+          </div>` : ''}
         </div>
 
-        ${buildGeneralHTML(currentLogo)}
+        ${canEditProfile ? buildGeneralHTML(currentLogo) : ''}
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(450px,1fr));gap:var(--space-6);">
           ${buildAppearanceHTML()}
         </div>
 
-        ${buildDataHTML()}
+        ${canSeeData ? buildDataHTML() : ''}
 
-        ${buildAccountingSetupHTML()}
+        ${canEditProfile ? buildAccountingSetupHTML() : ''}
 
         <div style="text-align:center;padding:var(--space-8) 0;border-top:1px solid var(--color-border-subtle);">
           <div style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-primary);">${i18n.t('settings.about' as any)}</div>
@@ -54,10 +59,12 @@ export function renderSettings(): HTMLElement {
       </div>
     `;
 
-    attachGeneralEvents(page, () => currentLogo, (v) => { currentLogo = v; }, render);
+    if (canEditProfile) {
+      attachGeneralEvents(page, () => currentLogo, (v) => { currentLogo = v; }, render);
+      attachAccountingEvents(page, render);
+    }
     attachAppearanceEvents(page, render);
-    attachDataEvents(page);
-    attachAccountingEvents(page, render);
+    if (canSeeData) attachDataEvents(page);
   };
 
   render();

@@ -7,7 +7,7 @@ import { authService } from '@services/authService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatDate, formatDateTime, getInitials, debounce, escapeHtml } from '@shared/utils/helpers';
+import { formatDate, formatDateTime, getInitials, debounce, escapeHtml, usePermissions } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { resolveAuthError } from '@features/auth/auth';
 import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
@@ -31,6 +31,7 @@ const ROLE_BADGE: Record<UserRole, string> = {
 
 /** Render and return the users page */
 export function renderUsers(): HTMLElement {
+  const { can } = usePermissions();
   const state: State = {
     users: userService.getAll(),
     filtered: [],
@@ -77,10 +78,16 @@ export function renderUsers(): HTMLElement {
       (id) => {
         const u = userService.getById(id);
         return [
-          { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
-          { action: 'toggle', icon: u?.active ? Icons.close(16) : Icons.check(16),
-            label: u?.active ? i18n.t('users.inactive') : i18n.t('users.active') },
-          { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+          ...(can('users:edit') ? [
+            { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
+          ] : []),
+          ...(can('users:toggleActive') ? [
+            { action: 'toggle', icon: u?.active ? Icons.close(16) : Icons.check(16),
+              label: u?.active ? i18n.t('users.inactive') : i18n.t('users.active') },
+          ] : []),
+          ...(can('users:delete') ? [
+            { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+          ] : []),
         ];
       },
       (action, id) => {
@@ -124,6 +131,7 @@ export function renderUsers(): HTMLElement {
 }
 
 function buildHTML(state: State): string {
+  const { can } = usePermissions();
   const total = state.filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const start = (state.page - 1) * PAGE_SIZE;
@@ -135,9 +143,9 @@ function buildHTML(state: State): string {
         <h2 class="page-title">${i18n.t('users.title')}</h2>
         <p class="page-subtitle">${i18n.t('users.subtitle', { count: total })}</p>
       </div>
-      <button class="btn btn-primary" id="add-user-btn">
+      ${can('users:create') ? `<button class="btn btn-primary" id="add-user-btn">
         ${Icons.plus()} ${i18n.t('users.addNew')}
-      </button>
+      </button>` : ''}
     </div>
 
     <div class="card">
@@ -233,6 +241,7 @@ function buildPagination(
 }
 
 function openUserModal(user: User | null, onSave: () => void): void {
+  const { can } = usePermissions();
   const isEdit = user !== null;
 
   const form = document.createElement('form');
@@ -250,7 +259,7 @@ function openUserModal(user: User | null, onSave: () => void): void {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label" for="u-role">${i18n.t('users.role')}</label>
-        <select id="u-role" class="form-control">
+        <select id="u-role" class="form-control" ${!can('users:changeRole') ? 'disabled' : ''}>
           <option value="admin" ${user?.role === 'admin' ? 'selected' : ''}>${i18n.t('users.roles.admin')}</option>
           <option value="manager" ${user?.role === 'manager' ? 'selected' : ''}>${i18n.t('users.roles.manager')}</option>
           <option value="sales" ${(!user || user.role === 'sales') ? 'selected' : ''}>${i18n.t('users.roles.sales')}</option>

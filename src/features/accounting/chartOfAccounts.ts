@@ -7,7 +7,7 @@ import { journalService } from '@services/journalService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { debounce, escapeHtml } from '@shared/utils/helpers';
+import { debounce, escapeHtml, usePermissions } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { router } from '@core/router';
 import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
@@ -37,6 +37,7 @@ const CATEGORIES_BY_TYPE: Record<AccountType, AccountCategory[]> = {
 };
 
 export function renderChartOfAccounts(): HTMLElement {
+  const { can } = usePermissions();
   const state: State = {
     accounts: accountService.getAll(),
     filtered: [],
@@ -88,10 +89,12 @@ export function renderChartOfAccounts(): HTMLElement {
       (id) => {
         const acc = accountService.getById(id);
         return [
-          { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
-          { action: 'toggle', icon: acc?.isActive ? Icons.close(16) : Icons.check(16),
-            label: acc?.isActive ? i18n.t('common.no') : i18n.t('common.yes') },
-          ...(!acc?.isSystem ? [{ action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true }] : []),
+          ...(can('accounting:editAccount') ? [
+            { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
+            { action: 'toggle', icon: acc?.isActive ? Icons.close(16) : Icons.check(16),
+              label: acc?.isActive ? i18n.t('common.no') : i18n.t('common.yes') },
+          ] : []),
+          ...(!acc?.isSystem && can('accounting:deleteAccount') ? [{ action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true }] : []),
         ];
       },
       (action, id) => {
@@ -138,6 +141,7 @@ export function renderChartOfAccounts(): HTMLElement {
 }
 
 function buildHTML(state: State): string {
+  const { can } = usePermissions();
   const total = state.filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const start = (state.page - 1) * PAGE_SIZE;
@@ -149,7 +153,7 @@ function buildHTML(state: State): string {
         <h2 class="page-title">${i18n.t('accounting.accounts.title' as any)}</h2>
         <p class="page-subtitle">${total} ${i18n.t('common.total' as any)}</p>
       </div>
-      <button class="btn btn-primary" id="add-account-btn">${Icons.plus()} ${i18n.t('accounting.accounts.addAccount' as any)}</button>
+      ${can('accounting:createAccount') ? `<button class="btn btn-primary" id="add-account-btn">${Icons.plus()} ${i18n.t('accounting.accounts.addAccount' as any)}</button>` : ''}
     </div>
 
     <div class="card">

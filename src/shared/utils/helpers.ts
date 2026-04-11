@@ -16,21 +16,104 @@ export function escapeHtml(str: unknown): string {
 }
 
 /** Permission map: which roles can perform which actions */
-const PERMISSIONS: Record<string, UserRole[]> = {
-  'page:users':          ['admin'],
-  'page:settings':       ['admin', 'manager'],
-  'page:journal':        ['admin', 'manager'],
-  'page:accounts':       ['admin', 'manager'],
-  'page:fiscalPeriods':  ['admin'],
-  'page:costCenters':    ['admin', 'manager'],
-  'action:delete':       ['admin', 'manager'],
-  'action:editSale':     ['admin', 'manager', 'sales'],
-  'action:createSale':   ['admin', 'manager', 'sales'],
-  'action:editInvoice':  ['admin', 'manager'],
-  'action:postJournal':  ['admin', 'manager'],
-  'action:closeperiod':  ['admin'],
-  'action:manageUsers':  ['admin'],
+export const PERMISSIONS: Record<string, UserRole[]> = {
+  // ── Page access ────────────────────────────────────────────────────────
+  'page:users':               ['admin'],
+  'page:settings':            ['admin', 'manager', 'sales', 'viewer'],
+  'page:reports':             ['admin', 'manager'],
+  'page:journal':             ['admin', 'manager'],
+  'page:chart-of-accounts':   ['admin', 'manager'],
+  'page:fiscal-periods':      ['admin'],
+  'page:cost-centers':        ['admin', 'manager'],
+  'page:accounting':          ['admin', 'manager'],
+  'page:trial-balance':       ['admin', 'manager'],
+  'page:income-statement':    ['admin', 'manager'],
+  'page:balance-sheet':       ['admin', 'manager'],
+  'page:cash-flow':           ['admin', 'manager'],
+  'page:tax-report':          ['admin', 'manager'],
+  'page:ledger':              ['admin', 'manager'],
+
+  // ── Customer actions ────────────────────────────────────────────────────
+  'customers:create':         ['admin', 'manager', 'sales'],
+  'customers:edit':           ['admin', 'manager', 'sales'],
+  'customers:delete':         ['admin', 'manager'],
+  'customers:view':           ['admin', 'manager', 'sales', 'viewer'],
+
+  // ── Product actions ────────────────────────────────────────────────────
+  'products:create':          ['admin', 'manager'],
+  'products:edit':            ['admin', 'manager'],
+  'products:delete':          ['admin'],
+  'products:view':            ['admin', 'manager', 'sales', 'viewer'],
+
+  // ── Sales actions ──────────────────────────────────────────────────────
+  'sales:create':             ['admin', 'manager', 'sales'],
+  'sales:edit':               ['admin', 'manager', 'sales'],
+  'sales:delete':             ['admin', 'manager'],
+  'sales:cancel':             ['admin', 'manager'],
+  'sales:view':               ['admin', 'manager', 'sales', 'viewer'],
+
+  // ── Invoice actions ────────────────────────────────────────────────────
+  'invoices:create':          ['admin', 'manager', 'sales'],
+  'invoices:edit':            ['admin', 'manager'],
+  'invoices:delete':          ['admin', 'manager'],
+  'invoices:recordPayment':   ['admin', 'manager'],
+  'invoices:view':            ['admin', 'manager', 'sales', 'viewer'],
+
+  // ── Purchase actions ───────────────────────────────────────────────────
+  'purchases:create':         ['admin', 'manager'],
+  'purchases:edit':           ['admin', 'manager'],
+  'purchases:delete':         ['admin', 'manager'],
+  'purchases:receive':        ['admin', 'manager'],
+  'purchases:cancel':         ['admin', 'manager'],
+  'purchases:recordPayment':  ['admin', 'manager'],
+  'purchases:view':           ['admin', 'manager', 'sales', 'viewer'],
+
+  // ── Return actions ─────────────────────────────────────────────────────
+  'returns:create':           ['admin', 'manager', 'sales'],
+  'returns:approve':          ['admin', 'manager'],
+  'returns:reject':           ['admin', 'manager'],
+  'returns:delete':           ['admin', 'manager'],
+  'returns:refund':           ['admin', 'manager'],
+  'returns:view':             ['admin', 'manager', 'sales', 'viewer'],
+
+  // ── Supplier actions ───────────────────────────────────────────────────
+  'suppliers:create':         ['admin', 'manager'],
+  'suppliers:edit':           ['admin', 'manager'],
+  'suppliers:delete':         ['admin', 'manager'],
+  'suppliers:view':           ['admin', 'manager', 'sales', 'viewer'],
+
+  // ── Inventory actions ──────────────────────────────────────────────────
+  'inventory:adjust':         ['admin', 'manager'],
+  'inventory:restock':        ['admin', 'manager'],
+  'inventory:view':           ['admin', 'manager', 'sales', 'viewer'],
+
+  // ── Accounting actions ─────────────────────────────────────────────────
+  'accounting:createAccount': ['admin', 'manager'],
+  'accounting:editAccount':   ['admin', 'manager'],
+  'accounting:deleteAccount': ['admin'],
+  'accounting:postJournal':   ['admin', 'manager'],
+  'accounting:deleteJournal': ['admin'],
+  'accounting:reverseJournal':['admin', 'manager'],
+  'accounting:closePeriod':   ['admin'],
+  'accounting:manageTaxRates':['admin', 'manager'],
+
+  // ── User management ────────────────────────────────────────────────────
+  'users:create':             ['admin'],
+  'users:edit':               ['admin'],
+  'users:delete':             ['admin'],
+  'users:changeRole':         ['admin'],
+  'users:toggleActive':       ['admin'],
+
+  // ── Settings actions ───────────────────────────────────────────────────
+  'settings:changeStorage':   ['admin'],
+  'settings:clearData':       ['admin'],
+  'settings:exportData':      ['admin', 'manager'],
+  'settings:importData':      ['admin'],
+  'settings:editProfile':     ['admin', 'manager'],
+  'settings:appearance':      ['admin', 'manager', 'sales', 'viewer'],
 };
+
+export type Permission = keyof typeof PERMISSIONS;
 
 export function hasPermission(role: UserRole, permission: string): boolean {
   return (PERMISSIONS[permission] ?? []).includes(role);
@@ -40,6 +123,39 @@ export function canView(role: UserRole, page: string): boolean {
   const restrictedPages = ['users', 'settings', 'journal', 'accounts', 'fiscalPeriods'];
   if (role === 'viewer' && restrictedPages.includes(page)) return false;
   return hasPermission(role, `page:${page}`) || !PERMISSIONS[`page:${page}`];
+}
+
+// ── Auth provider (set by authService after init to avoid circular imports) ──
+
+type GetUserFn = () => { role: UserRole } | null;
+let _getUser: GetUserFn = () => null;
+
+/** Called once by authService to register the user getter. */
+export function registerAuthProvider(fn: GetUserFn): void {
+  _getUser = fn;
+}
+
+/**
+ * Get the current user's permission checker.
+ * Always call inside render functions, not at module level.
+ */
+export function usePermissions(): { can: (permission: string) => boolean; role: UserRole } {
+  const role: UserRole = _getUser()?.role ?? 'viewer';
+  return {
+    role,
+    can: (permission: string) => hasPermission(role, permission),
+  };
+}
+
+/**
+ * Assert that the current user has the given permission.
+ * Throws an error (caught by the calling service) if not.
+ */
+export function assertPermission(permission: string): void {
+  const role: UserRole = _getUser()?.role ?? 'viewer';
+  if (!hasPermission(role, permission)) {
+    throw new Error(`Permission denied: ${permission} (role: ${role})`);
+  }
 }
 
 /** Generate a random UUID-like ID */

@@ -9,7 +9,7 @@ import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce, escapeHtml, exportReportPDF } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, escapeHtml, exportReportPDF, usePermissions } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
@@ -41,6 +41,7 @@ const PAY_BADGE: Record<string, string> = {
 };
 
 export function renderPurchases(): HTMLElement {
+  const { can } = usePermissions();
   const state: State = {
     purchases: purchaseService.getAll(),
     filtered: [],
@@ -96,11 +97,13 @@ export function renderPurchases(): HTMLElement {
         const canEdit = po && po.status !== 'received' && po.status !== 'cancelled';
         return [
           { action: 'view',    icon: Icons.eye(16),   label: i18n.t('common.view') },
-          ...(canEdit ? [
+          ...(canEdit && can('purchases:edit') ? [
             { action: 'edit',    icon: Icons.edit(16),  label: i18n.t('common.edit') },
+          ] : []),
+          ...(canEdit && can('purchases:receive') ? [
             { action: 'receive', icon: Icons.check(16), label: i18n.t('purchases.modals.receiveConfirm') },
           ] : []),
-          { action: 'delete',  icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+          ...(can('purchases:delete') ? [{ action: 'delete',  icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true }] : []),
         ];
       },
       (action, id) => {
@@ -155,6 +158,7 @@ export function renderPurchases(): HTMLElement {
 // ── HTML builder ──────────────────────────────────────────────────────────────
 
 function buildHTML(state: State): string {
+  const { can } = usePermissions();
   const all = purchaseService.getAll();
   const totalSpend   = all.filter((p) => p.status === 'received').reduce((s, p) => s + p.total, 0);
   const pending      = all.filter((p) => p.status === 'ordered').length;
@@ -173,7 +177,7 @@ function buildHTML(state: State): string {
         <h2 class="page-title">${i18n.t('purchases.title')}</h2>
         <p class="page-subtitle">${i18n.t('purchases.subtitle')}</p>
       </div>
-      <button class="btn btn-primary" id="add-po-btn">${Icons.plus()} ${i18n.t('purchases.addNew')}</button>
+      ${can('purchases:create') ? `<button class="btn btn-primary" id="add-po-btn">${Icons.plus()} ${i18n.t('purchases.addNew')}</button>` : ''}
     </div>
 
     <!-- KPI strip -->
@@ -282,6 +286,7 @@ function buildPagination(page: number, totalPages: number, total: number, start:
 // ── Detail modal ──────────────────────────────────────────────────────────────
 
 function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
+  const { can } = usePermissions();
   const content = document.createElement('div');
 
   // PDF export + Print button row
@@ -352,7 +357,7 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
 
     ${po.notes ? `<div style="margin-top:var(--space-4);padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);">${escapeHtml(po.notes)}</div>` : ''}
 
-    ${po.status === 'received' && po.paymentStatus !== 'paid' ? `
+    ${po.status === 'received' && po.paymentStatus !== 'paid' && can('purchases:recordPayment') ? `
     <div style="margin-top:var(--space-5);padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);border:1px solid var(--color-border);">
       <div style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-3);">${i18n.t('purchases.modals.recordPayment')}</div>
       ${(po.amountPaid ?? 0) > 0 ? `
@@ -373,13 +378,13 @@ function openPurchaseDetailModal(po: Purchase, onUpdate: () => void): void {
       </div>
     </div>` : ''}
 
-    ${po.status !== 'received' && po.status !== 'cancelled' ? `
+    ${po.status !== 'received' && po.status !== 'cancelled' && (can('purchases:receive') || can('purchases:edit')) ? `
     <div style="margin-top:var(--space-4);display:flex;gap:var(--space-3);">
-      <button class="btn btn-secondary" id="detail-status-ordered" ${po.status === 'ordered' ? 'disabled' : ''}>${i18n.t('purchases.modals.markOrdered')}</button>
-      <button class="btn btn-primary" id="detail-status-received">${i18n.t('purchases.modals.markReceived')}</button>
+      ${can('purchases:edit') ? `<button class="btn btn-secondary" id="detail-status-ordered" ${po.status === 'ordered' ? 'disabled' : ''}>${i18n.t('purchases.modals.markOrdered')}</button>` : ''}
+      ${can('purchases:receive') ? `<button class="btn btn-primary" id="detail-status-received">${i18n.t('purchases.modals.markReceived')}</button>` : ''}
     </div>` : ''}
 
-    ${po.status === 'received' ? `
+    ${po.status === 'received' && can('purchases:cancel') ? `
     <div style="margin-top:var(--space-4);">
       <button class="btn btn-secondary" id="detail-cancel-po" style="color:var(--color-error);border-color:var(--color-error);">${i18n.t('purchases.modals.cancelPurchase' as any)}</button>
     </div>` : ''}

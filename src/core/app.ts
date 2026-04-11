@@ -154,12 +154,20 @@ async function loadPage(
   const currentUser = authService.getUser();
   if (currentUser) {
     const PROTECTED_ROUTES: Partial<Record<Route, string>> = {
-      'users':             'page:users',
-      'settings':          'page:settings',
-      'journal':           'page:journal',
-      'chart-of-accounts': 'page:accounts',
-      'fiscal-periods':    'page:fiscalPeriods',
-      'cost-centers':      'page:costCenters',
+      'users':              'page:users',
+      'settings':           'page:settings',
+      'reports':            'page:reports',
+      'journal':            'page:journal',
+      'chart-of-accounts':  'page:chart-of-accounts',
+      'fiscal-periods':     'page:fiscal-periods',
+      'cost-centers':       'page:cost-centers',
+      'accounting':         'page:accounting',
+      'trial-balance':      'page:trial-balance',
+      'income-statement':   'page:income-statement',
+      'balance-sheet':      'page:balance-sheet',
+      'cash-flow':          'page:cash-flow',
+      'tax-report':         'page:tax-report',
+      'ledger':             'page:ledger',
     };
     const requiredPermission = PROTECTED_ROUTES[route];
     if (requiredPermission && !hasPermission(currentUser.role, requiredPermission)) {

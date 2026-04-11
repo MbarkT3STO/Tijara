@@ -6,7 +6,7 @@ import { supplierService } from '@services/supplierService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatDate, debounce, getInitials, escapeHtml } from '@shared/utils/helpers';
+import { formatDate, debounce, getInitials, escapeHtml, usePermissions } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { Supplier } from '@core/types';
@@ -21,6 +21,7 @@ interface State {
 }
 
 export function renderSuppliers(): HTMLElement {
+  const { can } = usePermissions();
   const state: State = {
     suppliers: supplierService.getAll(),
     filtered: [],
@@ -62,8 +63,8 @@ export function renderSuppliers(): HTMLElement {
       page,
       () => [
         { action: 'view',   icon: Icons.eye(16),   label: i18n.t('common.view') },
-        { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
-        { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+        ...(can('suppliers:edit')   ? [{ action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') }] : []),
+        ...(can('suppliers:delete') ? [{ action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true }] : []),
       ],
       (action, id) => {
         const supplier = supplierService.getById(id);
@@ -109,6 +110,7 @@ export function renderSuppliers(): HTMLElement {
 }
 
 function buildHTML(state: State): string {
+  const { can } = usePermissions();
   const total = state.filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const start = (state.page - 1) * PAGE_SIZE;
@@ -120,7 +122,7 @@ function buildHTML(state: State): string {
         <h2 class="page-title">${i18n.t('suppliers.title')}</h2>
         <p class="page-subtitle">${total === 1 ? i18n.t('suppliers.countTotal', { count: total }) : i18n.t('suppliers.countPlural', { count: total })}</p>
       </div>
-      <button class="btn btn-primary" id="add-supplier-btn">${Icons.plus()} ${i18n.t('suppliers.addNew')}</button>
+      ${can('suppliers:create') ? `<button class="btn btn-primary" id="add-supplier-btn">${Icons.plus()} ${i18n.t('suppliers.addNew')}</button>` : ''}
     </div>
 
     <div class="card">
@@ -204,6 +206,7 @@ function buildPagination(page: number, totalPages: number, total: number, start:
 }
 
 function openSupplierDetailModal(supplier: Supplier, onEdit: () => void): void {
+  const { can } = usePermissions();
   const content = document.createElement('div');
   content.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
@@ -242,7 +245,7 @@ function openSupplierDetailModal(supplier: Supplier, onEdit: () => void): void {
       ${escapeHtml(supplier.notes)}
     </div>` : ''}
     <div style="margin-top:var(--space-5);">
-      <button class="btn btn-secondary" id="detail-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>
+      ${can('suppliers:edit') ? `<button class="btn btn-secondary" id="detail-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>` : ''}
     </div>
   `;
 

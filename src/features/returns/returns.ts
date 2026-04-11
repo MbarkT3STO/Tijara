@@ -8,7 +8,7 @@ import { saleService } from '@services/saleService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, escapeHtml, usePermissions } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
 import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
@@ -41,6 +41,7 @@ const REASON_LABELS: Record<ReturnReason, string> = {
 };
 
 export function renderReturns(): HTMLElement {
+  const { can } = usePermissions();
   const state: State = {
     returns: returnService.getAll(),
     filtered: [],
@@ -99,11 +100,13 @@ export function renderReturns(): HTMLElement {
         const isPending = ret?.status === 'pending';
         return [
           { action: 'view',    icon: Icons.eye(16),   label: i18n.t('common.view') },
-          ...(isPending ? [
+          ...(isPending && can('returns:approve') ? [
             { action: 'approve', icon: Icons.check(16), label: i18n.t('returns.modals.approveConfirm') },
+          ] : []),
+          ...(isPending && can('returns:reject') ? [
             { action: 'reject',  icon: Icons.close(16), label: i18n.t('returns.modals.rejectConfirm'), danger: true },
           ] : []),
-          { action: 'delete',  icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+          ...(can('returns:delete') ? [{ action: 'delete',  icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true }] : []),
         ];
       },
       (action, id) => {
@@ -161,6 +164,7 @@ export function renderReturns(): HTMLElement {
 // ── HTML ──────────────────────────────────────────────────────────────────────
 
 function buildHTML(state: State): string {
+  const { can } = usePermissions();
   const all = returnService.getAll();
   const totalRefunded  = returnService.getTotalRefunded();
   const pendingCount   = all.filter((r) => r.status === 'pending').length;
@@ -177,7 +181,7 @@ function buildHTML(state: State): string {
         <h2 class="page-title">${i18n.t('returns.title')}</h2>
         <p class="page-subtitle">${i18n.t('returns.subtitle')}</p>
       </div>
-      <button class="btn btn-primary" id="add-return-btn">${Icons.plus()} ${i18n.t('returns.addNew')}</button>
+      ${can('returns:create') ? `<button class="btn btn-primary" id="add-return-btn">${Icons.plus()} ${i18n.t('returns.addNew')}</button>` : ''}
     </div>
 
     <!-- KPI strip -->
@@ -288,6 +292,7 @@ function buildPagination(page: number, totalPages: number, total: number, start:
 // ── Detail modal ──────────────────────────────────────────────────────────────
 
 function openReturnDetailModal(ret: Return, onUpdate: () => void): void {
+  const { can } = usePermissions();
   const content = document.createElement('div');
   content.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
@@ -342,13 +347,13 @@ function openReturnDetailModal(ret: Return, onUpdate: () => void): void {
 
     ${ret.notes ? `<div style="padding:var(--space-3);background:var(--color-bg-secondary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-4);">${escapeHtml(ret.notes)}</div>` : ''}
 
-    ${ret.status === 'pending' ? `
+    ${ret.status === 'pending' && (can('returns:approve') || can('returns:reject')) ? `
     <div style="display:flex;gap:var(--space-3);">
-      <button class="btn btn-primary" id="detail-approve-btn">${Icons.check(16)} ${i18n.t('returns.modals.approveTitle')}</button>
-      <button class="btn btn-danger" id="detail-reject-btn">${Icons.close(16)} ${i18n.t('returns.modals.rejectConfirm')}</button>
+      ${can('returns:approve') ? `<button class="btn btn-primary" id="detail-approve-btn">${Icons.check(16)} ${i18n.t('returns.modals.approveTitle')}</button>` : ''}
+      ${can('returns:reject') ? `<button class="btn btn-danger" id="detail-reject-btn">${Icons.close(16)} ${i18n.t('returns.modals.rejectConfirm')}</button>` : ''}
     </div>` : ''}
 
-    ${ret.status === 'approved' ? `
+    ${ret.status === 'approved' && can('returns:refund') ? `
     <div style="margin-top:var(--space-2);">
       <button class="btn btn-secondary" id="detail-refunded-btn">${Icons.dollarSign(16)} ${i18n.t('returns.modals.recordRefund')}</button>
     </div>` : ''}

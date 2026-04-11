@@ -9,7 +9,7 @@ import { fiscalPeriodService } from '@services/fiscalPeriodService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce, generateId, escapeHtml } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, generateId, escapeHtml, usePermissions } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
 import type { JournalEntry, JournalEntryStatus, JournalLine } from '@core/types';
@@ -55,6 +55,7 @@ const STATUS_BADGE: Record<JournalEntryStatus, string> = {
 };
 
 export function renderJournal(): HTMLElement {
+  const { can } = usePermissions();
   const state: State = {
     entries: journalService.getAll(),
     filtered: [],
@@ -117,12 +118,18 @@ export function renderJournal(): HTMLElement {
         const entry = journalService.getById(id);
         if (!entry) return [];
         if (entry.status === 'draft') return [
-          { action: 'edit',   icon: Icons.edit(16),    label: i18n.t('common.edit') },
-          { action: 'post',   icon: Icons.check(16),   label: i18n.t('accounting.journal.postEntry' as any) },
-          { action: 'delete', icon: Icons.trash(16),   label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+          ...(can('accounting:postJournal') ? [
+            { action: 'edit',   icon: Icons.edit(16),    label: i18n.t('common.edit') },
+            { action: 'post',   icon: Icons.check(16),   label: i18n.t('accounting.journal.postEntry' as any) },
+          ] : []),
+          ...(can('accounting:deleteJournal') ? [
+            { action: 'delete', icon: Icons.trash(16),   label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+          ] : []),
         ];
         if (entry.status === 'posted') return [
-          { action: 'reverse', icon: Icons.refresh(16), label: i18n.t('accounting.journal.reverseEntry' as any) },
+          ...(can('accounting:reverseJournal') ? [
+            { action: 'reverse', icon: Icons.refresh(16), label: i18n.t('accounting.journal.reverseEntry' as any) },
+          ] : []),
         ];
         return [];
       },
@@ -165,6 +172,7 @@ export function renderJournal(): HTMLElement {
 }
 
 function buildHTML(state: State): string {
+  const { can } = usePermissions();
   const total = state.filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const start = (state.page - 1) * PAGE_SIZE;
@@ -176,7 +184,7 @@ function buildHTML(state: State): string {
         <h2 class="page-title">${i18n.t('accounting.journal.title' as any)}</h2>
         <p class="page-subtitle">${total} ${i18n.t('common.total' as any)}</p>
       </div>
-      <button class="btn btn-primary" id="add-je-btn">${Icons.plus()} ${i18n.t('accounting.journal.newEntry' as any)}</button>
+      ${can('accounting:postJournal') ? `<button class="btn btn-primary" id="add-je-btn">${Icons.plus()} ${i18n.t('accounting.journal.newEntry' as any)}</button>` : ''}
     </div>
 
     <div class="card">

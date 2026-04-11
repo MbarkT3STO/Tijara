@@ -8,7 +8,7 @@ import { invoiceService } from '@services/invoiceService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatDate, formatCurrency, debounce, getInitials, escapeHtml, exportReportPDF } from '@shared/utils/helpers';
+import { formatDate, formatCurrency, debounce, getInitials, escapeHtml, exportReportPDF, usePermissions } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { menuTriggerHTML, attachMenuTriggers } from '@shared/utils/actionMenu';
@@ -25,6 +25,7 @@ interface State {
 
 /** Render and return the customers page */
 export function renderCustomers(): HTMLElement {
+  const { can } = usePermissions();
   const state: State = {
     customers: customerService.getAll(),
     filtered: [],
@@ -71,8 +72,8 @@ export function renderCustomers(): HTMLElement {
       page,
       () => [
         { action: 'view',   icon: Icons.eye(16),   label: i18n.t('common.view') },
-        { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
-        { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+        ...(can('customers:edit')   ? [{ action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') }] : []),
+        ...(can('customers:delete') ? [{ action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true }] : []),
       ],
       (action, id) => {
         const customer = customerService.getById(id);
@@ -128,6 +129,7 @@ export function renderCustomers(): HTMLElement {
 }
 
 function buildHTML(state: State): string {
+  const { can } = usePermissions();
   const total = state.filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const start = (state.page - 1) * PAGE_SIZE;
@@ -139,9 +141,9 @@ function buildHTML(state: State): string {
         <h2 class="page-title">${i18n.t('customers.title')}</h2>
         <p class="page-subtitle">${total === 1 ? i18n.t('customers.countTotal', { count: total }) : i18n.t('customers.countPlural', { count: total })}</p>
       </div>
-      <button class="btn btn-primary" id="add-customer-btn">
+      ${can('customers:create') ? `<button class="btn btn-primary" id="add-customer-btn">
         ${Icons.plus()} ${i18n.t('customers.addNew')}
-      </button>
+      </button>` : ''}
     </div>
 
     <div class="card">
@@ -336,6 +338,7 @@ function openCustomerModal(customer: Customer | null, onSave: () => void): void 
 
 /** Open customer profile modal with order history */
 function openCustomerProfileModal(customer: Customer, onEdit: () => void): void {
+  const { can } = usePermissions();
   const sales = saleService.getByCustomer(customer.id);
   const invoices = invoiceService.getByCustomer(customer.id);
 
@@ -372,7 +375,7 @@ function openCustomerProfileModal(customer: Customer, onEdit: () => void): void 
       </div>
       <div style="display:flex;gap:var(--space-2);">
         <button class="btn btn-secondary btn-sm" id="profile-statement-btn">${Icons.fileText(16)} ${i18n.t('customers.statement' as any)}</button>
-        <button class="btn btn-secondary btn-sm" id="profile-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>
+        ${can('customers:edit') ? `<button class="btn btn-secondary btn-sm" id="profile-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>` : ''}
       </div>
     </div>
 

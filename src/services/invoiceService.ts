@@ -3,6 +3,7 @@
  */
 
 import { repository } from '@data/repository';
+import { assertPermission } from '@shared/utils/helpers';
 import type { Invoice, Sale } from '@core/types';
 import { generateId, getCurrentISODate } from '@shared/utils/helpers';
 
@@ -94,6 +95,7 @@ export const invoiceService = {
 
   /** Delete invoice */
   delete(id: string): boolean {
+    assertPermission('invoices:delete');
     return repository.delete('invoices', id);
   },
 

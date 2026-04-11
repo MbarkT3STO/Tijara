@@ -8,7 +8,7 @@ import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
 import { openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDateTime, debounce, resolveMovementNote, escapeHtml } from '@shared/utils/helpers';
+import { formatCurrency, formatDateTime, debounce, resolveMovementNote, escapeHtml, usePermissions } from '@shared/utils/helpers';
 import { i18n } from '@core/i18n';
 import { accountingIntegrationService } from '@services/accountingIntegrationService';
 import type { StockMovement, StockMovementType, Product } from '@core/types';
@@ -40,6 +40,7 @@ interface State {
 }
 
 export function renderInventory(): HTMLElement {
+  const { can } = usePermissions();
   const state: State = {
     movements: inventoryService.getAllMovements(),
     filtered: [],
@@ -107,7 +108,6 @@ export function renderInventory(): HTMLElement {
     page.querySelector('#restock-btn')?.addEventListener('click', () => {
       openRestockModal(() => { refresh(); render(); });
     });
-
     // Reorder settings button
     page.querySelector('#reorder-settings-btn')?.addEventListener('click', () => {
       openReorderSettingsModal(() => { refresh(); render(); });
@@ -139,6 +139,7 @@ export function renderInventory(): HTMLElement {
 // ── HTML ──────────────────────────────────────────────────────────────────────
 
 function buildHTML(state: State): string {
+  const { can } = usePermissions();
   const products = productService.getAll();
   const lowStock = inventoryService.getLowStockProducts();
   const outOfStock = inventoryService.getOutOfStockProducts();
@@ -157,15 +158,15 @@ function buildHTML(state: State): string {
         <p class="page-subtitle">${i18n.t('inventory.subtitle')}</p>
       </div>
       <div class="toolbar">
-        <button class="btn btn-secondary" id="reorder-settings-btn">
+        ${can('inventory:adjust') ? `<button class="btn btn-secondary" id="reorder-settings-btn">
           ${Icons.settings(16)} ${i18n.t('inventory.reorderSettings')}
-        </button>
-        <button class="btn btn-secondary" id="restock-btn">
+        </button>` : ''}
+        ${can('inventory:restock') ? `<button class="btn btn-secondary" id="restock-btn">
           ${Icons.download(16)} ${i18n.t('inventory.restock')}
-        </button>
-        <button class="btn btn-primary" id="adjust-stock-btn">
+        </button>` : ''}
+        ${can('inventory:adjust') ? `<button class="btn btn-primary" id="adjust-stock-btn">
           ${Icons.refresh(16)} ${i18n.t('inventory.adjustStock')}
-        </button>
+        </button>` : ''}
       </div>
     </div>
 
@@ -230,9 +231,9 @@ function buildHTML(state: State): string {
                 <td style="color:var(--color-text-secondary);">${p.reorderPoint} ${escapeHtml(p.unit)}</td>
                 <td style="color:var(--color-text-secondary);">${p.reorderQuantity} ${escapeHtml(p.unit)}</td>
                 <td>
-                  <button class="btn btn-secondary btn-sm" data-quick-restock="${p.id}">
+                  ${can('inventory:restock') ? `<button class="btn btn-secondary btn-sm" data-quick-restock="${p.id}">
                     ${Icons.download(14)} ${i18n.t('inventory.restock')}
-                  </button>
+                  </button>` : ''}
                 </td>
               </tr>
             `).join('')}

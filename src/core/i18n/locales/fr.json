@@ -824,7 +824,8 @@
     "loadFailed": "Échec du chargement des données",
     "saveFailed": "L'enregistrement a échoué",
     "accessDenied": "Accès refusé",
-    "accessDeniedMsg": "Vous n'avez pas la permission d'accéder à cette page. Contactez votre administrateur."
+    "accessDeniedMsg": "Vous n'avez pas la permission d'accéder à cette page. Contactez votre administrateur.",
+    "actionDenied": "Vous n'avez pas la permission d'effectuer cette action."
   },
   "accounting": {
     "title": "Comptabilité",

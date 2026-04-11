@@ -169,3 +169,8 @@ class AuthService {
 
 /** Singleton auth service */
 export const authService = new AuthService();
+
+// Register the auth provider with helpers to enable usePermissions() / assertPermission()
+// without creating a circular import (helpers → authService → helpers).
+import { registerAuthProvider } from '@shared/utils/helpers';
+registerAuthProvider(() => authService.getUser());

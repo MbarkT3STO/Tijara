@@ -7,7 +7,7 @@ import { saleService } from '@services/saleService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, escapeHtml, usePermissions } from '@shared/utils/helpers';
 import { printInvoice, exportInvoicePDF } from '@shared/utils/invoicePdf';
 import { openPrintPreview } from '@shared/components/printPreview';
 import { profileService } from '@services/profileService';
@@ -39,6 +39,7 @@ function getStatusLabel(status: string): string {
 
 /** Render and return the invoices page */
 export function renderInvoices(): HTMLElement {
+  const { can } = usePermissions();
   invoiceService.markOverdue();
 
   const state: State = {
@@ -127,12 +128,11 @@ export function renderInvoices(): HTMLElement {
       menu.setAttribute('aria-label', `Actions for invoice ${invNumber}`);
       menu.innerHTML = `
         <button class="dropdown-item" data-action="view"   role="menuitem">${Icons.eye(16)}      ${i18n.t('common.view')}</button>
-        <button class="dropdown-item" data-action="edit"   role="menuitem">${Icons.edit(16)}     ${i18n.t('common.edit')}</button>
+        ${can('invoices:edit') ? `<button class="dropdown-item" data-action="edit"   role="menuitem">${Icons.edit(16)}     ${i18n.t('common.edit')}</button>` : ''}
         <div class="dropdown-divider"></div>
         <button class="dropdown-item" data-action="pdf"    role="menuitem" style="color:var(--color-primary);">${Icons.fileText(16)}  ${i18n.t('common.export' as any)} PDF</button>
         <button class="dropdown-item" data-action="print"  role="menuitem">${Icons.printer(16)}  ${i18n.t('common.print')}</button>
-        <div class="dropdown-divider"></div>
-        <button class="dropdown-item danger" data-action="delete" role="menuitem">${Icons.trash(16)} ${i18n.t('common.delete')}</button>
+        ${can('invoices:delete') ? `<div class="dropdown-divider"></div><button class="dropdown-item danger" data-action="delete" role="menuitem">${Icons.trash(16)} ${i18n.t('common.delete')}</button>` : ''}
       `;
 
       // Position: align right edge of menu with right edge of trigger
@@ -201,12 +201,17 @@ export function renderInvoices(): HTMLElement {
               break;
 
             case 'delete':
+              if (!can('invoices:delete')) { notifications.error(i18n.t('errors.actionDenied' as any)); return; }
               confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${invoice.invoiceNumber}"?`, () => {
-                invoiceService.delete(invId);
-                notifications.success(i18n.t('common.delete'));
-                state.invoices = invoiceService.getAll();
-                applyFilters();
-                render();
+                try {
+                  invoiceService.delete(invId);
+                  notifications.success(i18n.t('common.delete'));
+                  state.invoices = invoiceService.getAll();
+                  applyFilters();
+                  render();
+                } catch {
+                  notifications.error(i18n.t('errors.actionDenied' as any));
+                }
               });
               break;
           }
@@ -259,6 +264,7 @@ export function renderInvoices(): HTMLElement {
 }
 
 function buildHTML(state: State): string {
+  const { can } = usePermissions();
   const total = state.filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const start = (state.page - 1) * PAGE_SIZE;
@@ -277,9 +283,9 @@ function buildHTML(state: State): string {
         <h2 class="page-title">${i18n.t('invoices.title')}</h2>
         <p class="page-subtitle">${total === 1 ? i18n.t('invoices.countTotal', { count: total }) : i18n.t('invoices.countPlural', { count: total })}</p>
       </div>
-      <button class="btn btn-primary" id="create-invoice-btn">
+      ${can('invoices:create') ? `<button class="btn btn-primary" id="create-invoice-btn">
         ${Icons.plus()} ${i18n.t('invoices.modals.createTitle')}
-      </button>
+      </button>` : ''}
     </div>
 
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); margin-bottom: var(--space-6);">
@@ -402,6 +408,7 @@ function buildPagination(
 }
 
 function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
+  const { can } = usePermissions();
   const profile = profileService.get();
 
   const statusColor: Record<string, string> = {
@@ -581,8 +588,8 @@ function openInvoiceDetailModal(invoice: Invoice, onUpdate: () => void): void {
 
     </div>
 
-    <!-- Record payment (only when amount is due) -->
-    ${invoice.amountDue > 0 ? `
+    <!-- Record payment (only when amount is due and user has permission) -->
+    ${invoice.amountDue > 0 && can('invoices:recordPayment') ? `
     <div style="margin-top:var(--space-5);padding:var(--space-4);background:var(--color-bg-secondary);border-radius:var(--radius-md);border:1px solid var(--color-border);">
       <div style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:var(--space-3);">${i18n.t('invoices.modals.recordPayment')}</div>
       <div style="display:flex;gap:var(--space-2);">

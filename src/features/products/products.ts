@@ -6,7 +6,7 @@ import { productService } from '@services/productService';
 import { notifications } from '@core/notifications';
 import { confirmDialog, openModal, showModalError } from '@shared/components/modal';
 import { Icons } from '@shared/components/icons';
-import { formatCurrency, formatDate, debounce, escapeHtml } from '@shared/utils/helpers';
+import { formatCurrency, formatDate, debounce, escapeHtml, usePermissions } from '@shared/utils/helpers';
 import { profileService } from '@services/profileService';
 import { i18n } from '@core/i18n';
 import { repository } from '@data/repository';
@@ -25,6 +25,7 @@ interface State {
 
 /** Render and return the products page */
 export function renderProducts(): HTMLElement {
+  const { can } = usePermissions();
   const state: State = {
     products: productService.getAll(),
     filtered: [],
@@ -85,8 +86,8 @@ export function renderProducts(): HTMLElement {
       page,
       () => [
         { action: 'view',   icon: Icons.eye(16),   label: i18n.t('common.view') },
-        { action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') },
-        { action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true },
+        ...(can('products:edit')   ? [{ action: 'edit',   icon: Icons.edit(16),  label: i18n.t('common.edit') }] : []),
+        ...(can('products:delete') ? [{ action: 'delete', icon: Icons.trash(16), label: i18n.t('common.delete'), danger: true, dividerBefore: true }] : []),
       ],
       (action, id) => {
         const product = productService.getById(id);
@@ -95,9 +96,13 @@ export function renderProducts(): HTMLElement {
         if (action === 'view')        openProductDetailModal(product, refresh);
         else if (action === 'edit')   openProductModal(product, refresh);
         else if (action === 'delete') confirmDialog(i18n.t('common.delete'), `${i18n.t('common.confirm')} "${product.name}"?`, () => {
-          productService.delete(id);
-          notifications.success(i18n.t('common.delete'));
-          refresh();
+          try {
+            productService.delete(id);
+            notifications.success(i18n.t('common.delete'));
+            refresh();
+          } catch {
+            notifications.error(i18n.t('errors.actionDenied' as any));
+          }
         });
       }
     );
@@ -131,6 +136,7 @@ export function renderProducts(): HTMLElement {
 }
 
 function buildHTML(state: State): string {
+  const { can } = usePermissions();
   const categories = productService.getCategories();
   const total = state.filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -143,9 +149,9 @@ function buildHTML(state: State): string {
         <h2 class="page-title">${i18n.t('products.title')}</h2>
         <p class="page-subtitle">${total === 1 ? i18n.t('products.countTotal', { count: total }) : i18n.t('products.countPlural', { count: total })}</p>
       </div>
-      <button class="btn btn-primary" id="add-product-btn">
+      ${can('products:create') ? `<button class="btn btn-primary" id="add-product-btn">
         ${Icons.plus()} ${i18n.t('products.addNew')}
-      </button>
+      </button>` : ''}
     </div>
 
     <div class="card">
@@ -282,6 +288,7 @@ const PRODUCT_UNITS = [
 ] as const;
 
 function openProductDetailModal(product: Product, onEdit: () => void): void {
+  const { can } = usePermissions();
   const margin = product.price > 0 ? ((product.price - product.cost) / product.price) * 100 : 0;
   const marginColor = margin >= 30 ? 'var(--color-success)' : margin >= 15 ? 'var(--color-warning)' : 'var(--color-error)';
   const stockClass = product.stock === 0 ? 'badge-error' : product.stock < 10 ? 'badge-warning' : 'badge-success';
@@ -373,7 +380,7 @@ function openProductDetailModal(product: Product, onEdit: () => void): void {
     </div>` : ''}
 
     <div style="margin-top:var(--space-5);">
-      <button class="btn btn-secondary" id="product-detail-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>
+      ${can('products:edit') ? `<button class="btn btn-secondary" id="product-detail-edit-btn">${Icons.edit(16)} ${i18n.t('common.edit')}</button>` : ''}
     </div>
   `;
 

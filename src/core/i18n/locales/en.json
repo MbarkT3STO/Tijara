@@ -821,7 +821,8 @@
     "loadFailed": "Failed to load data",
     "saveFailed": "Failed to save",
     "accessDenied": "Access Denied",
-    "accessDeniedMsg": "You don't have permission to access this page. Contact your administrator."
+    "accessDeniedMsg": "You don't have permission to access this page. Contact your administrator.",
+    "actionDenied": "You don't have permission to perform this action."
   },
   "accounting": {
     "title": "Accounting",

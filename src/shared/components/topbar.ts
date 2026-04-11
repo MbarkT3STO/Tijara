@@ -106,6 +106,15 @@ export function createTopbar(
   right.appendChild(bellWrapper);
   right.appendChild(userTrigger);
 
+  // Viewer read-only badge
+  if (currentUser.role === 'viewer') {
+    const badge = document.createElement('span');
+    badge.className = 'badge badge-neutral';
+    badge.style.cssText = 'font-size:10px;padding:2px 6px;';
+    badge.textContent = i18n.t('users.roles.viewer' as any);
+    right.insertBefore(badge, userTrigger);
+  }
+
   topbar.appendChild(left);
   topbar.appendChild(searchWrapper);
   topbar.appendChild(right);

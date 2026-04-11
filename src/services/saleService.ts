@@ -5,6 +5,7 @@
 
 import { repository } from '@data/repository';
 import { inventoryService } from './inventoryService';
+import { assertPermission } from '@shared/utils/helpers';
 import type { Sale, OrderItem } from '@core/types';
 import { generateId, getCurrentISODate, autoNote } from '@shared/utils/helpers';
 
@@ -107,6 +108,7 @@ export const saleService = {
   },
 
   delete(id: string): boolean {
+    assertPermission('sales:delete');
     // Restore stock before deleting
     const sale = repository.getById('sales', id);
     if (sale && sale.status !== 'cancelled') {

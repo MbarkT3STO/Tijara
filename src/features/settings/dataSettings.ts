@@ -7,6 +7,7 @@ import { i18n } from '@core/i18n';
 import { notifications } from '@core/notifications';
 import { repository } from '@data/repository';
 import { storageFormatService } from '@core/storageFormatService';
+import { usePermissions } from '@shared/utils/helpers';
 import type { StorageFormat } from '@core/storageFormatService';
 import type { ElectronAPI } from '../../../electron/preload';
 
@@ -53,6 +54,7 @@ function buildStorageFormatCard(format: StorageFormat, active: boolean): string 
 }
 
 export function buildDataHTML(): string {
+  const { can } = usePermissions();
   return `
     <div class="card">
       <div class="card-header" style="background:var(--color-bg-secondary);border-bottom:1px solid var(--color-border-subtle);">
@@ -70,11 +72,11 @@ export function buildDataHTML(): string {
           <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);margin-bottom:var(--space-4);">
             ${i18n.t('settings.storageFormatSubtitle' as any)}
           </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-bottom:var(--space-4);" id="storage-format-cards">
+          ${can('settings:changeStorage') ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-bottom:var(--space-4);" id="storage-format-cards">
             ${buildStorageFormatCard('json', storageFormatService.current === 'json')}
             ${buildStorageFormatCard('excel', storageFormatService.current === 'excel')}
             ${buildStorageFormatCard('sqlite', storageFormatService.current === 'sqlite')}
-          </div>
+          </div>` : ''}
           <div id="storage-format-info" style="
             padding:var(--space-3) var(--space-4);
             background:var(--color-bg-secondary);
@@ -112,9 +114,9 @@ export function buildDataHTML(): string {
             <p style="font-size:var(--font-size-xs);color:var(--color-text-secondary);line-height:1.4;">
               ${isElectron ? i18n.t('settings.exportExcelSubtitleWin' as any) : i18n.t('settings.exportExcelSubtitleWeb' as any)}
             </p>
-            <button class="btn btn-secondary btn-sm" id="export-btn" style="margin-top:auto;">
+            ${can('settings:exportData') ? `<button class="btn btn-secondary btn-sm" id="export-btn" style="margin-top:auto;">
               ${Icons.download(14)} ${i18n.t('settings.exportData' as any)}
-            </button>
+            </button>` : ''}
           </div>
 
           <div style="display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-4);border:1px solid var(--color-border-subtle);border-radius:var(--radius-md);">
@@ -123,13 +125,13 @@ export function buildDataHTML(): string {
             <p style="font-size:var(--font-size-xs);color:var(--color-text-secondary);line-height:1.4;">
               ${isElectron ? i18n.t('settings.importExcelSubtitleWin' as any) : i18n.t('settings.importExcelSubtitleWeb' as any)}
             </p>
-            ${isElectron
+            ${can('settings:importData') ? (isElectron
               ? `<button class="btn btn-secondary btn-sm" id="import-btn" style="margin-top:auto;">${Icons.upload(14)} ${i18n.t('settings.importData' as any)}</button>`
               : `<label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-top:auto;">${Icons.upload(14)} ${i18n.t('settings.importData' as any)}<input type="file" id="import-file" accept=".xlsx,.xls" style="display:none;" /></label>`
-            }
+            ) : ''}
           </div>
 
-          <div style="display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-4);border:1px solid var(--color-error-subtle);background:var(--color-error-subtle);border-radius:var(--radius-md);">
+          ${can('settings:clearData') ? `<div style="display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-4);border:1px solid var(--color-error-subtle);background:var(--color-error-subtle);border-radius:var(--radius-md);">
             <div style="color:var(--color-error);">${Icons.alertTriangle(24)}</div>
             <div style="font-weight:600;color:var(--color-error);">${i18n.t('settings.clearAllData' as any)}</div>
             <p style="font-size:var(--font-size-xs);color:var(--color-text-secondary);line-height:1.4;">
@@ -138,7 +140,7 @@ export function buildDataHTML(): string {
             <button class="btn btn-ghost btn-sm" id="clear-btn" style="color:var(--color-error);border:1px solid rgba(239,68,68,0.2);margin-top:auto;">
               ${Icons.trash(14)} ${i18n.t('common.delete' as any)}
             </button>
-          </div>
+          </div>` : ''}
         </div>
       </div>
     </div>

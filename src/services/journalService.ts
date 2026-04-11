@@ -6,6 +6,7 @@
 import { repository } from '@data/repository';
 import { accountService } from './accountService';
 import { fiscalPeriodService } from './fiscalPeriodService';
+import { assertPermission } from '@shared/utils/helpers';
 import type {
   JournalEntry, JournalEntrySource, LedgerEntry,
   TrialBalance, IncomeStatement, BalanceSheet,
@@ -87,6 +88,7 @@ class JournalService {
   }
 
   async postEntry(id: string): Promise<JournalEntry> {
+    assertPermission('accounting:postJournal');
     const entry = this.getById(id);
     if (!entry) throw new Error('ERR_ENTRY_NOT_FOUND');
     if (entry.status !== 'draft') throw new Error('ERR_ONLY_DRAFT_CAN_BE_POSTED');
@@ -143,6 +145,7 @@ class JournalService {
   }
 
   async deleteDraft(id: string): Promise<void> {
+    assertPermission('accounting:deleteJournal');
     const entry = this.getById(id);
     if (!entry) throw new Error('ERR_ENTRY_NOT_FOUND');
     if (entry.status !== 'draft') throw new Error('ERR_ONLY_DRAFT_CAN_BE_DELETED');
