@@ -37,6 +37,20 @@ function getDb(): DatabaseType {
   _db.pragma('journal_mode = WAL');
   _db.pragma('foreign_keys = ON');
   _db.pragma('synchronous = NORMAL');
+
+  // Detect stale schema (old single-table 'collections' design) and wipe it
+  // so the new 16-table schema is created cleanly.
+  const hasOldSchema = _db.prepare(
+    `SELECT 1 FROM sqlite_master WHERE type='table' AND name='collections'`
+  ).get();
+  if (hasOldSchema) {
+    console.log('[main] Detected old collections schema — dropping and recreating');
+    const tables = (_db.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all() as { name: string }[])
+      .map((r) => r.name)
+      .filter((n) => n !== 'sqlite_sequence');
+    for (const t of tables) _db.prepare(`DROP TABLE IF EXISTS "${t}"`).run();
+  }
+
   initSchema(_db);
   return _db;
 }
@@ -595,12 +609,37 @@ const TABLE_NAMES: Record<string, string> = {
 // JSON columns that store nested arrays
 const JSON_COLUMNS = new Set(['items', 'lines']);
 
+/**
+ * Canonical snake_case columns for each table — used by bulkInsert to ensure
+ * every row provides exactly the right number of values regardless of which
+ * optional fields are present on a given item.
+ */
+const TABLE_COLUMNS: Record<string, string[]> = {
+  customers:            ['id','name','email','phone','address','city','country','notes','created_at'],
+  products:             ['id','name','sku','category','price','cost','stock','unit','description','reorder_point','reorder_quantity','created_at'],
+  sales:                ['id','order_number','customer_id','customer_name','items','subtotal','tax_rate','tax_amount','discount','total','status','payment_status','payment_method','notes','created_at','updated_at'],
+  invoices:             ['id','invoice_number','sale_id','customer_id','customer_name','items','subtotal','tax_rate','tax_amount','discount','total','amount_paid','amount_due','status','due_date','notes','created_at'],
+  users:                ['id','name','email','password_hash','role','avatar','active','last_login','created_at'],
+  stock_movements:      ['id','product_id','product_name','type','quantity','stock_before','stock_after','reference','notes','created_at'],
+  suppliers:            ['id','name','email','phone','address','city','country','contact_person','tax_id','website','notes','created_at'],
+  purchases:            ['id','po_number','supplier_id','supplier_name','items','subtotal','tax_rate','tax_amount','shipping_cost','total','amount_paid','status','payment_status','payment_method','expected_date','notes','created_at','updated_at'],
+  returns:              ['id','return_number','sale_id','order_number','customer_id','customer_name','items','subtotal','tax_rate','tax_amount','refund_amount','reason','status','refund_method','restock_items','notes','created_at','updated_at'],
+  accounts:             ['id','code','name','name_ar','name_fr','type','category','normal_balance','parent_id','description','is_system','is_active','cost_center_id','created_at'],
+  journal_entries:      ['id','entry_number','date','description','reference','source_type','source_id','lines','total_debit','total_credit','status','reversal_entry_id','posted_at','posted_by','fiscal_period_id','created_at','updated_at'],
+  fiscal_periods:       ['id','name','start_date','end_date','status','is_current','closed_at','closed_by','created_at'],
+  cost_centers:         ['id','code','name','description','parent_id','is_active','created_at'],
+  tax_rates:            ['id','name','code','rate','account_id','is_default','is_active','created_at'],
+  journal_templates:    ['id','name','description','lines','created_at'],
+  product_cost_history: ['id','product_id','product_name','old_cost','new_cost','changed_at','changed_by'],
+};
+
 /** Convert a JS object (camelCase) to a DB row (snake_case), serializing JSON columns */
 function toRow(collection: string, obj: Record<string, unknown>): Record<string, unknown> {
   const map = CAMEL_TO_SNAKE[collection] ?? {};
   const row: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {
-    const col = map[k] ?? k;
+    // Use explicit map first, then fall back to automatic camelCase → snake_case
+    const col = map[k] ?? k.replace(/([A-Z])/g, '_$1').toLowerCase();
     if (JSON_COLUMNS.has(k)) {
       row[col] = JSON.stringify(v ?? []);
     } else if (typeof v === 'boolean') {
@@ -617,7 +656,8 @@ function fromRow(collection: string, row: Record<string, unknown>): Record<strin
   const map = SNAKE_TO_CAMEL[collection] ?? {};
   const obj: Record<string, unknown> = {};
   for (const [col, v] of Object.entries(row)) {
-    const key = map[col] ?? col;
+    // Use explicit map first, then fall back to automatic snake_case → camelCase
+    const key = map[col] ?? col.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
     if (JSON_COLUMNS.has(key)) {
       try { obj[key] = JSON.parse(v as string); } catch { obj[key] = []; }
     } else if (col === 'active' || col === 'is_system' || col === 'is_active' ||
@@ -661,10 +701,12 @@ ipcMain.handle('sqlite:insert', (_event, collection: string, item: Record<string
   try {
     const table = TABLE_NAMES[collection];
     if (!table) return false;
+    const cols = TABLE_COLUMNS[table];
+    if (!cols) return false;
     const row = toRow(collection, item);
-    const cols = Object.keys(row).join(', ');
-    const placeholders = Object.keys(row).map(() => '?').join(', ');
-    getDb().prepare(`INSERT INTO ${table} (${cols}) VALUES (${placeholders})`).run(...Object.values(row));
+    const placeholders = cols.map(() => '?').join(', ');
+    const values = cols.map((col) => row[col] ?? null);
+    getDb().prepare(`INSERT OR REPLACE INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`).run(...values);
     return true;
   } catch (err) {
     console.error(`[main] sqlite:insert(${collection}) error`, err);
@@ -707,16 +749,21 @@ ipcMain.handle('sqlite:bulkInsert', (_event, allData: Record<string, unknown[]>)
     const tx = db.transaction(() => {
       for (const [collection, items] of Object.entries(allData)) {
         const table = TABLE_NAMES[collection];
-        if (!table || !Array.isArray(items) || items.length === 0) continue;
-        // Clear existing data for this table first
+        if (!table) continue;
         db.prepare(`DELETE FROM ${table}`).run();
-        const firstRow = toRow(collection, items[0] as Record<string, unknown>);
-        const cols = Object.keys(firstRow).join(', ');
-        const placeholders = Object.keys(firstRow).map(() => '?').join(', ');
-        const stmt = db.prepare(`INSERT OR REPLACE INTO ${table} (${cols}) VALUES (${placeholders})`);
+        if (!Array.isArray(items) || items.length === 0) continue;
+
+        const cols = TABLE_COLUMNS[table];
+        if (!cols) continue;
+        const placeholders = cols.map(() => '?').join(', ');
+        const stmt = db.prepare(`INSERT OR REPLACE INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`);
+
         for (const item of items) {
+          // Convert camelCase item to snake_case row, then extract values
+          // in the exact column order defined by TABLE_COLUMNS.
           const row = toRow(collection, item as Record<string, unknown>);
-          stmt.run(...Object.values(row));
+          const values = cols.map((col) => row[col] ?? null);
+          stmt.run(...values);
         }
       }
     });
